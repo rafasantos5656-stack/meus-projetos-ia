@@ -1,0 +1,20 @@
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Configura‡äes locais de editores
+.vscode/
+.idea/
+*.code-workspace
+
+# Dependˆncias, caches e arquivos gerados
+node_modules/
+dist/
+build/
+coverage/
+.cache/
+
+# Logs tempor rios
+*.log
+npm-debug.log*

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Painel para acompanhar seus projetos de inteligência artificial."
+    />
+    <title>Meus Projetos de IA</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Navegação principal">
+        <a class="brand" href="#inicio" aria-label="Meus Projetos de IA - início">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M12 3v18M3 12h18" />
+              <circle cx="12" cy="12" r="4" />
+            </svg>
+          </span>
+          <span>Meus Projetos <strong>de IA</strong></span>
+        </a>
+
+        <nav class="main-nav">
+          <p class="nav-section-label">Visão do produto</p>
+          <a class="nav-link active" href="#inicio" aria-current="page">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V10Z" /></svg>
+            Dashboard
+          </a>
+          <a class="nav-link" href="#projetos">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h5L12 6h6.5A1.5 1.5 0 0 1 20 7.5v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5v-13Z" /></svg>
+            Projetos
+          </a>
+          <a class="nav-link" href="#projetos">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" /></svg>
+            Tarefas
+          </a>
+          <div class="nav-divider" aria-hidden="true"></div>
+          <p class="nav-section-label nav-section-label-future">Em breve</p>
+          <span class="nav-link nav-link-future" aria-disabled="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2" /></svg>
+            Relatórios
+            <small>Em breve</small>
+          </span>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="tip-card">
+            <span class="tip-icon" aria-hidden="true">✦</span>
+            <p>Organize uma ideia, transforme-a em projeto e acompanhe cada avanço.</p>
+          </div>
+          <span class="nav-link nav-link-future" aria-disabled="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.1 2.1-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56v.1h-3v-.1a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-2.1-2.1.06-.06A1.7 1.7 0 0 0 7.06 15a1.7 1.7 0 0 0-1.56-1.03h-.1v-3h.1A1.7 1.7 0 0 0 7.06 9.94a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.1-2.1.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.56v-.1h3v.1a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.1 2.1-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.03h.1v3h-.1A1.7 1.7 0 0 0 19.4 15Z" /></svg>
+            Configurações
+            <small>Em breve</small>
+          </span>
+        </div>
+      </aside>
+
+      <main id="inicio" class="main-content">
+        <header class="topbar">
+          <button class="menu-button" type="button" aria-label="Abrir menu">
+            <span></span><span></span><span></span>
+          </button>
+          <div class="page-context">
+            <p>Seu espaço de criação</p>
+            <h1>Visão geral</h1>
+          </div>
+          <button class="profile-button" type="button" aria-label="Perfil de usuário">
+            <span class="avatar">MP</span>
+            <span class="profile-name">Meu perfil</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
+          </button>
+        </header>
+
+        <section class="welcome-card" aria-labelledby="boas-vindas">
+          <div class="welcome-copy">
+            <span class="eyebrow">Seu painel pessoal</span>
+            <h2 id="boas-vindas">Transforme ideias em<br /><em>projetos de IA.</em></h2>
+            <p>Organize suas iniciativas, acompanhe cada etapa e mantenha o foco no que importa.</p>
+            <button class="primary-button" type="button" data-open-project-modal>
+              <span aria-hidden="true">+</span>
+              Novo Projeto
+            </button>
+          </div>
+          <div class="welcome-visual" aria-hidden="true">
+            <div class="orb orb-one"></div>
+            <div class="orb orb-two"></div>
+            <div class="orbit orbit-one"></div>
+            <div class="orbit orbit-two"></div>
+            <div class="brain-card">
+              <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M50 19c-8-8-22-3-22 9 0 3 1 6 3 8-8 2-12 12-7 19-7 4-7 16 1 20 0 10 13 14 20 7 3 6 8 6 10 0 7 7 20 3 20-7 8-4 8-16 1-20 5-7 1-17-7-19 2-2 3-5 3-8 0-12-14-17-22-9Z" />
+                <path d="M50 19v62M34 36c5 0 8 3 8 8M28 55c7 0 11 4 11 10M66 36c-5 0-8 3-8 8M72 55c-7 0-11 4-11 10" />
+                <circle cx="34" cy="36" r="2.5" fill="currentColor" /><circle cx="28" cy="55" r="2.5" fill="currentColor" />
+                <circle cx="66" cy="36" r="2.5" fill="currentColor" /><circle cx="72" cy="55" r="2.5" fill="currentColor" />
+              </svg>
+            </div>
+          </div>
+        </section>
+
+        <section class="stats-section" aria-labelledby="resumo-titulo">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Resumo rápido</p>
+              <h2 id="resumo-titulo">Seus projetos</h2>
+            </div>
+            <span class="period-label">Visão inicial</span>
+          </div>
+
+          <div class="stats-grid">
+            <article class="stat-card total-card">
+              <div class="stat-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h5L12 6h6.5A1.5 1.5 0 0 1 20 7.5v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5v-13Z" /></svg>
+              </div>
+              <div><span>Total de projetos</span><strong id="total-projects">0</strong></div>
+              <small>Pronto para começar</small>
+            </article>
+
+            <article class="stat-card idea-card">
+              <div class="stat-icon" aria-hidden="true">✦</div>
+              <div><span>Ideias</span><strong id="idea-projects">0</strong></div>
+              <small>Projetos em planejamento</small>
+            </article>
+
+            <article class="stat-card progress-card">
+              <div class="stat-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18" /><circle cx="12" cy="12" r="4" /></svg>
+              </div>
+              <div><span>Em andamento</span><strong id="in-progress-projects">0</strong></div>
+              <small>Projetos em execução</small>
+            </article>
+
+            <article class="stat-card done-card">
+              <div class="stat-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="m5 12 4.5 4.5L19 7" /></svg>
+              </div>
+              <div><span>Concluídos</span><strong id="completed-projects">0</strong></div>
+              <small>Resultados alcançados</small>
+            </article>
+
+            <article class="stat-card paused-card">
+              <div class="stat-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M9 7v10M15 7v10" /></svg>
+              </div>
+              <div><span>Pausados</span><strong id="paused-projects">0</strong></div>
+              <small>Projetos temporariamente parados</small>
+            </article>
+
+            <article class="stat-card tasks-card">
+              <div class="stat-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" /></svg>
+              </div>
+              <div><span>Total de tarefas</span><strong id="total-tasks">0</strong></div>
+              <small>Tarefas cadastradas</small>
+            </article>
+
+            <article class="stat-card completed-tasks-card">
+              <div class="stat-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="m5 12 4.5 4.5L19 7" /></svg>
+              </div>
+              <div><span>Tarefas concluídas</span><strong id="completed-tasks">0</strong></div>
+              <small>Etapas finalizadas</small>
+            </article>
+
+            <article class="stat-card pending-tasks-card">
+              <div class="stat-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 8v5l3 2" /><circle cx="12" cy="12" r="8" /></svg>
+              </div>
+              <div><span>Tarefas pendentes</span><strong id="pending-tasks">0</strong></div>
+              <small>Etapas a realizar</small>
+            </article>
+          </div>
+        </section>
+
+        <section class="overview-section" aria-labelledby="visao-geral-titulo">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Panorama do trabalho</p>
+              <h2 id="visao-geral-titulo">Visão geral</h2>
+            </div>
+            <span class="period-label">Dados em tempo real</span>
+          </div>
+
+          <div class="overview-grid">
+            <article class="overview-card average-progress-card">
+              <span>Progresso médio</span>
+              <strong id="average-progress">0%</strong>
+              <div class="overview-progress-track" aria-hidden="true"><span id="average-progress-bar"></span></div>
+            </article>
+            <article class="overview-card">
+              <span>Total de tarefas</span>
+              <strong id="overview-total-tasks">0</strong>
+              <small>Em todos os projetos</small>
+            </article>
+            <article class="overview-card">
+              <span>Tarefas concluídas</span>
+              <strong id="overview-completed-tasks">0</strong>
+              <small>Etapas já finalizadas</small>
+            </article>
+            <article class="overview-card">
+              <span>Tarefas pendentes</span>
+              <strong id="overview-pending-tasks">0</strong>
+              <small>Próximas etapas</small>
+            </article>
+          </div>
+        </section>
+
+        <section class="attention-section" aria-labelledby="atencao-titulo">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Prioridades do momento</p>
+              <h2 id="atencao-titulo">Projetos que precisam de atenção</h2>
+            </div>
+            <span class="period-label" id="attention-count">Nenhum projeto</span>
+          </div>
+
+          <div class="attention-empty" id="attention-empty">
+            <span aria-hidden="true">✓</span>
+            <p>Nenhum projeto de alta prioridade com tarefas pendentes ou data vencida precisa de atenção.</p>
+          </div>
+          <div class="attention-grid" id="attention-projects" aria-live="polite" hidden></div>
+        </section>
+
+        <section id="projetos" class="projects-section" aria-labelledby="recentes-titulo">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Acompanhe seu trabalho</p>
+              <h2 id="recentes-titulo">Projetos recentes</h2>
+            </div>
+            <button class="text-button" type="button" data-show-all-projects>Ver todos <span aria-hidden="true">→</span></button>
+          </div>
+
+          <div class="project-controls" aria-label="Buscar e ordenar projetos">
+            <label class="project-search" for="project-search">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" /></svg>
+              <input id="project-search" type="search" placeholder="Buscar projeto pelo nome" autocomplete="off" />
+            </label>
+
+            <label class="sort-control" for="project-sort">
+              <span>Ordenar por</span>
+              <select id="project-sort">
+                <option value="newest">Mais recentes</option>
+                <option value="oldest">Mais antigos</option>
+                <option value="priority-high">Maior prioridade</option>
+                <option value="priority-low">Menor prioridade</option>
+                <option value="progress-high">Maior progresso</option>
+                <option value="progress-low">Menor progresso</option>
+                <option value="alphabetical">Ordem alfabética</option>
+              </select>
+            </label>
+
+            <button class="clear-filters-button" type="button" data-clear-project-controls>Limpar filtros</button>
+          </div>
+
+          <div class="project-filters" role="group" aria-label="Filtrar projetos">
+            <button class="filter-button is-active" type="button" data-filter="all" aria-pressed="true">Todos</button>
+            <button class="filter-button" type="button" data-filter="Ideia" aria-pressed="false">Ideia</button>
+            <button class="filter-button" type="button" data-filter="Em andamento" aria-pressed="false">Em andamento</button>
+            <button class="filter-button" type="button" data-filter="Pausado" aria-pressed="false">Pausado</button>
+            <button class="filter-button" type="button" data-filter="Concluído" aria-pressed="false">Concluído</button>
+            <button class="filter-button" type="button" data-filter="high-priority" aria-pressed="false">Alta prioridade</button>
+          </div>
+
+          <div class="empty-state" id="empty-projects">
+            <div class="empty-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h5L12 6h6.5A1.5 1.5 0 0 1 20 7.5v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5v-13Z" /><path d="M12 10v5M9.5 12.5h5" /></svg>
+            </div>
+            <h3>Seu primeiro projeto começa aqui</h3>
+            <p>Quando você criar um projeto, ele aparecerá nesta área.</p>
+            <button class="secondary-button" type="button" data-open-project-modal>Criar meu primeiro projeto</button>
+          </div>
+
+          <div class="filtered-empty-state" id="filtered-empty-projects" hidden>
+            <span aria-hidden="true">⌕</span>
+            <p>Nenhum projeto corresponde à busca ou ao filtro selecionado.</p>
+          </div>
+
+          <div class="projects-grid" id="projects-list" aria-live="polite" hidden></div>
+        </section>
+      </main>
+    </div>
+
+    <div class="modal-backdrop" id="project-modal" aria-hidden="true">
+      <section class="project-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <header class="modal-header">
+          <div>
+            <p class="eyebrow">Cadastro de projeto</p>
+            <h2 id="modal-title">Novo projeto</h2>
+          </div>
+          <button class="close-modal-button" type="button" aria-label="Fechar formulário" data-close-project-modal>
+            <span aria-hidden="true">×</span>
+          </button>
+        </header>
+
+        <form id="project-form">
+          <input type="hidden" id="project-id" />
+
+          <div class="form-grid">
+            <div class="form-field form-field-full">
+              <label for="project-name">Nome do projeto</label>
+              <input id="project-name" name="name" type="text" placeholder="Ex.: Assistente de atendimento" required />
+            </div>
+
+            <div class="form-field form-field-full">
+              <label for="project-description">Descrição</label>
+              <textarea id="project-description" name="description" rows="3" placeholder="Explique brevemente o projeto" required></textarea>
+            </div>
+
+            <div class="form-field form-field-full">
+              <label for="project-goal">Objetivo</label>
+              <textarea id="project-goal" name="goal" rows="2" placeholder="Qual resultado você quer alcançar?" required></textarea>
+            </div>
+
+            <div class="form-field">
+              <label for="project-status">Status</label>
+              <select id="project-status" name="status" required>
+                <option value="Ideia">Ideia</option>
+                <option value="Em andamento">Em andamento</option>
+                <option value="Pausado">Pausado</option>
+                <option value="Concluído">Concluído</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label for="project-priority">Prioridade</label>
+              <select id="project-priority" name="priority" required>
+                <option value="Baixa">Baixa</option>
+                <option value="Média" selected>Média</option>
+                <option value="Alta">Alta</option>
+              </select>
+            </div>
+
+            <div class="form-field form-field-date">
+              <label for="project-date">Data</label>
+              <input id="project-date" name="date" type="date" required />
+            </div>
+          </div>
+
+          <footer class="form-actions">
+            <button class="cancel-button" type="button" data-close-project-modal>Cancelar</button>
+            <button class="save-button" type="submit">Salvar</button>
+          </footer>
+        </form>
+      </section>
+    </div>
+  </body>
+</html>
