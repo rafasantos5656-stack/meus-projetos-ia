@@ -9,10 +9,76 @@
     />
     <title>Meus Projetos de IA</title>
     <link rel="stylesheet" href="styles.css" />
+    <script src="supabase-config.js" defer></script>
     <script src="script.js" defer></script>
+    <script src="auth.js" defer></script>
   </head>
   <body>
-    <div class="app-shell">
+    <main class="auth-page" id="auth-screen" aria-labelledby="auth-title">
+      <section class="auth-card">
+        <div class="auth-intro">
+          <a class="brand auth-brand" href="#" aria-label="Meus Projetos de IA">
+            <span class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M12 3v18M3 12h18" />
+                <circle cx="12" cy="12" r="4" />
+              </svg>
+            </span>
+            <span>Meus Projetos <strong>de IA</strong></span>
+          </a>
+          <span class="eyebrow">Seu espaço de criação</span>
+          <h1 id="auth-title">Organize seus projetos com clareza.</h1>
+          <p>Entre para acompanhar suas ideias, projetos e tarefas em um único lugar.</p>
+        </div>
+
+        <div class="auth-panel">
+          <div class="auth-panel-heading">
+            <p class="eyebrow">Acesso à plataforma</p>
+            <h2>Boas-vindas</h2>
+            <p>Use seu e-mail para acessar seu painel pessoal.</p>
+          </div>
+
+          <div class="auth-tabs" role="tablist" aria-label="Opções de autenticação">
+            <button class="auth-tab is-active" id="login-tab" type="button" role="tab" aria-selected="true" aria-controls="login-form" data-auth-view="login">Entrar</button>
+            <button class="auth-tab" id="signup-tab" type="button" role="tab" aria-selected="false" aria-controls="signup-form" data-auth-view="signup">Criar conta</button>
+          </div>
+
+          <p class="auth-message" id="auth-message" role="status" aria-live="polite" hidden></p>
+
+          <form class="auth-form" id="login-form" novalidate>
+            <div class="form-field">
+              <label for="login-email">E-mail</label>
+              <input id="login-email" name="email" type="email" autocomplete="email" placeholder="voce@exemplo.com" required />
+            </div>
+            <div class="form-field">
+              <label for="login-password">Senha</label>
+              <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Sua senha" required />
+            </div>
+            <button class="auth-submit-button" type="submit">Entrar no painel</button>
+          </form>
+
+          <form class="auth-form" id="signup-form" hidden novalidate>
+            <div class="form-field">
+              <label for="signup-email">E-mail</label>
+              <input id="signup-email" name="email" type="email" autocomplete="email" placeholder="voce@exemplo.com" required />
+            </div>
+            <div class="form-field">
+              <label for="signup-password">Senha</label>
+              <input id="signup-password" name="password" type="password" autocomplete="new-password" minlength="6" placeholder="Mínimo de 6 caracteres" required />
+            </div>
+            <div class="form-field">
+              <label for="signup-password-confirmation">Confirmar senha</label>
+              <input id="signup-password-confirmation" name="passwordConfirmation" type="password" autocomplete="new-password" minlength="6" placeholder="Repita sua senha" required />
+            </div>
+            <button class="auth-submit-button" type="submit">Criar minha conta</button>
+          </form>
+
+          <p class="auth-help">Nesta etapa, seus projetos continuam armazenados somente neste navegador.</p>
+        </div>
+      </section>
+    </main>
+
+    <div class="app-shell" id="dashboard-shell" hidden>
       <aside class="sidebar" aria-label="Navegação principal">
         <a class="brand" href="#inicio" aria-label="Meus Projetos de IA - início">
           <span class="brand-mark" aria-hidden="true">
@@ -69,11 +135,16 @@
             <p>Seu espaço de criação</p>
             <h1>Visão geral</h1>
           </div>
-          <button class="profile-button" type="button" aria-label="Perfil de usuário">
-            <span class="avatar">MP</span>
-            <span class="profile-name">Meu perfil</span>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
-          </button>
+          <div class="user-actions">
+            <div class="profile-button" aria-label="Usuário autenticado">
+              <span class="avatar" id="user-avatar">MP</span>
+              <span class="profile-name" id="authenticated-user-email">Meu perfil</span>
+            </div>
+            <button class="sign-out-button" id="sign-out-button" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-2" /><path d="m13 16 4-4-4-4M17 12H3" /></svg>
+              Sair
+            </button>
+          </div>
         </header>
 
         <section class="welcome-card" aria-labelledby="boas-vindas">
@@ -283,6 +354,8 @@
         </section>
       </main>
     </div>
+
+<p class="app-message" id="app-message" role="status" aria-live="polite" hidden></p>
 
     <div class="modal-backdrop" id="project-modal" aria-hidden="true">
       <section class="project-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
