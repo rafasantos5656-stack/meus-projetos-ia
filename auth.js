@@ -14,6 +14,7 @@ const userAvatarElement = document.querySelector("#user-avatar");
 const appMessageElement = document.querySelector("#app-message");
 
 let currentAuthSession = null;
+let currentAuthUser = null;
 let appMessageTimeout;
 
 function authGetSettings() {
@@ -141,6 +142,41 @@ function authGetUser(session) {
   return authRequest("user", { accessToken: session.access_token });
 }
 
+async function authGetSupabaseDataContext() {
+  if (!currentAuthSession?.access_token || !currentAuthUser?.id) return null;
+
+  try {
+    if (authSessionNeedsRefresh(currentAuthSession)) {
+      currentAuthSession = await authRefreshSession(currentAuthSession);
+    }
+
+    return {
+      accessToken: currentAuthSession.access_token,
+      userId: currentAuthUser.id,
+    };
+  } catch {
+    authClearSession();
+    currentAuthSession = null;
+    currentAuthUser = null;
+    window.dispatchEvent(new Event("supabase-auth-signed-out"));
+    authShowScreen();
+    authSetMessage("Sua sessão expirou. Entre novamente para continuar.", "info");
+    throw new Error("Sua sessão expirou. Entre novamente para continuar.");
+  }
+}
+
+function authNotifyDataLayer(user) {
+  currentAuthUser = user?.id ? user : null;
+  if (!currentAuthUser) return;
+
+  window.dispatchEvent(new CustomEvent("supabase-auth-ready", {
+    detail: { userId: currentAuthUser.id },
+  }));
+}
+
+// A camada de dados recebe o token somente em memória, nunca por URL ou formulário.
+window.getSupabaseAuthContext = authGetSupabaseDataContext;
+
 function authSetMessage(message = "", type = "info") {
   if (!message) {
     authMessageElement.hidden = true;
@@ -231,10 +267,13 @@ async function initializeAuth() {
       : savedSession;
     const user = await authGetUser(validSession);
     currentAuthSession = validSession;
+    authNotifyDataLayer(user);
     authShowDashboard(user);
   } catch {
     authClearSession();
     currentAuthSession = null;
+    currentAuthUser = null;
+    window.dispatchEvent(new Event("supabase-auth-signed-out"));
     authShowScreen();
     authSetMessage("Sua sessão expirou. Entre novamente para continuar.", "info");
   } finally {
@@ -259,6 +298,7 @@ async function authSignIn(event) {
     });
     currentAuthSession = authSaveSession(response);
     const user = response.user ?? await authGetUser(currentAuthSession);
+    authNotifyDataLayer(user);
     loginFormElement.reset();
     authShowDashboard(user);
     authShowAppMessage("Login realizado com sucesso.");
@@ -295,7 +335,9 @@ async function authSignUp(event) {
 
     if (session?.access_token && session?.refresh_token) {
       currentAuthSession = authSaveSession(session);
-      authShowDashboard(response.user ?? await authGetUser(currentAuthSession));
+      const user = response.user ?? await authGetUser(currentAuthSession);
+      authNotifyDataLayer(user);
+      authShowDashboard(user);
       authShowAppMessage("Conta criada com sucesso.");
       return;
     }
@@ -324,6 +366,8 @@ async function authSignOut() {
   } finally {
     authClearSession();
     currentAuthSession = null;
+    currentAuthUser = null;
+    window.dispatchEvent(new Event("supabase-auth-signed-out"));
     signOutButtonElement.disabled = false;
     authShowScreen();
     authSetView("login");

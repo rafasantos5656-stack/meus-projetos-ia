@@ -1,6 +1,6 @@
-// Projetos e tarefas ficam salvos apenas no navegador do usuário.
+// O Supabase é a fonte principal para usuários autenticados; o localStorage mantém o backup local.
 const STORAGE_KEY = "meus_projetos_ia";
-
+const MIGRATION_STORAGE_PREFIX = "meus_projetos_ia_migration_";
 const menuButton = document.querySelector(".menu-button");
 const sidebar = document.querySelector(".sidebar");
 const modal = document.querySelector("#project-modal");
@@ -33,11 +33,18 @@ const showAllProjectsButton = document.querySelector("[data-show-all-projects]")
 const projectSearch = document.querySelector("#project-search");
 const projectSort = document.querySelector("#project-sort");
 const clearProjectControlsButton = document.querySelector("[data-clear-project-controls]");
+const dataStatusMessageElement = document.querySelector("#app-message");
 
-let projects = loadProjects();
+const localProjectsBackup = loadProjects();
+let projects = [];
 let activeFilter = "all";
 let activeSearch = "";
 let activeSort = "newest";
+let isSupabaseDataReady = false;
+let isSupabaseDataLoading = false;
+let isMigrationRunning = false;
+let activeSupabaseUserId = null;
+let dataMessageTimeout;
 
 menuButton?.addEventListener("click", () => {
   sidebar.classList.toggle("is-open");
@@ -75,15 +82,544 @@ function loadProjects() {
   }
 }
 
-function saveProjects() {
-  const projectsToSave = projects.map((project) => ({
-    ...project,
-    tasks: project.tasks,
-    progress: calculateProgress(project),
-  }));
+function showDataMessage(message) {
+  if (!dataStatusMessageElement) return;
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(projectsToSave));
+  window.clearTimeout(dataMessageTimeout);
+  dataStatusMessageElement.hidden = false;
+  dataStatusMessageElement.className = "app-message";
+  dataStatusMessageElement.textContent = message;
+  dataMessageTimeout = window.setTimeout(() => {
+    dataStatusMessageElement.hidden = true;
+  }, 5200);
 }
+
+function createDataError(message, status = 0, code = "") {
+  const error = new Error(message);
+  error.status = status;
+  error.code = code;
+  return error;
+}
+
+function getSupabaseDataSettings() {
+  const config = window.SUPABASE_CONFIG ?? {};
+  const url = typeof config.url === "string" ? config.url.trim().replace(/\/$/, "") : "";
+  const anonKey = typeof config.anonKey === "string" ? config.anonKey.trim() : "";
+
+  if (!url || !anonKey) {
+    throw createDataError("A configuração pública do Supabase não está disponível.");
+  }
+
+  try {
+    const parsedUrl = new URL(url);
+    if (!["http:", "https:"].includes(parsedUrl.protocol)) throw new Error();
+  } catch {
+    throw createDataError("A Project URL do Supabase não é válida.");
+  }
+
+  return { url, anonKey };
+}
+
+async function getAuthenticatedDataContext() {
+  if (typeof window.getSupabaseAuthContext !== "function") {
+    throw createDataError("A sessão ainda não está disponível.");
+  }
+
+  const context = await window.getSupabaseAuthContext();
+  if (!context?.accessToken || !context?.userId) {
+    throw createDataError("Sua sessão expirou. Entre novamente para continuar.", 401);
+  }
+
+  return context;
+}
+
+async function supabaseDataRequest(path, options = {}) {
+  const context = options.context ?? await getAuthenticatedDataContext();
+  const { url, anonKey } = getSupabaseDataSettings();
+  let response;
+
+  try {
+    response = await fetch(url + "/rest/v1/" + path, {
+      method: options.method ?? "GET",
+      headers: {
+        apikey: anonKey,
+        Authorization: "Bearer " + context.accessToken,
+        ...(options.body ? { "Content-Type": "application/json" } : {}),
+        ...(options.prefer ? { Prefer: options.prefer } : {}),
+      },
+      ...(options.body ? { body: JSON.stringify(options.body) } : {}),
+    });
+  } catch {
+    throw createDataError("Não foi possível conectar ao Supabase.");
+  }
+
+  const responseText = await response.text();
+  let payload = null;
+  try {
+    payload = responseText ? JSON.parse(responseText) : null;
+  } catch {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    throw createDataError(
+      payload?.message || payload?.error || "Não foi possível concluir a operação.",
+      response.status,
+      payload?.code || "",
+    );
+  }
+
+  return payload;
+}
+
+function getDataErrorMessage(error, fallbackMessage) {
+  const status = Number(error?.status);
+  const message = String(error?.message ?? "").toLocaleLowerCase("pt-BR");
+
+  if (status === 401 || message.includes("sessão expirou")) {
+    return "Sua sessão expirou. Entre novamente para continuar.";
+  }
+  if (status === 403) {
+    return "Você não tem permissão para realizar esta operação.";
+  }
+  if (message.includes("failed to fetch") || message.includes("network") || message.includes("conectar")) {
+    return "Não foi possível conectar ao Supabase. Verifique sua internet e tente novamente.";
+  }
+
+  return fallbackMessage;
+}
+
+function asSingleRow(payload, errorMessage) {
+  if (!Array.isArray(payload) || payload.length === 0) {
+    throw createDataError(errorMessage);
+  }
+
+  return payload[0];
+}
+
+function getUserFilter(userId) {
+  return "user_id=eq." + encodeURIComponent(String(userId));
+}
+
+function getIdFilter(columnName, id) {
+  return columnName + "=eq." + encodeURIComponent(String(id));
+}
+
+function mapRemoteProjectToInterface(project, projectTasks) {
+  const interfaceProject = {
+    id: String(project.id),
+    name: String(project.name ?? ""),
+    description: String(project.description ?? ""),
+    goal: String(project.objective ?? ""),
+    status: String(project.status ?? "Ideia"),
+    priority: String(project.priority ?? "Média"),
+    date: String(project.project_date ?? ""),
+    tasks: projectTasks.map((task) => ({
+      id: String(task.id),
+      description: String(task.description ?? ""),
+      completed: Boolean(task.completed),
+    })),
+  };
+
+  interfaceProject.progress = calculateProgress(interfaceProject);
+  return interfaceProject;
+}
+
+async function fetchRemoteProjectsAndTasks() {
+  const context = await getAuthenticatedDataContext();
+  const userFilter = getUserFilter(context.userId);
+  const projectPath = "projects?select=id,name,description,objective,status,priority,project_date&"
+    + userFilter + "&order=created_at.desc";
+  const taskPath = "tasks?select=id,project_id,description,completed&"
+    + userFilter + "&order=created_at.asc";
+  const results = await Promise.all([
+    supabaseDataRequest(projectPath, { context }),
+    supabaseDataRequest(taskPath, { context }),
+  ]);
+  const remoteProjects = Array.isArray(results[0]) ? results[0] : [];
+  const remoteTasks = Array.isArray(results[1]) ? results[1] : [];
+  const tasksByProjectId = new Map();
+
+  remoteTasks.forEach((task) => {
+    const projectId = String(task.project_id);
+    const currentTasks = tasksByProjectId.get(projectId) ?? [];
+    currentTasks.push(task);
+    tasksByProjectId.set(projectId, currentTasks);
+  });
+
+  return {
+    userId: context.userId,
+    projects: remoteProjects.map((project) => (
+      mapRemoteProjectToInterface(project, tasksByProjectId.get(String(project.id)) ?? [])
+    )),
+  };
+}
+
+async function loadRemoteProjects() {
+  const remoteData = await fetchRemoteProjectsAndTasks();
+  projects = remoteData.projects;
+  activeSupabaseUserId = remoteData.userId;
+  renderProjects();
+  return remoteData;
+}
+
+function canManageSupabaseData() {
+  if (isMigrationRunning) {
+    showDataMessage("A importação dos projetos está em andamento. Aguarde a conclusão.");
+    return false;
+  }
+
+  if (!isSupabaseDataReady) {
+    showDataMessage("Estamos carregando seus projetos. Tente novamente em instantes.");
+    return false;
+  }
+
+  return true;
+}
+
+function getProjectDatabasePayload(project, userId, legacyId) {
+  const payload = {
+    user_id: userId,
+    name: project.name,
+    description: project.description,
+    objective: project.goal,
+    status: project.status,
+    priority: project.priority,
+    project_date: project.date,
+  };
+
+  if (legacyId !== null && legacyId !== undefined) payload.legacy_id = legacyId;
+  return payload;
+}
+
+async function createRemoteProject(project, legacyId = null) {
+  const context = await getAuthenticatedDataContext();
+  const payload = await supabaseDataRequest("projects", {
+    method: "POST",
+    context,
+    prefer: "return=representation",
+    body: getProjectDatabasePayload(project, context.userId, legacyId),
+  });
+
+  return asSingleRow(payload, "Não foi possível confirmar a criação do projeto.");
+}
+
+async function updateRemoteProject(projectId, project) {
+  const context = await getAuthenticatedDataContext();
+  const payload = await supabaseDataRequest(
+    "projects?" + getIdFilter("id", projectId) + "&" + getUserFilter(context.userId),
+    {
+      method: "PATCH",
+      context,
+      prefer: "return=representation",
+      body: {
+        name: project.name,
+        description: project.description,
+        objective: project.goal,
+        status: project.status,
+        priority: project.priority,
+        project_date: project.date,
+      },
+    },
+  );
+
+  return asSingleRow(payload, "O projeto não foi encontrado ou não pôde ser atualizado.");
+}
+
+async function createRemoteTask(projectId, description, legacyId = null) {
+  const context = await getAuthenticatedDataContext();
+  const body = {
+    project_id: projectId,
+    user_id: context.userId,
+    description,
+    completed: false,
+  };
+  if (legacyId !== null && legacyId !== undefined) body.legacy_id = legacyId;
+
+  const payload = await supabaseDataRequest("tasks", {
+    method: "POST",
+    context,
+    prefer: "return=representation",
+    body,
+  });
+
+  return asSingleRow(payload, "Não foi possível confirmar a criação da tarefa.");
+}
+
+async function updateRemoteTaskCompletion(taskId, completed) {
+  const context = await getAuthenticatedDataContext();
+  const payload = await supabaseDataRequest(
+    "tasks?" + getIdFilter("id", taskId) + "&" + getUserFilter(context.userId),
+    {
+      method: "PATCH",
+      context,
+      prefer: "return=representation",
+      body: { completed },
+    },
+  );
+
+  return asSingleRow(payload, "A tarefa não foi encontrada ou não pôde ser atualizada.");
+}
+
+async function deleteRemoteTask(taskId) {
+  const context = await getAuthenticatedDataContext();
+  const payload = await supabaseDataRequest(
+    "tasks?" + getIdFilter("id", taskId) + "&" + getUserFilter(context.userId),
+    {
+      method: "DELETE",
+      context,
+      prefer: "return=representation",
+    },
+  );
+
+  return asSingleRow(payload, "A tarefa não foi encontrada ou não pôde ser excluída.");
+}
+
+async function deleteRemoteProject(projectId) {
+  const context = await getAuthenticatedDataContext();
+  let tasksWereDeleted = false;
+
+  try {
+    await supabaseDataRequest(
+      "tasks?" + getIdFilter("project_id", projectId) + "&" + getUserFilter(context.userId),
+      {
+        method: "DELETE",
+        context,
+        prefer: "return=representation",
+      },
+    );
+    tasksWereDeleted = true;
+
+    const payload = await supabaseDataRequest(
+      "projects?" + getIdFilter("id", projectId) + "&" + getUserFilter(context.userId),
+      {
+        method: "DELETE",
+        context,
+        prefer: "return=representation",
+      },
+    );
+
+    return asSingleRow(payload, "O projeto não foi encontrado ou não pôde ser excluído.");
+  } catch (error) {
+    error.tasksWereDeleted = tasksWereDeleted;
+    throw error;
+  }
+}
+
+function getMigrationStorageKey(userId) {
+  return MIGRATION_STORAGE_PREFIX + String(userId);
+}
+
+function readMigrationState(userId) {
+  try {
+    const savedState = localStorage.getItem(getMigrationStorageKey(userId));
+    if (!savedState) return null;
+
+    const state = JSON.parse(savedState);
+    if (!state || typeof state !== "object") return null;
+
+    return {
+      ...state,
+      projectIds: state.projectIds && typeof state.projectIds === "object" ? state.projectIds : {},
+      taskIds: state.taskIds && typeof state.taskIds === "object" ? state.taskIds : {},
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveMigrationState(userId, state) {
+  localStorage.setItem(getMigrationStorageKey(userId), JSON.stringify(state));
+}
+
+function getLegacyId(item, itemType) {
+  if (item?.id === null || item?.id === undefined || String(item.id).trim() === "") {
+    throw createDataError("Há " + itemType + " sem identificador no backup local.");
+  }
+
+  return String(item.id);
+}
+
+function isUniqueViolation(error) {
+  return Number(error?.status) === 409 || error?.code === "23505";
+}
+
+async function findRemoteProjectByLegacyId(userId, legacyId) {
+  const context = await getAuthenticatedDataContext();
+  if (context.userId !== userId) throw createDataError("A conta autenticada foi alterada.");
+
+  const payload = await supabaseDataRequest(
+    "projects?select=id&" + getUserFilter(userId) + "&legacy_id=eq." + encodeURIComponent(legacyId) + "&limit=1",
+    { context },
+  );
+
+  return Array.isArray(payload) && payload.length ? payload[0] : null;
+}
+
+async function findRemoteTaskByLegacyId(userId, legacyId) {
+  const context = await getAuthenticatedDataContext();
+  if (context.userId !== userId) throw createDataError("A conta autenticada foi alterada.");
+
+  const payload = await supabaseDataRequest(
+    "tasks?select=id,project_id,completed&" + getUserFilter(userId) + "&legacy_id=eq." + encodeURIComponent(legacyId) + "&limit=1",
+    { context },
+  );
+
+  return Array.isArray(payload) && payload.length ? payload[0] : null;
+}
+
+async function getOrCreateMigratedProject(localProject, userId, state) {
+  const legacyId = getLegacyId(localProject, "projeto");
+  let remoteProject = await findRemoteProjectByLegacyId(userId, legacyId);
+
+  if (!remoteProject) {
+    try {
+      remoteProject = await createRemoteProject(localProject, legacyId);
+    } catch (error) {
+      if (!isUniqueViolation(error)) throw error;
+      remoteProject = await findRemoteProjectByLegacyId(userId, legacyId);
+      if (!remoteProject) throw error;
+    }
+  }
+
+  state.projectIds[legacyId] = String(remoteProject.id);
+  saveMigrationState(userId, state);
+  return remoteProject;
+}
+
+async function getOrCreateMigratedTask(localTask, remoteProjectId, userId, state) {
+  const legacyId = getLegacyId(localTask, "tarefa");
+  let remoteTask = await findRemoteTaskByLegacyId(userId, legacyId);
+
+  if (remoteTask && String(remoteTask.project_id) !== String(remoteProjectId)) {
+    throw createDataError("Uma tarefa do backup local já está vinculada a outro projeto.");
+  }
+
+  if (!remoteTask) {
+    try {
+      remoteTask = await createRemoteTask(remoteProjectId, String(localTask.description ?? ""), legacyId);
+    } catch (error) {
+      if (!isUniqueViolation(error)) throw error;
+      remoteTask = await findRemoteTaskByLegacyId(userId, legacyId);
+      if (!remoteTask) throw error;
+      if (String(remoteTask.project_id) !== String(remoteProjectId)) {
+        throw createDataError("Uma tarefa do backup local já está vinculada a outro projeto.");
+      }
+    }
+  }
+
+  if (Boolean(remoteTask.completed) !== Boolean(localTask.completed)) {
+    await updateRemoteTaskCompletion(remoteTask.id, Boolean(localTask.completed));
+  }
+
+  state.taskIds[legacyId] = String(remoteTask.id);
+  saveMigrationState(userId, state);
+}
+
+async function runLocalMigration(userId) {
+  const previousState = readMigrationState(userId);
+  const state = previousState?.status === "in_progress"
+    ? previousState
+    : {
+      version: 1,
+      status: "in_progress",
+      startedAt: new Date().toISOString(),
+      projectIds: {},
+      taskIds: {},
+    };
+
+  isMigrationRunning = true;
+  saveMigrationState(userId, state);
+
+  try {
+    for (const localProject of localProjectsBackup) {
+      const remoteProject = await getOrCreateMigratedProject(localProject, userId, state);
+      for (const localTask of localProject.tasks ?? []) {
+        await getOrCreateMigratedTask(localTask, remoteProject.id, userId, state);
+      }
+    }
+
+    state.status = "completed";
+    state.completedAt = new Date().toISOString();
+    saveMigrationState(userId, state);
+  } catch (error) {
+    state.status = "in_progress";
+    try {
+      saveMigrationState(userId, state);
+    } catch {
+      // Os índices legacy_id continuam evitando duplicação mesmo se o marcador local falhar.
+    }
+    showDataMessage("A importação foi interrompida. Seus projetos locais continuam intactos e você poderá retomá-la depois.");
+    isMigrationRunning = false;
+    return;
+  }
+
+  isMigrationRunning = false;
+  try {
+    await loadRemoteProjects();
+    showDataMessage("Projetos e tarefas importados com sucesso para sua conta.");
+  } catch {
+    showDataMessage("A importação foi concluída, mas não foi possível atualizar a tela. Atualize a página para carregar os dados.");
+  }
+}
+
+async function offerLocalMigration(userId, remoteProjectCount) {
+  if (localProjectsBackup.length === 0) return;
+
+  const migrationState = readMigrationState(userId);
+  if (migrationState?.status === "completed") return;
+
+  if (migrationState?.status === "in_progress") {
+    const shouldResume = window.confirm(
+      "Uma importação anterior foi interrompida. Deseja retomá-la agora? Seus dados locais permanecem salvos neste navegador.",
+    );
+    if (shouldResume) await runLocalMigration(userId);
+    return;
+  }
+
+  if (remoteProjectCount !== 0) return;
+
+  const shouldMigrate = window.confirm(
+    "Encontramos projetos salvos neste navegador. Deseja importá-los para sua conta? O backup local será mantido.",
+  );
+  if (shouldMigrate) await runLocalMigration(userId);
+}
+
+async function initializeSupabaseProjects() {
+  if (isSupabaseDataLoading) return;
+
+  isSupabaseDataLoading = true;
+  isSupabaseDataReady = false;
+  activeSupabaseUserId = null;
+  projects = [];
+  renderProjects();
+
+  try {
+    const remoteData = await loadRemoteProjects();
+    isSupabaseDataReady = true;
+    await offerLocalMigration(remoteData.userId, remoteData.projects.length);
+  } catch (error) {
+    isSupabaseDataReady = false;
+    projects = [];
+    renderProjects();
+    showDataMessage(getDataErrorMessage(error, "Não foi possível carregar seus projetos agora."));
+  } finally {
+    isSupabaseDataLoading = false;
+  }
+}
+
+window.addEventListener("supabase-auth-ready", () => {
+  void initializeSupabaseProjects();
+});
+
+window.addEventListener("supabase-auth-signed-out", () => {
+  isSupabaseDataReady = false;
+  isSupabaseDataLoading = false;
+  isMigrationRunning = false;
+  activeSupabaseUserId = null;
+  projects = [];
+  renderProjects();
+});
 
 function calculateProgress(project) {
   const tasks = project.tasks ?? [];
@@ -588,72 +1124,105 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-projectForm.addEventListener("submit", (event) => {
+projectForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
-  if (!projectForm.reportValidity()) return;
+  if (!projectForm.reportValidity() || !canManageSupabaseData()) return;
 
   const formData = new FormData(projectForm);
   const existingProject = projects.find((item) => item.id === projectIdInput.value);
   const project = {
     ...(existingProject ?? {}),
-    id: projectIdInput.value || createId(),
-    name: formData.get("name").trim(),
-    description: formData.get("description").trim(),
-    goal: formData.get("goal").trim(),
-    status: formData.get("status"),
-    priority: formData.get("priority"),
-    date: formData.get("date"),
+    name: String(formData.get("name") ?? "").trim(),
+    description: String(formData.get("description") ?? "").trim(),
+    goal: String(formData.get("goal") ?? "").trim(),
+    status: String(formData.get("status") ?? ""),
+    priority: String(formData.get("priority") ?? ""),
+    date: String(formData.get("date") ?? ""),
     tasks: existingProject?.tasks ?? [],
   };
+  const saveButton = projectForm.querySelector(".save-button");
+  if (saveButton) saveButton.disabled = true;
 
-  const projectIndex = projects.findIndex((item) => item.id === project.id);
-  if (projectIndex >= 0) {
-    projects[projectIndex] = project;
-  } else {
-    projects.unshift(project);
+  try {
+    const remoteProject = existingProject
+      ? await updateRemoteProject(existingProject.id, project)
+      : await createRemoteProject(project);
+    const updatedProject = mapRemoteProjectToInterface(remoteProject, project.tasks);
+    const projectIndex = projects.findIndex((item) => item.id === updatedProject.id);
+
+    if (projectIndex >= 0) {
+      projects[projectIndex] = updatedProject;
+    } else {
+      projects.unshift(updatedProject);
+    }
+
+    renderProjects();
+    closeProjectModal();
+    showDataMessage(existingProject ? "Projeto atualizado com sucesso." : "Projeto criado com sucesso.");
+  } catch (error) {
+    showDataMessage(getDataErrorMessage(
+      error,
+      existingProject ? "Não foi possível atualizar o projeto. Tente novamente." : "Não foi possível criar o projeto. Tente novamente.",
+    ));
+  } finally {
+    if (saveButton) saveButton.disabled = false;
   }
-
-  saveProjects();
-  renderProjects();
-  closeProjectModal();
 });
 
-projectsList.addEventListener("submit", (event) => {
+projectsList.addEventListener("submit", async (event) => {
   const addTaskForm = event.target.closest("[data-task-form]");
   if (!addTaskForm) return;
 
   event.preventDefault();
-  if (!addTaskForm.reportValidity()) return;
+  if (!addTaskForm.reportValidity() || !canManageSupabaseData()) return;
 
   const project = projects.find((item) => item.id === addTaskForm.dataset.projectId);
   const taskDescription = addTaskForm.elements.taskDescription.value.trim();
   if (!project || !taskDescription) return;
 
-  project.tasks.push({
-    id: createId(),
-    description: taskDescription,
-    completed: false,
-  });
+  const addButton = addTaskForm.querySelector("button[type=submit]");
+  if (addButton) addButton.disabled = true;
 
-  saveProjects();
-  renderProjects();
+  try {
+    const remoteTask = await createRemoteTask(project.id, taskDescription);
+    project.tasks.push({
+      id: String(remoteTask.id),
+      description: String(remoteTask.description ?? taskDescription),
+      completed: Boolean(remoteTask.completed),
+    });
+    renderProjects();
+    showDataMessage("Tarefa adicionada com sucesso.");
+  } catch (error) {
+    showDataMessage(getDataErrorMessage(error, "Não foi possível adicionar a tarefa. Tente novamente."));
+  } finally {
+    if (addButton) addButton.disabled = false;
+  }
 });
 
-projectsList.addEventListener("change", (event) => {
+projectsList.addEventListener("change", async (event) => {
   const taskToggle = event.target.closest("[data-task-toggle]");
-  if (!taskToggle) return;
+  if (!taskToggle || !canManageSupabaseData()) return;
 
   const project = projects.find((item) => item.id === taskToggle.dataset.projectId);
   const task = project?.tasks.find((item) => item.id === taskToggle.dataset.taskId);
   if (!task) return;
 
-  task.completed = taskToggle.checked;
-  saveProjects();
-  renderProjects();
+  taskToggle.disabled = true;
+  try {
+    const remoteTask = await updateRemoteTaskCompletion(task.id, taskToggle.checked);
+    task.completed = Boolean(remoteTask.completed);
+    renderProjects();
+    showDataMessage(task.completed ? "Tarefa concluída." : "Tarefa reaberta.");
+  } catch (error) {
+    renderProjects();
+    showDataMessage(getDataErrorMessage(error, "Não foi possível atualizar a tarefa. Tente novamente."));
+  } finally {
+    taskToggle.disabled = false;
+  }
 });
 
-projectsList.addEventListener("click", (event) => {
+projectsList.addEventListener("click", async (event) => {
   const actionButton = event.target.closest("[data-action]");
   if (!actionButton) return;
 
@@ -662,33 +1231,67 @@ projectsList.addEventListener("click", (event) => {
   if (!project) return;
 
   if (actionButton.dataset.action === "edit") {
+    if (!canManageSupabaseData()) return;
     openProjectModal(project);
+    return;
   }
 
   if (actionButton.dataset.action === "delete") {
+    if (!canManageSupabaseData()) return;
+
     const taskCount = project.tasks.length;
-    const taskDescription = taskCount === 1 ? "1 tarefa vinculada" : `${taskCount} tarefas vinculadas`;
+    const taskDescription = taskCount === 1 ? "1 tarefa vinculada" : taskCount + " tarefas vinculadas";
     const confirmed = window.confirm(
-      `Excluir o projeto "${project.name}" e ${taskDescription}? Todos esses dados serão removidos do navegador e não poderão ser recuperados.`,
+      "Excluir o projeto \"" + project.name + "\" e " + taskDescription
+      + " da sua conta? A exclusão no Supabase é permanente. O backup local antigo não será apagado.",
     );
-    if (confirmed) {
+    if (!confirmed) return;
+
+    actionButton.disabled = true;
+    try {
+      await deleteRemoteProject(project.id);
       projects = projects.filter((item) => item.id !== project.id);
-      saveProjects();
       renderProjects();
+      showDataMessage("Projeto excluído com sucesso.");
+    } catch (error) {
+      if (error?.tasksWereDeleted) {
+        try {
+          await loadRemoteProjects();
+        } catch {
+          // A mensagem abaixo já orienta o usuário sem expor detalhes internos.
+        }
+        showDataMessage("A exclusão do projeto não foi concluída. As tarefas foram removidas e os dados foram recarregados.");
+      } else {
+        showDataMessage(getDataErrorMessage(error, "Não foi possível excluir o projeto. Tente novamente."));
+      }
+    } finally {
+      actionButton.disabled = false;
     }
+    return;
   }
 
   if (actionButton.dataset.action === "delete-task") {
+    if (!canManageSupabaseData()) return;
+
     const task = project.tasks.find((item) => item.id === actionButton.dataset.taskId);
     if (!task) return;
 
     const confirmed = window.confirm(
-      `Excluir a tarefa "${task.description}" do projeto "${project.name}"? Esta ação não poderá ser desfeita.`,
+      "Excluir a tarefa \"" + task.description + "\" do projeto \"" + project.name
+      + "\"? Esta ação será removida da sua conta e não poderá ser desfeita.",
     );
-    if (confirmed) {
+    if (!confirmed) return;
+
+    actionButton.disabled = true;
+    try {
+      await deleteRemoteTask(task.id);
       project.tasks = project.tasks.filter((item) => item.id !== task.id);
-      saveProjects();
       renderProjects();
+      showDataMessage("Tarefa excluída com sucesso.");
+    } catch (error) {
+      showDataMessage(getDataErrorMessage(error, "Não foi possível excluir a tarefa. Tente novamente."));
+    } finally {
+      actionButton.disabled = false;
     }
   }
 });
