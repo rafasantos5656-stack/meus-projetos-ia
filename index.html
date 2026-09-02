@@ -54,6 +54,9 @@
               <label for="login-password">Senha</label>
               <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Sua senha" required />
             </div>
+            <div class="auth-form-options">
+              <button class="auth-link-button" id="forgot-password-button" type="button">Esqueci minha senha</button>
+            </div>
             <button class="auth-submit-button" type="submit">Entrar no painel</button>
           </form>
 
@@ -73,7 +76,31 @@
             <button class="auth-submit-button" type="submit">Criar minha conta</button>
           </form>
 
-          <p class="auth-help">Nesta etapa, seus projetos continuam armazenados somente neste navegador.</p>
+          <form class="auth-form" id="forgot-password-form" hidden novalidate>
+            <p class="auth-view-copy">Informe seu e-mail para receber as instruções de redefinição de senha.</p>
+            <div class="form-field">
+              <label for="forgot-password-email">E-mail</label>
+              <input id="forgot-password-email" name="email" type="email" autocomplete="email" placeholder="voce@exemplo.com" required />
+            </div>
+            <button class="auth-submit-button" type="submit">Enviar instruções</button>
+            <button class="auth-link-button auth-back-button" type="button" data-auth-view="login">Voltar para entrar</button>
+          </form>
+
+          <form class="auth-form" id="reset-password-form" hidden novalidate>
+            <p class="auth-view-copy">Crie uma nova senha segura para continuar usando sua conta.</p>
+            <div class="form-field">
+              <label for="reset-password">Nova senha</label>
+              <input id="reset-password" name="password" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo de 8 caracteres" required />
+            </div>
+            <div class="form-field">
+              <label for="reset-password-confirmation">Confirmar nova senha</label>
+              <input id="reset-password-confirmation" name="passwordConfirmation" type="password" autocomplete="new-password" minlength="8" placeholder="Repita a nova senha" required />
+            </div>
+            <button class="auth-submit-button" type="submit">Salvar nova senha</button>
+            <button class="auth-link-button auth-back-button" id="cancel-reset-password-button" type="button">Cancelar recuperação</button>
+          </form>
+
+          <p class="auth-help">Seus projetos e tarefas ficam associados à sua conta.</p>
         </div>
       </section>
     </main>
@@ -118,11 +145,10 @@
             <span class="tip-icon" aria-hidden="true">✦</span>
             <p>Organize uma ideia, transforme-a em projeto e acompanhe cada avanço.</p>
           </div>
-          <span class="nav-link nav-link-future" aria-disabled="true">
+          <button class="nav-link nav-button" id="open-profile-modal" type="button">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.1 2.1-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56v.1h-3v-.1a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-2.1-2.1.06-.06A1.7 1.7 0 0 0 7.06 15a1.7 1.7 0 0 0-1.56-1.03h-.1v-3h.1A1.7 1.7 0 0 0 7.06 9.94a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.1-2.1.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.56v-.1h3v.1a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.1 2.1-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.03h.1v3h-.1A1.7 1.7 0 0 0 19.4 15Z" /></svg>
-            Configurações
-            <small>Em breve</small>
-          </span>
+            Meu Perfil
+          </button>
         </div>
       </aside>
 
@@ -136,10 +162,10 @@
             <h1>Visão geral</h1>
           </div>
           <div class="user-actions">
-            <div class="profile-button" aria-label="Usuário autenticado">
+            <button class="profile-button" id="open-profile-from-header" type="button" aria-label="Abrir meu perfil">
               <span class="avatar" id="user-avatar">MP</span>
               <span class="profile-name" id="authenticated-user-email">Meu perfil</span>
-            </div>
+            </button>
             <button class="sign-out-button" id="sign-out-button" type="button">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-2" /><path d="m13 16 4-4-4-4M17 12H3" /></svg>
               Sair
@@ -418,6 +444,69 @@
             <button class="save-button" type="submit">Salvar</button>
           </footer>
         </form>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="profile-modal" aria-hidden="true">
+      <section class="project-modal profile-modal" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title" aria-describedby="profile-modal-description" tabindex="-1">
+        <header class="modal-header">
+          <div>
+            <p class="eyebrow">Sua conta</p>
+            <h2 id="profile-modal-title">Meu Perfil</h2>
+          </div>
+          <button class="close-modal-button" type="button" aria-label="Fechar meu perfil" data-close-profile-modal>
+            <span aria-hidden="true">×</span>
+          </button>
+        </header>
+
+        <div class="profile-account" id="profile-modal-description">
+          <span>Conta autenticada</span>
+          <strong id="profile-email">Carregando e-mail…</strong>
+        </div>
+
+        <form class="profile-password-form" id="profile-password-form" novalidate>
+          <div>
+            <p class="eyebrow">Segurança</p>
+            <h3>Alterar senha</h3>
+            <p>Confirme sua senha atual antes de definir uma nova.</p>
+          </div>
+
+          <p class="auth-message profile-message" id="profile-message" role="status" aria-live="polite" hidden></p>
+
+          <div class="form-field">
+            <label for="profile-current-password">Senha atual</label>
+            <input id="profile-current-password" name="currentPassword" type="password" autocomplete="current-password" required />
+          </div>
+          <div class="form-field">
+            <label for="profile-new-password">Nova senha</label>
+            <input id="profile-new-password" name="newPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo de 8 caracteres" required />
+          </div>
+          <div class="form-field">
+            <label for="profile-new-password-confirmation">Confirmar nova senha</label>
+            <input id="profile-new-password-confirmation" name="newPasswordConfirmation" type="password" autocomplete="new-password" minlength="8" placeholder="Repita a nova senha" required />
+          </div>
+
+          <footer class="form-actions">
+            <button class="cancel-button" type="button" data-close-profile-modal>Voltar ao Dashboard</button>
+            <button class="save-button" type="submit">Atualizar senha</button>
+          </footer>
+        </form>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="confirmation-modal" aria-hidden="true">
+      <section class="project-modal confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="confirmation-modal-title" aria-describedby="confirmation-modal-description" tabindex="-1">
+        <header class="modal-header">
+          <div>
+            <p class="eyebrow">Confirmação necessária</p>
+            <h2 id="confirmation-modal-title">Excluir item</h2>
+          </div>
+        </header>
+        <p class="confirmation-copy" id="confirmation-modal-description"></p>
+        <footer class="form-actions">
+          <button class="cancel-button" id="cancel-confirmation-button" type="button">Cancelar</button>
+          <button class="save-button delete-confirm-button" id="confirm-deletion-button" type="button">Excluir</button>
+        </footer>
       </section>
     </div>
   </body>

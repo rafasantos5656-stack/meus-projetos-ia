@@ -34,6 +34,11 @@ const projectSearch = document.querySelector("#project-search");
 const projectSort = document.querySelector("#project-sort");
 const clearProjectControlsButton = document.querySelector("[data-clear-project-controls]");
 const dataStatusMessageElement = document.querySelector("#app-message");
+const confirmationModalElement = document.querySelector("#confirmation-modal");
+const confirmationModalTitleElement = document.querySelector("#confirmation-modal-title");
+const confirmationModalDescriptionElement = document.querySelector("#confirmation-modal-description");
+const cancelConfirmationButtonElement = document.querySelector("#cancel-confirmation-button");
+const confirmDeletionButtonElement = document.querySelector("#confirm-deletion-button");
 
 const localProjectsBackup = loadProjects();
 let projects = [];
@@ -45,6 +50,9 @@ let isSupabaseDataLoading = false;
 let isMigrationRunning = false;
 let activeSupabaseUserId = null;
 let dataMessageTimeout;
+let confirmationResolver = null;
+let confirmationReturnFocus = null;
+let isConfirmationBusy = false;
 
 menuButton?.addEventListener("click", () => {
   sidebar.classList.toggle("is-open");
@@ -92,6 +100,55 @@ function showDataMessage(message) {
   dataMessageTimeout = window.setTimeout(() => {
     dataStatusMessageElement.hidden = true;
   }, 5200);
+}
+
+function getConfirmationFocusableElements() {
+  return Array.from(confirmationModalElement.querySelectorAll(
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+  )).filter((element) => !element.hidden);
+}
+
+function resetConfirmationButtonState() {
+  cancelConfirmationButtonElement.disabled = false;
+  confirmDeletionButtonElement.disabled = false;
+  confirmDeletionButtonElement.textContent = "Excluir";
+  confirmDeletionButtonElement.removeAttribute("data-loading");
+}
+
+function finishDeletionConfirmation(result = false, restoreFocus = true) {
+  const wasVisible = confirmationModalElement.classList.contains("is-visible");
+  const resolver = confirmationResolver;
+  confirmationResolver = null;
+  isConfirmationBusy = false;
+  resetConfirmationButtonState();
+  confirmationModalElement.classList.remove("is-visible");
+  confirmationModalElement.setAttribute("aria-hidden", "true");
+  if (!document.querySelector(".modal-backdrop.is-visible")) {
+    document.body.classList.remove("modal-open");
+  }
+
+  if (restoreFocus && confirmationReturnFocus instanceof HTMLElement && confirmationReturnFocus.isConnected) {
+    confirmationReturnFocus.focus();
+  }
+  confirmationReturnFocus = null;
+  if (wasVisible && resolver) resolver(result);
+}
+
+function requestDeletionConfirmation({ title, message, triggerElement }) {
+  if (confirmationResolver || isConfirmationBusy) return Promise.resolve(false);
+
+  confirmationModalTitleElement.textContent = title;
+  confirmationModalDescriptionElement.textContent = message;
+  confirmationReturnFocus = triggerElement instanceof HTMLElement ? triggerElement : document.activeElement;
+  resetConfirmationButtonState();
+  confirmationModalElement.classList.add("is-visible");
+  confirmationModalElement.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
+  window.setTimeout(() => cancelConfirmationButtonElement.focus(), 0);
+
+  return new Promise((resolve) => {
+    confirmationResolver = resolve;
+  });
 }
 
 function createDataError(message, status = 0, code = "") {
@@ -151,6 +208,25 @@ async function supabaseDataRequest(path, options = {}) {
     });
   } catch {
     throw createDataError("Não foi possível conectar ao Supabase.");
+  }
+
+  if (
+    response.status === 401
+    && !options.hasRetriedAfterRefresh
+    && typeof window.refreshSupabaseAuthSession === "function"
+  ) {
+    try {
+      const refreshedContext = await window.refreshSupabaseAuthSession(context.accessToken);
+      if (refreshedContext?.accessToken && refreshedContext.userId) {
+        return supabaseDataRequest(path, {
+          ...options,
+          context: refreshedContext,
+          hasRetriedAfterRefresh: true,
+        });
+      }
+    } catch {
+      throw createDataError("Sua sessão expirou. Entre novamente para continuar.", 401);
+    }
   }
 
   const responseText = await response.text();
@@ -1119,9 +1195,56 @@ modal.addEventListener("click", (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
+  if (confirmationModalElement.classList.contains("is-visible")) {
+    if (event.key === "Escape" && !isConfirmationBusy) {
+      event.preventDefault();
+      finishDeletionConfirmation(false);
+      return;
+    }
+
+    if (event.key === "Tab") {
+      const focusableElements = getConfirmationFocusableElements();
+      if (!focusableElements.length) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    }
+    return;
+  }
+
   if (event.key === "Escape" && modal.classList.contains("is-visible")) {
     closeProjectModal();
   }
+});
+
+confirmationModalElement.addEventListener("click", (event) => {
+  if (event.target === confirmationModalElement && !isConfirmationBusy) {
+    finishDeletionConfirmation(false);
+  }
+});
+
+cancelConfirmationButtonElement.addEventListener("click", () => {
+  if (!isConfirmationBusy) finishDeletionConfirmation(false);
+});
+
+confirmDeletionButtonElement.addEventListener("click", () => {
+  if (isConfirmationBusy || !confirmationResolver) return;
+
+  isConfirmationBusy = true;
+  cancelConfirmationButtonElement.disabled = true;
+  confirmDeletionButtonElement.disabled = true;
+  confirmDeletionButtonElement.dataset.loading = "true";
+  confirmDeletionButtonElement.textContent = "Excluindo…";
+  const resolver = confirmationResolver;
+  confirmationResolver = null;
+  resolver(true);
 });
 
 projectForm.addEventListener("submit", async (event) => {
@@ -1241,10 +1364,12 @@ projectsList.addEventListener("click", async (event) => {
 
     const taskCount = project.tasks.length;
     const taskDescription = taskCount === 1 ? "1 tarefa vinculada" : taskCount + " tarefas vinculadas";
-    const confirmed = window.confirm(
-      "Excluir o projeto \"" + project.name + "\" e " + taskDescription
-      + " da sua conta? A exclusão no Supabase é permanente. O backup local antigo não será apagado.",
-    );
+    const confirmed = await requestDeletionConfirmation({
+      title: "Excluir projeto",
+      message: "Excluir o projeto \"" + project.name + "\" e " + taskDescription
+        + " da sua conta? A exclusão no Supabase é permanente. O backup local antigo não será apagado.",
+      triggerElement: actionButton,
+    });
     if (!confirmed) return;
 
     actionButton.disabled = true;
@@ -1266,6 +1391,7 @@ projectsList.addEventListener("click", async (event) => {
       }
     } finally {
       actionButton.disabled = false;
+      finishDeletionConfirmation(false, false);
     }
     return;
   }
@@ -1276,10 +1402,12 @@ projectsList.addEventListener("click", async (event) => {
     const task = project.tasks.find((item) => item.id === actionButton.dataset.taskId);
     if (!task) return;
 
-    const confirmed = window.confirm(
-      "Excluir a tarefa \"" + task.description + "\" do projeto \"" + project.name
-      + "\"? Esta ação será removida da sua conta e não poderá ser desfeita.",
-    );
+    const confirmed = await requestDeletionConfirmation({
+      title: "Excluir tarefa",
+      message: "Excluir a tarefa \"" + task.description + "\" do projeto \"" + project.name
+        + "\"? Esta ação será removida da sua conta e não poderá ser desfeita.",
+      triggerElement: actionButton,
+    });
     if (!confirmed) return;
 
     actionButton.disabled = true;
@@ -1292,6 +1420,7 @@ projectsList.addEventListener("click", async (event) => {
       showDataMessage(getDataErrorMessage(error, "Não foi possível excluir a tarefa. Tente novamente."));
     } finally {
       actionButton.disabled = false;
+      finishDeletionConfirmation(false, false);
     }
   }
 });
