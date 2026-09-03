@@ -60,6 +60,31 @@ const reportTasksCount = document.querySelector("#report-tasks-count");
 const reportAttentionList = document.querySelector("#report-attention-list");
 const reportAttentionEmpty = document.querySelector("#report-attention-empty");
 const exportExcelButton = document.querySelector("#export-excel-button");
+const dashboardVisualsSection = document.querySelector("#dashboard-visuals");
+const dashboardStatusChart = document.querySelector("#dashboard-status-chart");
+const dashboardStatusEmpty = document.querySelector("#dashboard-status-empty");
+const dashboardPriorityChart = document.querySelector("#dashboard-priority-chart");
+const dashboardPriorityEmpty = document.querySelector("#dashboard-priority-empty");
+const dashboardTaskChart = document.querySelector("#dashboard-task-chart");
+const dashboardTaskEmpty = document.querySelector("#dashboard-task-empty");
+const dashboardProjectProgressList = document.querySelector("#dashboard-project-progress-list");
+const dashboardProjectProgressEmpty = document.querySelector("#dashboard-project-progress-empty");
+const dashboardExecutiveAttention = document.querySelector("#dashboard-executive-attention");
+const dashboardExecutiveAttentionEmpty = document.querySelector("#dashboard-executive-attention-empty");
+const dashboardOverdueCount = document.querySelector("#dashboard-overdue-count");
+const dashboardOverdueControl = document.querySelector("#dashboard-overdue-control");
+const reportStatusChart = document.querySelector("#report-status-chart");
+const reportStatusEmpty = document.querySelector("#report-status-empty");
+const reportPriorityChart = document.querySelector("#report-priority-chart");
+const reportPriorityEmpty = document.querySelector("#report-priority-empty");
+const reportTaskChart = document.querySelector("#report-task-chart");
+const reportTaskEmpty = document.querySelector("#report-task-empty");
+const reportProjectProgressList = document.querySelector("#report-project-progress-list");
+const reportProjectProgressEmpty = document.querySelector("#report-project-progress-empty");
+const reportExecutiveAttention = document.querySelector("#report-executive-attention");
+const reportExecutiveAttentionEmpty = document.querySelector("#report-executive-attention-empty");
+const reportsExecutiveInsight = document.querySelector("#reports-executive-insight");
+const reportsExecutiveInsightText = document.querySelector("#reports-executive-insight-text");
 
 const localProjectsBackup = loadProjects();
 let projects = [];
@@ -1085,6 +1110,400 @@ function createAttentionCard(project) {
   return card;
 }
 
+function getVisualPercentage(value, total) {
+  if (total <= 0) return 0;
+  return Math.round((value / total) * 100);
+}
+
+function isLowProgressVisualSignal(project) {
+  const tasks = project.tasks ?? [];
+  return project.status === "Em andamento"
+    && tasks.length > 0
+    && calculateProgress(project) < 50;
+}
+
+function getVisualChartData(projectCollection) {
+  const visualProjects = Array.isArray(projectCollection) ? projectCollection : [];
+  const allTasks = visualProjects.flatMap((project) => project.tasks ?? []);
+  const totalProjectsCount = visualProjects.length;
+  const totalTasksCount = allTasks.length;
+  const statusItems = [
+    { label: "Ideia", className: "visual-status-idea", filter: "Ideia" },
+    { label: "Em andamento", className: "visual-status-progress", filter: "Em andamento" },
+    { label: "Pausado", className: "visual-status-paused", filter: "Pausado" },
+    { label: "Concluído", className: "visual-status-completed", filter: "Concluído" },
+  ].map((item) => {
+    const count = visualProjects.filter((project) => project.status === item.label).length;
+    return { ...item, count, percentage: getVisualPercentage(count, totalProjectsCount) };
+  });
+  const priorityItems = [
+    { label: "Baixa", className: "visual-priority-low", filter: null },
+    { label: "Média", className: "visual-priority-medium", filter: null },
+    { label: "Alta", className: "visual-priority-high", filter: "high-priority" },
+  ].map((item) => {
+    const count = visualProjects.filter((project) => project.priority === item.label).length;
+    return { ...item, count, percentage: getVisualPercentage(count, totalProjectsCount) };
+  });
+  const completedTasksCount = allTasks.filter((task) => task.completed).length;
+
+  return {
+    projects: visualProjects,
+    totalProjects: totalProjectsCount,
+    totalTasks: totalTasksCount,
+    completedTasks: completedTasksCount,
+    pendingTasks: totalTasksCount - completedTasksCount,
+    completedTasksPercentage: getVisualPercentage(completedTasksCount, totalTasksCount),
+    pendingTasksPercentage: getVisualPercentage(totalTasksCount - completedTasksCount, totalTasksCount),
+    overdueProjects: visualProjects.filter(isOverdue).length,
+    statusItems,
+    priorityItems,
+  };
+}
+
+function getExecutiveAttentionDetails(project) {
+  const taskSummary = getProjectTaskSummary(project);
+  const tags = [];
+  let score = 0;
+
+  if (isOverdue(project)) {
+    tags.push({ label: "Atrasado", className: "is-overdue" });
+    score += 8;
+  }
+  if (needsPriorityAttention(project)) {
+    tags.push({ label: "Alta prioridade com pendências", className: "is-priority" });
+    score += 5;
+  }
+  if (project.status === "Em andamento" && taskSummary.pendingTasks > 0) {
+    tags.push({ label: "Em andamento com pendências", className: "is-pending" });
+    score += 2;
+  }
+  if (isLowProgressVisualSignal(project)) {
+    tags.push({ label: "Baixo progresso", className: "is-low-progress" });
+    score += 1;
+  }
+
+  return {
+    project,
+    tags,
+    score,
+    taskSummary,
+  };
+}
+
+function sortProjectsForVisuals(projectCollection) {
+  return [...projectCollection]
+    .map(getExecutiveAttentionDetails)
+    .sort((firstItem, secondItem) => {
+      if (secondItem.score !== firstItem.score) return secondItem.score - firstItem.score;
+      if (firstItem.taskSummary.progress !== secondItem.taskSummary.progress) {
+        return firstItem.taskSummary.progress - secondItem.taskSummary.progress;
+      }
+      return String(firstItem.project.name ?? "").localeCompare(
+        String(secondItem.project.name ?? ""),
+        "pt-BR",
+        { sensitivity: "base" },
+      );
+    });
+}
+
+function createDistributionRow(item, canFilterProjects, isDominant = false) {
+  const isInteractive = canFilterProjects && item.filter;
+  const row = document.createElement(isInteractive ? "button" : "div");
+  row.className = `distribution-row ${item.className}${isInteractive ? " is-interactive" : ""}${isDominant ? " is-dominant" : ""}`;
+  row.setAttribute(
+    "aria-label",
+    `${item.label}: ${item.count} projeto${item.count === 1 ? "" : "s"}, ${item.percentage}%${isDominant ? ", maior concentração do conjunto" : ""}`,
+  );
+  if (isInteractive) {
+    row.type = "button";
+    row.dataset.dashboardProjectFilter = item.filter;
+  }
+
+  const label = document.createElement("span");
+  label.className = "distribution-label";
+  label.textContent = item.label;
+  const track = document.createElement("span");
+  track.className = "distribution-track";
+  track.setAttribute("aria-hidden", "true");
+  const fill = document.createElement("span");
+  fill.style.setProperty("--chart-share", `${item.percentage}%`);
+  track.append(fill);
+  const value = document.createElement("span");
+  value.className = "distribution-value";
+  value.textContent = `${item.count} · ${item.percentage}%`;
+  row.append(label, track, value);
+  return row;
+}
+
+function renderDistributionChart(chartElement, emptyElement, items, totalProjectsCount, canFilterProjects) {
+  if (!chartElement || !emptyElement) return;
+
+  const hasProjects = totalProjectsCount > 0;
+  chartElement.hidden = !hasProjects;
+  emptyElement.hidden = hasProjects;
+  const predominantCount = hasProjects ? Math.max(...items.map((item) => item.count)) : 0;
+  chartElement.replaceChildren(...(hasProjects
+    ? items.map((item) => createDistributionRow(
+      item,
+      canFilterProjects,
+      predominantCount > 0 && item.count === predominantCount,
+    ))
+    : []));
+}
+
+function createTaskLegendItem(label, count, percentage) {
+  const item = document.createElement("li");
+  const text = document.createElement("span");
+  text.textContent = label;
+  const value = document.createElement("strong");
+  value.textContent = `${count} · ${percentage}%`;
+  text.append(value);
+  item.append(text);
+  return item;
+}
+
+function renderTaskCompositionChart(chartElement, emptyElement, visualData) {
+  if (!chartElement || !emptyElement) return;
+
+  const hasTasks = visualData.totalTasks > 0;
+  chartElement.hidden = !hasTasks;
+  emptyElement.hidden = hasTasks;
+  if (!hasTasks) {
+    chartElement.replaceChildren();
+    return;
+  }
+
+  const donut = document.createElement("div");
+  donut.className = "task-donut";
+  donut.style.setProperty("--completed-share", `${visualData.completedTasksPercentage}%`);
+  donut.setAttribute("aria-hidden", "true");
+  const donutCenter = document.createElement("div");
+  donutCenter.className = "task-donut-center";
+  const total = document.createElement("strong");
+  total.textContent = String(visualData.totalTasks);
+  const totalLabel = document.createElement("span");
+  totalLabel.textContent = "tarefas";
+  donutCenter.append(total, totalLabel);
+  donut.append(donutCenter);
+
+  const legend = document.createElement("ul");
+  legend.className = "task-chart-legend";
+  legend.append(
+    createTaskLegendItem("Concluídas", visualData.completedTasks, visualData.completedTasksPercentage),
+    createTaskLegendItem("Pendentes", visualData.pendingTasks, visualData.pendingTasksPercentage),
+  );
+  chartElement.replaceChildren(donut, legend);
+}
+
+function createProjectProgressRow(item) {
+  const row = document.createElement("article");
+  row.className = `project-progress-row${item.score > 0 ? " is-attention" : ""}`;
+  const name = document.createElement("strong");
+  name.className = "project-progress-name";
+  name.textContent = item.project.name;
+  const value = document.createElement("span");
+  value.className = "project-progress-value";
+  value.textContent = `${item.taskSummary.progress}%`;
+  const details = document.createElement("small");
+  details.textContent = `${item.project.status} · ${item.taskSummary.completedTasks}/${item.taskSummary.totalTasks} tarefas concluídas`;
+  const track = document.createElement("div");
+  track.className = "project-progress-track";
+  track.setAttribute("aria-label", `Progresso de ${item.project.name}: ${item.taskSummary.progress}%`);
+  const fill = document.createElement("span");
+  fill.style.setProperty("--project-progress", `${item.taskSummary.progress}%`);
+  track.append(fill);
+  row.append(name, value, details, track);
+  return row;
+}
+
+function renderProjectProgressComparison(listElement, emptyElement, projectCollection) {
+  if (!listElement || !emptyElement) return;
+
+  const sortedProjects = sortProjectsForVisuals(projectCollection);
+  const hasProjects = sortedProjects.length > 0;
+  listElement.hidden = !hasProjects;
+  emptyElement.hidden = hasProjects;
+  listElement.replaceChildren(...sortedProjects.map(createProjectProgressRow));
+}
+
+function createExecutiveAttentionItem(item) {
+  const row = document.createElement("article");
+  row.className = "executive-attention-item";
+  const copy = document.createElement("div");
+  copy.className = "executive-attention-copy";
+  const name = document.createElement("strong");
+  name.textContent = item.project.name;
+  const details = document.createElement("span");
+  details.textContent = `${item.taskSummary.pendingTasks} tarefa${item.taskSummary.pendingTasks === 1 ? "" : "s"} pendente${item.taskSummary.pendingTasks === 1 ? "" : "s"} · ${item.project.status}`;
+  copy.append(name, details);
+  const progress = document.createElement("span");
+  progress.className = "executive-attention-progress";
+  progress.textContent = `${item.taskSummary.progress}%`;
+  const tags = document.createElement("div");
+  tags.className = "executive-attention-tags";
+  item.tags.forEach((tag) => {
+    const tagElement = document.createElement("span");
+    tagElement.className = `executive-attention-tag ${tag.className}`;
+    tagElement.textContent = tag.label;
+    tags.append(tagElement);
+  });
+  row.append(copy, progress, tags);
+  return row;
+}
+
+function renderExecutiveAttention(listElement, emptyElement, projectCollection) {
+  if (!listElement || !emptyElement) return;
+
+  const attentionItems = sortProjectsForVisuals(projectCollection).filter((item) => item.tags.length > 0);
+  const hasAttentionItems = attentionItems.length > 0;
+  listElement.hidden = !hasAttentionItems;
+  emptyElement.hidden = hasAttentionItems;
+  listElement.replaceChildren(...attentionItems.map(createExecutiveAttentionItem));
+}
+
+function renderVisualSuite(projectCollection, elements, canFilterProjects = false) {
+  const visualData = getVisualChartData(projectCollection);
+  renderDistributionChart(
+    elements.statusChart,
+    elements.statusEmpty,
+    visualData.statusItems,
+    visualData.totalProjects,
+    canFilterProjects,
+  );
+  renderDistributionChart(
+    elements.priorityChart,
+    elements.priorityEmpty,
+    visualData.priorityItems,
+    visualData.totalProjects,
+    canFilterProjects,
+  );
+  renderTaskCompositionChart(elements.taskChart, elements.taskEmpty, visualData);
+  renderProjectProgressComparison(elements.progressList, elements.progressEmpty, visualData.projects);
+  renderExecutiveAttention(elements.attentionList, elements.attentionEmpty, visualData.projects);
+  return visualData;
+}
+
+function renderDashboardVisuals() {
+  const visualData = renderVisualSuite(projects, {
+    statusChart: dashboardStatusChart,
+    statusEmpty: dashboardStatusEmpty,
+    priorityChart: dashboardPriorityChart,
+    priorityEmpty: dashboardPriorityEmpty,
+    taskChart: dashboardTaskChart,
+    taskEmpty: dashboardTaskEmpty,
+    progressList: dashboardProjectProgressList,
+    progressEmpty: dashboardProjectProgressEmpty,
+    attentionList: dashboardExecutiveAttention,
+    attentionEmpty: dashboardExecutiveAttentionEmpty,
+  }, true);
+  if (dashboardOverdueCount) dashboardOverdueCount.textContent = String(visualData.overdueProjects);
+}
+
+function getReportExecutiveInsight(report) {
+  const filteredProjects = report.filteredProjects;
+  const overdueProjects = filteredProjects.filter(isOverdue);
+  const overdueHighPriorityProjects = overdueProjects.filter((project) => project.priority === "Alta");
+  const priorityAttentionProjects = filteredProjects.filter(needsPriorityAttention);
+  const lowProgressProjects = filteredProjects.filter(isLowProgressVisualSignal);
+  const activePendingProjects = filteredProjects.filter((project) => (
+    project.status === "Em andamento" && hasPendingTasks(project)
+  ));
+  const formatCount = (count) => `${count} projeto${count === 1 ? "" : "s"}`;
+
+  if (!filteredProjects.length) {
+    return { positive: false, text: "Nenhum projeto corresponde aos filtros selecionados." };
+  }
+  if (overdueHighPriorityProjects.length) {
+    const count = overdueHighPriorityProjects.length;
+    return {
+      positive: false,
+      text: `Atenção necessária: ${formatCount(count)} ${count === 1 ? "está atrasado e classificado como alta prioridade." : "estão atrasados e classificados como alta prioridade."}`,
+    };
+  }
+  if (overdueProjects.length) {
+    const count = overdueProjects.length;
+    return {
+      positive: false,
+      text: `Atenção necessária: ${formatCount(count)} ${count === 1 ? "está atrasado." : "estão atrasados."}`,
+    };
+  }
+  if (priorityAttentionProjects.length) {
+    const count = priorityAttentionProjects.length;
+    return {
+      positive: false,
+      text: `Atenção necessária: ${formatCount(count)} ${count === 1 ? "de alta prioridade está com tarefas pendentes." : "de alta prioridade estão com tarefas pendentes."}`,
+    };
+  }
+  if (lowProgressProjects.length) {
+    const count = lowProgressProjects.length;
+    return {
+      positive: false,
+      text: `Atenção necessária: ${formatCount(count)} em andamento ${count === 1 ? "está com progresso abaixo de 50%." : "estão com progresso abaixo de 50%."}`,
+    };
+  }
+  if (activePendingProjects.length) {
+    const count = activePendingProjects.length;
+    return {
+      positive: false,
+      text: `Acompanhamento: ${formatCount(count)} em andamento ${count === 1 ? "tem tarefa pendente." : "têm tarefas pendentes."}`,
+    };
+  }
+  return {
+    positive: true,
+    text: "Visão positiva: não há projetos atrasados nem itens que precisem de atenção no conjunto filtrado.",
+  };
+}
+
+function renderReportExecutiveInsight(report) {
+  if (!reportsExecutiveInsight || !reportsExecutiveInsightText) return;
+
+  const insight = getReportExecutiveInsight(report);
+  reportsExecutiveInsightText.textContent = insight.text;
+  reportsExecutiveInsight.classList.toggle("is-positive", insight.positive);
+}
+function renderReportVisuals(report) {
+  renderVisualSuite(report.filteredProjects, {
+    statusChart: reportStatusChart,
+    statusEmpty: reportStatusEmpty,
+    priorityChart: reportPriorityChart,
+    priorityEmpty: reportPriorityEmpty,
+    taskChart: reportTaskChart,
+    taskEmpty: reportTaskEmpty,
+    progressList: reportProjectProgressList,
+    progressEmpty: reportProjectProgressEmpty,
+    attentionList: reportExecutiveAttention,
+    attentionEmpty: reportExecutiveAttentionEmpty,
+  });
+  renderReportExecutiveInsight(report);
+}
+
+function focusVisualDestination(selector) {
+  const destination = document.querySelector(selector);
+  if (!destination) return;
+  destination.setAttribute("tabindex", "-1");
+  window.setTimeout(() => destination.focus({ preventScroll: true }), 0);
+}
+
+function applyDashboardProjectFilter(filter) {
+  if (!filter) return;
+  setActiveFilter(filter);
+  window.location.hash = "#projetos";
+  sidebar.classList.remove("is-open");
+  focusVisualDestination("#recentes-titulo");
+}
+
+function openOverdueReportsFromDashboard() {
+  reportFilters = { ...defaultReportFilters, deadline: "overdue" };
+  reportStartDateInput.value = "";
+  reportEndDateInput.value = "";
+  reportStatusSelect.value = "all";
+  reportPrioritySelect.value = "all";
+  reportDeadlineSelect.value = "overdue";
+  renderReports();
+  window.location.hash = "#relatorios";
+  sidebar.classList.remove("is-open");
+  focusVisualDestination("#reports-title");
+}
 function getDashboardData() {
   const allTasks = projects.flatMap((project) => project.tasks ?? []);
   const completedTasksCount = allTasks.filter((task) => task.completed).length;
@@ -1137,6 +1556,7 @@ function updateDashboard() {
   overviewCompletedTasks.textContent = dashboard.completedTasks;
   overviewPendingTasks.textContent = dashboard.pendingTasks;
   renderAttentionProjects(dashboard.attentionProjects);
+  renderDashboardVisuals();
 }
 
 function getFilteredProjects() {
@@ -1461,6 +1881,7 @@ function renderReports() {
   reportAttentionList.hidden = !hasAttentionProjects;
   reportAttentionEmpty.hidden = hasAttentionProjects;
   reportAttentionList.replaceChildren(...report.attentionProjects.map(createReportAttentionItem));
+  renderReportVisuals(report);
 }
 
 function syncReportFilters() {
@@ -1761,6 +2182,17 @@ reportsFilterForm.addEventListener("input", syncReportFilters);
 reportsFilterForm.addEventListener("change", syncReportFilters);
 clearReportFiltersButton.addEventListener("click", clearReportFilters);
 exportExcelButton?.addEventListener("click", exportReportsToExcel);
+
+document.querySelectorAll("[data-dashboard-project-filter]").forEach((control) => {
+  control.addEventListener("click", () => applyDashboardProjectFilter(control.dataset.dashboardProjectFilter));
+});
+
+dashboardVisualsSection?.addEventListener("click", (event) => {
+  const control = event.target.closest("[data-dashboard-project-filter]");
+  if (control) applyDashboardProjectFilter(control.dataset.dashboardProjectFilter);
+});
+
+dashboardOverdueControl?.addEventListener("click", openOverdueReportsFromDashboard);
 
 navigationLinks.forEach((link) => {
   link.addEventListener("click", () => {

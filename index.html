@@ -216,35 +216,35 @@
               <small>Pronto para começar</small>
             </article>
 
-            <article class="stat-card idea-card">
+            <button class="stat-card idea-card dashboard-filter-card" type="button" data-dashboard-project-filter="Ideia" aria-label="Filtrar projetos por Ideia">
               <div class="stat-icon" aria-hidden="true">✦</div>
               <div><span>Ideias</span><strong id="idea-projects">0</strong></div>
               <small>Projetos em planejamento</small>
-            </article>
+            </button>
 
-            <article class="stat-card progress-card">
+            <button class="stat-card progress-card dashboard-filter-card" type="button" data-dashboard-project-filter="Em andamento" aria-label="Filtrar projetos em andamento">
               <div class="stat-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18" /><circle cx="12" cy="12" r="4" /></svg>
               </div>
               <div><span>Em andamento</span><strong id="in-progress-projects">0</strong></div>
               <small>Projetos em execução</small>
-            </article>
+            </button>
 
-            <article class="stat-card done-card">
+            <button class="stat-card done-card dashboard-filter-card" type="button" data-dashboard-project-filter="Concluído" aria-label="Filtrar projetos concluídos">
               <div class="stat-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24"><path d="m5 12 4.5 4.5L19 7" /></svg>
               </div>
               <div><span>Concluídos</span><strong id="completed-projects">0</strong></div>
               <small>Resultados alcançados</small>
-            </article>
+            </button>
 
-            <article class="stat-card paused-card">
+            <button class="stat-card paused-card dashboard-filter-card" type="button" data-dashboard-project-filter="Pausado" aria-label="Filtrar projetos pausados">
               <div class="stat-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24"><path d="M9 7v10M15 7v10" /></svg>
               </div>
               <div><span>Pausados</span><strong id="paused-projects">0</strong></div>
               <small>Projetos temporariamente parados</small>
-            </article>
+            </button>
 
             <article class="stat-card tasks-card">
               <div class="stat-icon" aria-hidden="true">
@@ -305,6 +305,81 @@
           </div>
         </section>
 
+        <section class="visual-intelligence-section" id="dashboard-visuals" aria-labelledby="visual-intelligence-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Leitura executiva</p>
+              <h2 id="visual-intelligence-title">Inteligência visual</h2>
+            </div>
+            <span class="period-label">Visão da sua conta</span>
+          </div>
+
+          <div class="visual-charts-grid">
+            <article class="visual-card" aria-labelledby="dashboard-status-title">
+              <div class="visual-card-heading">
+                <div>
+                  <span>Distribuição</span>
+                  <h3 id="dashboard-status-title">Projetos por status</h3>
+                </div>
+                <small>Visão geral</small>
+              </div>
+              <div class="distribution-chart" id="dashboard-status-chart" aria-live="polite"></div>
+              <p class="visual-empty-state" id="dashboard-status-empty">Crie um projeto para visualizar a distribuição por status.</p>
+            </article>
+
+            <article class="visual-card" aria-labelledby="dashboard-priority-title">
+              <div class="visual-card-heading">
+                <div>
+                  <span>Foco</span>
+                  <h3 id="dashboard-priority-title">Projetos por prioridade</h3>
+                </div>
+                <small>Visão geral</small>
+              </div>
+              <div class="distribution-chart compact-distribution-chart" id="dashboard-priority-chart" aria-live="polite"></div>
+              <p class="visual-empty-state" id="dashboard-priority-empty">Crie um projeto para visualizar as prioridades.</p>
+            </article>
+
+            <article class="visual-card task-visual-card" aria-labelledby="dashboard-tasks-visual-title">
+              <div class="visual-card-heading">
+                <div>
+                  <span>Execução</span>
+                  <h3 id="dashboard-tasks-visual-title">Tarefas</h3>
+                </div>
+                <small>Visão geral</small>
+              </div>
+              <div class="task-composition-chart" id="dashboard-task-chart" aria-live="polite"></div>
+              <p class="visual-empty-state" id="dashboard-task-empty">Adicione tarefas aos projetos para acompanhar a execução.</p>
+            </article>
+          </div>
+
+          <article class="visual-card visual-progress-card" aria-labelledby="dashboard-project-progress-title">
+            <div class="visual-card-heading">
+              <div>
+                <span>Ritmo de entrega</span>
+                <h3 id="dashboard-project-progress-title">Progresso dos projetos</h3>
+              </div>
+              <small>Todos os projetos</small>
+            </div>
+            <div class="project-progress-comparison" id="dashboard-project-progress-list" aria-live="polite"></div>
+            <p class="visual-empty-state" id="dashboard-project-progress-empty">Os progressos dos projetos aparecerão aqui.</p>
+          </article>
+
+          <article class="executive-visual-card" aria-labelledby="dashboard-executive-attention-title">
+            <div class="visual-card-heading">
+              <div>
+                <span>Prioridades do momento</span>
+                <h3 id="dashboard-executive-attention-title">Atenção executiva</h3>
+              </div>
+              <button class="executive-overdue-control" id="dashboard-overdue-control" type="button" aria-label="Abrir Relatórios mostrando somente projetos atrasados">
+                <span>Projetos atrasados</span>
+                <strong id="dashboard-overdue-count">0</strong>
+                <small>Ver nos Relatórios</small>
+              </button>
+            </div>
+            <div class="executive-attention-list" id="dashboard-executive-attention" aria-live="polite"></div>
+            <p class="visual-empty-state" id="dashboard-executive-attention-empty">Nenhum sinal de atenção identificado neste momento.</p>
+          </article>
+        </section>
         <section class="attention-section" aria-labelledby="atencao-titulo">
           <div class="section-heading">
             <div>
@@ -466,6 +541,61 @@
             </div>
           </section>
 
+          <section class="reports-visuals-section" aria-labelledby="reports-visuals-title">
+            <div class="section-heading compact-heading">
+              <div>
+                <p class="eyebrow">Leitura do conjunto filtrado</p>
+                <h3 id="reports-visuals-title">Visão Executiva</h3>
+              </div>
+            </div>
+            <div class="reports-executive-insight" id="reports-executive-insight" role="status" aria-live="polite">
+              <span class="reports-executive-insight-icon" aria-hidden="true">↗</span>
+              <p id="reports-executive-insight-text"></p>
+            </div>
+
+            <div class="visual-charts-grid report-visual-charts-grid">
+              <article class="visual-card" aria-labelledby="report-status-title">
+                <div class="visual-card-heading">
+                  <div><span>Distribuição</span><h3 id="report-status-title">Projetos por status</h3></div>
+                </div>
+                <div class="distribution-chart" id="report-status-chart" aria-live="polite"></div>
+                <p class="visual-empty-state" id="report-status-empty">Nenhum projeto para mostrar nos filtros selecionados.</p>
+              </article>
+
+              <article class="visual-card" aria-labelledby="report-priority-title">
+                <div class="visual-card-heading">
+                  <div><span>Foco</span><h3 id="report-priority-title">Projetos por prioridade</h3></div>
+                </div>
+                <div class="distribution-chart compact-distribution-chart" id="report-priority-chart" aria-live="polite"></div>
+                <p class="visual-empty-state" id="report-priority-empty">Nenhum projeto para mostrar nos filtros selecionados.</p>
+              </article>
+
+              <article class="visual-card task-visual-card" aria-labelledby="report-tasks-visual-title">
+                <div class="visual-card-heading">
+                  <div><span>Execução</span><h3 id="report-tasks-visual-title">Tarefas</h3></div>
+                </div>
+                <div class="task-composition-chart" id="report-task-chart" aria-live="polite"></div>
+                <p class="visual-empty-state" id="report-task-empty">Nenhuma tarefa para mostrar nos filtros selecionados.</p>
+              </article>
+            </div>
+
+            <article class="visual-card visual-progress-card" aria-labelledby="report-project-progress-title">
+              <div class="visual-card-heading">
+                <div><span>Ritmo de entrega</span><h3 id="report-project-progress-title">Progresso dos projetos</h3></div>
+              </div>
+              <div class="project-progress-comparison" id="report-project-progress-list" aria-live="polite"></div>
+              <p class="visual-empty-state" id="report-project-progress-empty">Nenhum progresso para mostrar nos filtros selecionados.</p>
+            </article>
+
+            <article class="executive-visual-card report-executive-visual-card" aria-labelledby="report-executive-attention-title">
+              <div class="visual-card-heading">
+                <div><span>Prioridades do conjunto filtrado</span><h3 id="report-executive-attention-title">Atenção executiva</h3></div>
+                <small>Sem alterar filtros</small>
+              </div>
+              <div class="executive-attention-list" id="report-executive-attention" aria-live="polite"></div>
+              <p class="visual-empty-state" id="report-executive-attention-empty">Nenhum sinal de atenção para os filtros selecionados.</p>
+            </article>
+          </section>
           <section class="executive-summary-section" aria-labelledby="executive-summary-title">
             <div class="section-heading compact-heading">
               <div>
