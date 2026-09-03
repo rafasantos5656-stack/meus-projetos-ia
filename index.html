@@ -132,12 +132,11 @@
             Tarefas
           </a>
           <div class="nav-divider" aria-hidden="true"></div>
-          <p class="nav-section-label nav-section-label-future">Em breve</p>
-          <span class="nav-link nav-link-future" aria-disabled="true">
+          <p class="nav-section-label">Gestão</p>
+          <a class="nav-link" id="reports-navigation-link" href="#relatorios">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2" /></svg>
             Relatórios
-            <small>Em breve</small>
-          </span>
+          </a>
         </nav>
 
         <div class="sidebar-footer">
@@ -377,6 +376,183 @@
           </div>
 
           <div class="projects-grid" id="projects-list" aria-live="polite" hidden></div>
+        </section>
+
+        <section id="relatorios" class="reports-section" aria-labelledby="reports-title">
+          <div class="section-heading reports-heading">
+            <div>
+              <p class="eyebrow">Visão de gestão</p>
+              <h2 id="reports-title">Relatórios</h2>
+            </div>
+            <span class="period-label" id="reports-filter-summary">Todos os projetos</span>
+          </div>
+
+          <div class="reports-intro">
+            <div>
+              <h3>Dados para acompanhar decisões</h3>
+              <p>Os indicadores consideram somente os projetos e tarefas da sua conta carregados do Supabase.</p>
+            </div>
+            <div class="reports-actions">
+              <span class="reports-intro-status">Atualização automática</span>
+              <button class="primary-button report-export-button" id="export-excel-button" type="button">
+                Exportar Excel
+              </button>
+            </div>
+          </div>
+
+          <form class="reports-filters" id="reports-filter-form" aria-label="Filtros dos relatórios">
+            <div class="report-filter-field">
+              <label for="report-start-date">Data inicial</label>
+              <input id="report-start-date" name="startDate" type="date" />
+            </div>
+            <div class="report-filter-field">
+              <label for="report-end-date">Data final</label>
+              <input id="report-end-date" name="endDate" type="date" />
+            </div>
+            <div class="report-filter-field">
+              <label for="report-status">Status</label>
+              <select id="report-status" name="status">
+                <option value="all">Todos</option>
+                <option value="Ideia">Ideia</option>
+                <option value="Em andamento">Em andamento</option>
+                <option value="Pausado">Pausado</option>
+                <option value="Concluído">Concluído</option>
+              </select>
+            </div>
+            <div class="report-filter-field">
+              <label for="report-priority">Prioridade</label>
+              <select id="report-priority" name="priority">
+                <option value="all">Todas</option>
+                <option value="Baixa">Baixa</option>
+                <option value="Média">Média</option>
+                <option value="Alta">Alta</option>
+              </select>
+            </div>
+            <div class="report-filter-field">
+              <label for="report-project">Projeto</label>
+              <select id="report-project" name="projectId">
+                <option value="all">Todos</option>
+              </select>
+            </div>
+            <div class="report-filter-field">
+              <label for="report-deadline">Atraso</label>
+              <select id="report-deadline" name="deadline">
+                <option value="all">Todos</option>
+                <option value="overdue">Somente atrasados</option>
+                <option value="on-time">Somente dentro do prazo</option>
+              </select>
+            </div>
+            <button class="clear-filters-button reports-clear-button" type="button" data-clear-report-filters>Limpar filtros</button>
+          </form>
+
+          <section class="reports-metrics-section" aria-labelledby="reports-metrics-title">
+            <div class="section-heading compact-heading">
+              <div>
+                <p class="eyebrow">Conjunto filtrado</p>
+                <h3 id="reports-metrics-title">Indicadores</h3>
+              </div>
+            </div>
+            <div class="reports-metrics-grid" aria-live="polite">
+              <article class="report-metric-card"><span>Total de projetos</span><strong data-report-metric="totalProjects">0</strong></article>
+              <article class="report-metric-card"><span>Ideias</span><strong data-report-metric="ideaProjects">0</strong></article>
+              <article class="report-metric-card"><span>Em andamento</span><strong data-report-metric="inProgressProjects">0</strong></article>
+              <article class="report-metric-card"><span>Pausados</span><strong data-report-metric="pausedProjects">0</strong></article>
+              <article class="report-metric-card"><span>Concluídos</span><strong data-report-metric="completedProjects">0</strong></article>
+              <article class="report-metric-card report-metric-alert"><span>Projetos atrasados</span><strong data-report-metric="overdueProjects">0</strong></article>
+              <article class="report-metric-card"><span>Total de tarefas</span><strong data-report-metric="totalTasks">0</strong></article>
+              <article class="report-metric-card"><span>Tarefas concluídas</span><strong data-report-metric="completedTasks">0</strong></article>
+              <article class="report-metric-card"><span>Tarefas pendentes</span><strong data-report-metric="pendingTasks">0</strong></article>
+              <article class="report-metric-card report-metric-progress"><span>Progresso médio</span><strong data-report-metric="averageProgress">0%</strong></article>
+            </div>
+          </section>
+
+          <section class="executive-summary-section" aria-labelledby="executive-summary-title">
+            <div class="section-heading compact-heading">
+              <div>
+                <p class="eyebrow">Priorize o que importa</p>
+                <h3 id="executive-summary-title">Resumo Executivo</h3>
+              </div>
+            </div>
+            <div class="executive-summary-grid">
+              <article class="executive-summary-card"><span>Projetos ativos</span><strong data-executive-metric="activeProjects">0</strong><small>Em andamento</small></article>
+              <article class="executive-summary-card is-attention"><span>Projetos atrasados</span><strong data-executive-metric="overdueProjects">0</strong><small>Precisam de acompanhamento</small></article>
+              <article class="executive-summary-card"><span>Tarefas pendentes</span><strong data-executive-metric="pendingTasks">0</strong><small>Próximas etapas</small></article>
+              <article class="executive-summary-card is-progress"><span>Progresso médio</span><strong data-executive-metric="averageProgress">0%</strong><small>Do conjunto filtrado</small></article>
+              <article class="executive-summary-card"><span>Alta prioridade</span><strong data-executive-metric="highPriorityProjects">0</strong><small>Projetos prioritários</small></article>
+              <article class="executive-summary-card is-attention"><span>Precisam de atenção</span><strong data-executive-metric="attentionProjects">0</strong><small>Atrasados ou prioritários em andamento</small></article>
+            </div>
+
+            <div class="report-attention-panel">
+              <div>
+                <h4>Itens que precisam de atenção</h4>
+                <p>Projetos atrasados ou de alta prioridade em andamento com tarefas pendentes.</p>
+              </div>
+              <div class="report-attention-list" id="report-attention-list" aria-live="polite" hidden></div>
+              <p class="report-attention-empty" id="report-attention-empty">Nenhum projeto precisa de atenção para os filtros selecionados.</p>
+            </div>
+          </section>
+
+          <section class="reports-table-section" aria-labelledby="report-projects-title">
+            <div class="section-heading compact-heading">
+              <div>
+                <p class="eyebrow">Detalhamento</p>
+                <h3 id="report-projects-title">Relatório de Projetos</h3>
+              </div>
+              <span class="period-label" id="report-projects-count">0 projetos</span>
+            </div>
+            <div class="reports-empty-state" id="report-projects-empty" hidden>
+              <strong>Nenhum projeto encontrado</strong>
+              <p>Nenhum projeto encontrado para os filtros selecionados.</p>
+            </div>
+            <div class="reports-table-scroll" id="report-projects-table-wrap" tabindex="0" role="region" aria-label="Tabela do relatório de projetos">
+              <table class="reports-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Projeto</th>
+                    <th scope="col">Descrição</th>
+                    <th scope="col">Objetivo</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Prioridade</th>
+                    <th scope="col">Data</th>
+                    <th scope="col">Situação do prazo</th>
+                    <th scope="col">Total de tarefas</th>
+                    <th scope="col">Concluídas</th>
+                    <th scope="col">Pendentes</th>
+                    <th scope="col">Progresso</th>
+                  </tr>
+                </thead>
+                <tbody id="report-projects-body"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="reports-table-section" aria-labelledby="report-tasks-title">
+            <div class="section-heading compact-heading">
+              <div>
+                <p class="eyebrow">Acompanhe as etapas</p>
+                <h3 id="report-tasks-title">Relatório de Tarefas</h3>
+              </div>
+              <span class="period-label" id="report-tasks-count">0 tarefas</span>
+            </div>
+            <div class="reports-empty-state" id="report-tasks-empty" hidden>
+              <strong>Nenhuma tarefa encontrada</strong>
+              <p>Os projetos selecionados ainda não possuem tarefas para mostrar.</p>
+            </div>
+            <div class="reports-table-scroll" id="report-tasks-table-wrap" tabindex="0" role="region" aria-label="Tabela do relatório de tarefas">
+              <table class="reports-table reports-tasks-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Projeto</th>
+                    <th scope="col">Tarefa</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Data do projeto</th>
+                    <th scope="col">Prioridade do projeto</th>
+                  </tr>
+                </thead>
+                <tbody id="report-tasks-body"></tbody>
+              </table>
+            </div>
+          </section>
         </section>
       </main>
     </div>

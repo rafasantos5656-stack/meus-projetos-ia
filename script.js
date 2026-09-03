@@ -39,6 +39,27 @@ const confirmationModalTitleElement = document.querySelector("#confirmation-moda
 const confirmationModalDescriptionElement = document.querySelector("#confirmation-modal-description");
 const cancelConfirmationButtonElement = document.querySelector("#cancel-confirmation-button");
 const confirmDeletionButtonElement = document.querySelector("#confirm-deletion-button");
+const navigationLinks = document.querySelectorAll(".main-nav .nav-link[href]");
+const reportsFilterForm = document.querySelector("#reports-filter-form");
+const reportStartDateInput = document.querySelector("#report-start-date");
+const reportEndDateInput = document.querySelector("#report-end-date");
+const reportStatusSelect = document.querySelector("#report-status");
+const reportPrioritySelect = document.querySelector("#report-priority");
+const reportProjectSelect = document.querySelector("#report-project");
+const reportDeadlineSelect = document.querySelector("#report-deadline");
+const clearReportFiltersButton = document.querySelector("[data-clear-report-filters]");
+const reportFilterSummaryElement = document.querySelector("#reports-filter-summary");
+const reportProjectsBody = document.querySelector("#report-projects-body");
+const reportTasksBody = document.querySelector("#report-tasks-body");
+const reportProjectsTableWrap = document.querySelector("#report-projects-table-wrap");
+const reportTasksTableWrap = document.querySelector("#report-tasks-table-wrap");
+const reportProjectsEmpty = document.querySelector("#report-projects-empty");
+const reportTasksEmpty = document.querySelector("#report-tasks-empty");
+const reportProjectsCount = document.querySelector("#report-projects-count");
+const reportTasksCount = document.querySelector("#report-tasks-count");
+const reportAttentionList = document.querySelector("#report-attention-list");
+const reportAttentionEmpty = document.querySelector("#report-attention-empty");
+const exportExcelButton = document.querySelector("#export-excel-button");
 
 const localProjectsBackup = loadProjects();
 let projects = [];
@@ -53,6 +74,17 @@ let dataMessageTimeout;
 let confirmationResolver = null;
 let confirmationReturnFocus = null;
 let isConfirmationBusy = false;
+const defaultReportFilters = Object.freeze({
+  startDate: "",
+  endDate: "",
+  status: "all",
+  priority: "all",
+  projectId: "all",
+  deadline: "all",
+});
+let reportFilters = { ...defaultReportFilters };
+let isExcelExportRunning = false;
+let sheetJsLoadingPromise = null;
 
 menuButton?.addEventListener("click", () => {
   sidebar.classList.toggle("is-open");
@@ -1150,6 +1182,539 @@ function clearProjectControls() {
   renderProjects();
 }
 
+function getProjectTaskSummary(project) {
+  const tasks = project.tasks ?? [];
+  const completedTasks = tasks.filter((task) => task.completed).length;
+
+  return {
+    totalTasks: tasks.length,
+    completedTasks,
+    pendingTasks: tasks.length - completedTasks,
+    progress: calculateProgress(project),
+  };
+}
+
+function formatReportCount(count, singular, plural = `${singular}s`) {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function refreshReportProjectOptions() {
+  if (!reportProjectSelect) return;
+
+  const requestedProjectId = reportFilters.projectId;
+  const projectOptions = [...projects].sort((firstProject, secondProject) => (
+    String(firstProject.name ?? "").localeCompare(String(secondProject.name ?? ""), "pt-BR", { sensitivity: "base" })
+  ));
+  const options = document.createDocumentFragment();
+  const allOption = document.createElement("option");
+  allOption.value = "all";
+  allOption.textContent = "Todos";
+  options.append(allOption);
+
+  projectOptions.forEach((project) => {
+    const option = document.createElement("option");
+    option.value = String(project.id);
+    option.textContent = project.name;
+    options.append(option);
+  });
+
+  reportProjectSelect.replaceChildren(options);
+  const selectedProjectStillExists = projectOptions.some((project) => String(project.id) === requestedProjectId);
+  if (requestedProjectId !== "all" && !selectedProjectStillExists) {
+    reportFilters.projectId = "all";
+  }
+  reportProjectSelect.value = reportFilters.projectId;
+}
+
+function projectMatchesReportFilters(project) {
+  const projectDate = parseProjectDate(project.date);
+  const startDate = parseProjectDate(reportFilters.startDate);
+  const endDate = parseProjectDate(reportFilters.endDate);
+
+  if (startDate && (!projectDate || projectDate < startDate)) return false;
+  if (endDate && (!projectDate || projectDate > endDate)) return false;
+  if (reportFilters.status !== "all" && project.status !== reportFilters.status) return false;
+  if (reportFilters.priority !== "all" && project.priority !== reportFilters.priority) return false;
+  if (reportFilters.projectId !== "all" && String(project.id) !== reportFilters.projectId) return false;
+  if (reportFilters.deadline === "overdue" && !isOverdue(project)) return false;
+  if (reportFilters.deadline === "on-time" && (!projectDate || isOverdue(project))) return false;
+
+  return true;
+}
+
+function getReportProjects() {
+  return projects
+    .filter(projectMatchesReportFilters)
+    .sort((firstProject, secondProject) => {
+      const dateComparison = compareByProjectDate(firstProject, secondProject, -1);
+      if (dateComparison !== 0) return dateComparison;
+      return String(firstProject.name ?? "").localeCompare(String(secondProject.name ?? ""), "pt-BR", { sensitivity: "base" });
+    });
+}
+
+function getReportData() {
+  const filteredProjects = getReportProjects();
+  const taskRows = [];
+  const attentionProjects = filteredProjects.filter((project) => (
+    isOverdue(project) || needsPriorityAttention(project)
+  ));
+  const allTasks = filteredProjects.flatMap((project) => project.tasks ?? []);
+  const completedTasksCount = allTasks.filter((task) => task.completed).length;
+  const averageProgressValue = filteredProjects.length === 0
+    ? 0
+    : Math.round(filteredProjects.reduce((total, project) => total + calculateProgress(project), 0) / filteredProjects.length);
+
+  filteredProjects.forEach((project) => {
+    (project.tasks ?? []).forEach((task) => {
+      taskRows.push({ project, task });
+    });
+  });
+
+  taskRows.sort((firstRow, secondRow) => {
+    const projectComparison = String(firstRow.project.name ?? "").localeCompare(
+      String(secondRow.project.name ?? ""),
+      "pt-BR",
+      { sensitivity: "base" },
+    );
+    if (projectComparison !== 0) return projectComparison;
+    return String(firstRow.task.description ?? "").localeCompare(
+      String(secondRow.task.description ?? ""),
+      "pt-BR",
+      { sensitivity: "base" },
+    );
+  });
+
+  return {
+    filteredProjects,
+    taskRows,
+    attentionProjects,
+    metrics: {
+      totalProjects: filteredProjects.length,
+      ideaProjects: filteredProjects.filter((project) => project.status === "Ideia").length,
+      inProgressProjects: filteredProjects.filter((project) => project.status === "Em andamento").length,
+      pausedProjects: filteredProjects.filter((project) => project.status === "Pausado").length,
+      completedProjects: filteredProjects.filter((project) => project.status === "Concluído").length,
+      overdueProjects: filteredProjects.filter(isOverdue).length,
+      totalTasks: allTasks.length,
+      completedTasks: completedTasksCount,
+      pendingTasks: allTasks.length - completedTasksCount,
+      averageProgress: `${averageProgressValue}%`,
+    },
+    executive: {
+      activeProjects: filteredProjects.filter((project) => project.status === "Em andamento").length,
+      overdueProjects: filteredProjects.filter(isOverdue).length,
+      pendingTasks: allTasks.length - completedTasksCount,
+      averageProgress: `${averageProgressValue}%`,
+      highPriorityProjects: filteredProjects.filter((project) => project.priority === "Alta").length,
+      attentionProjects: attentionProjects.length,
+    },
+  };
+}
+
+function setReportMetrics(selector, values) {
+  document.querySelectorAll(selector).forEach((element) => {
+    const value = values[element.dataset.reportMetric ?? element.dataset.executiveMetric];
+    element.textContent = value ?? "0";
+  });
+}
+
+function getReportFilterSummary(projectCount) {
+  const hasFilters = Object.values(reportFilters).some((value) => value !== "" && value !== "all");
+  if (projectCount === 0) return "Nenhum projeto encontrado";
+  return hasFilters
+    ? `${formatReportCount(projectCount, "projeto")} com filtros aplicados`
+    : `${formatReportCount(projectCount, "projeto")} da sua conta`;
+}
+
+function createReportTextCell(text, className = "") {
+  const cell = document.createElement("td");
+  if (className) cell.className = className;
+  cell.textContent = text;
+  return cell;
+}
+
+function createReportBadge(text, className) {
+  const badge = document.createElement("span");
+  badge.className = className;
+  badge.textContent = text;
+  return badge;
+}
+
+function createReportProjectRow(project) {
+  const row = document.createElement("tr");
+  const taskSummary = getProjectTaskSummary(project);
+  const projectDate = parseProjectDate(project.date);
+  const overdue = isOverdue(project);
+
+  const statusCell = document.createElement("td");
+  statusCell.append(createReportBadge(project.status, `badge status-${formatClass(project.status)}`));
+  const priorityCell = document.createElement("td");
+  priorityCell.append(createReportBadge(project.priority, `badge priority-${formatClass(project.priority)}`));
+  const deadlineCell = document.createElement("td");
+  const deadline = document.createElement("span");
+  deadline.className = "report-deadline";
+  if (!projectDate) {
+    deadline.classList.add("is-no-date");
+    deadline.textContent = "Sem data";
+  } else if (overdue) {
+    deadline.classList.add("is-overdue");
+    deadline.textContent = "Atrasado";
+  } else if (project.status === "Concluído") {
+    deadline.textContent = "Concluído";
+  } else {
+    deadline.textContent = "Em dia";
+  }
+  deadlineCell.append(deadline);
+
+  const progressCell = document.createElement("td");
+  progressCell.className = "report-progress-cell";
+  const progressLabel = document.createElement("span");
+  progressLabel.className = "report-progress-label";
+  progressLabel.textContent = `${taskSummary.progress}%`;
+  const progressTrack = document.createElement("div");
+  progressTrack.className = "report-progress-track";
+  progressTrack.setAttribute("aria-label", `Progresso de ${project.name}: ${taskSummary.progress}%`);
+  const progressFill = document.createElement("span");
+  progressFill.style.width = `${taskSummary.progress}%`;
+  progressTrack.append(progressFill);
+  progressCell.append(progressLabel, progressTrack);
+
+  row.append(
+    createReportTextCell(project.name, "report-project-name"),
+    createReportTextCell(project.description || "—", "report-description-cell"),
+    createReportTextCell(project.goal || "—", "report-goal-cell"),
+    statusCell,
+    priorityCell,
+    createReportTextCell(formatDate(project.date), "report-date-cell"),
+    deadlineCell,
+    createReportTextCell(String(taskSummary.totalTasks), "report-count-cell"),
+    createReportTextCell(String(taskSummary.completedTasks), "report-count-cell"),
+    createReportTextCell(String(taskSummary.pendingTasks), "report-count-cell"),
+    progressCell,
+  );
+  return row;
+}
+
+function createReportTaskRow({ project, task }) {
+  const row = document.createElement("tr");
+  const statusCell = document.createElement("td");
+  statusCell.append(createReportBadge(
+    task.completed ? "Concluída" : "Pendente",
+    `report-task-status${task.completed ? " is-completed" : ""}`,
+  ));
+  const priorityCell = document.createElement("td");
+  priorityCell.append(createReportBadge(project.priority, `badge priority-${formatClass(project.priority)}`));
+
+  row.append(
+    createReportTextCell(project.name, "report-project-name"),
+    createReportTextCell(task.description, "report-task-name"),
+    statusCell,
+    createReportTextCell(formatDate(project.date), "report-date-cell"),
+    priorityCell,
+  );
+  return row;
+}
+
+function getReportAttentionReason(project) {
+  const reasons = [];
+  if (isOverdue(project)) reasons.push("data vencida");
+  if (needsPriorityAttention(project)) {
+    const { pendingTasks } = getProjectTaskSummary(project);
+    reasons.push(`alta prioridade · ${pendingTasks} pendente${pendingTasks === 1 ? "" : "s"}`);
+  }
+  return reasons.join(" · ");
+}
+
+function createReportAttentionItem(project) {
+  const item = document.createElement("article");
+  item.className = "report-attention-item";
+  const name = document.createElement("strong");
+  name.textContent = project.name;
+  const reason = document.createElement("span");
+  reason.textContent = getReportAttentionReason(project);
+  item.append(name, reason);
+  return item;
+}
+
+function renderReports() {
+  if (!reportsFilterForm) return;
+
+  refreshReportProjectOptions();
+  const report = getReportData();
+  const hasProjects = report.filteredProjects.length > 0;
+  const hasTasks = report.taskRows.length > 0;
+  const hasAttentionProjects = report.attentionProjects.length > 0;
+
+  setReportMetrics("[data-report-metric]", report.metrics);
+  setReportMetrics("[data-executive-metric]", report.executive);
+  reportFilterSummaryElement.textContent = getReportFilterSummary(report.filteredProjects.length);
+  reportProjectsCount.textContent = formatReportCount(report.filteredProjects.length, "projeto");
+  reportTasksCount.textContent = formatReportCount(report.taskRows.length, "tarefa");
+
+  reportProjectsBody.replaceChildren(...report.filteredProjects.map(createReportProjectRow));
+  reportTasksBody.replaceChildren(...report.taskRows.map(createReportTaskRow));
+  reportProjectsTableWrap.hidden = !hasProjects;
+  reportTasksTableWrap.hidden = !hasTasks;
+  reportProjectsEmpty.hidden = hasProjects;
+  reportTasksEmpty.hidden = hasTasks;
+
+  reportAttentionList.hidden = !hasAttentionProjects;
+  reportAttentionEmpty.hidden = hasAttentionProjects;
+  reportAttentionList.replaceChildren(...report.attentionProjects.map(createReportAttentionItem));
+}
+
+function syncReportFilters() {
+  reportFilters = {
+    startDate: reportStartDateInput.value,
+    endDate: reportEndDateInput.value,
+    status: reportStatusSelect.value,
+    priority: reportPrioritySelect.value,
+    projectId: reportProjectSelect.value,
+    deadline: reportDeadlineSelect.value,
+  };
+  renderReports();
+}
+
+function clearReportFilters() {
+  reportFilters = { ...defaultReportFilters };
+  reportsFilterForm.reset();
+  renderReports();
+}
+
+function updateNavigationState() {
+  const activeHash = window.location.hash || "#inicio";
+  navigationLinks.forEach((link) => {
+    const isActive = link.getAttribute("href") === activeHash;
+    link.classList.toggle("active", isActive);
+    if (isActive) {
+      link.setAttribute("aria-current", "page");
+    } else {
+      link.removeAttribute("aria-current");
+    }
+  });
+}
+function showReportMessage(message, type = "info") {
+  if (typeof window.showAppMessage === "function") {
+    window.showAppMessage(message, type);
+    return;
+  }
+  showDataMessage(message);
+}
+
+function setExcelExportLoading(isLoading) {
+  if (!exportExcelButton) return;
+
+  if (isLoading) {
+    exportExcelButton.dataset.idleLabel = exportExcelButton.textContent.trim();
+    exportExcelButton.textContent = "Gerando Excel…";
+    exportExcelButton.classList.add("is-loading");
+  } else {
+    exportExcelButton.textContent = exportExcelButton.dataset.idleLabel || "Exportar Excel";
+    exportExcelButton.classList.remove("is-loading");
+  }
+
+  exportExcelButton.disabled = isLoading;
+  exportExcelButton.setAttribute("aria-busy", String(isLoading));
+  reportsFilterForm?.querySelectorAll("input, select, button").forEach((control) => {
+    control.disabled = isLoading;
+  });
+  reportsFilterForm?.setAttribute("aria-busy", String(isLoading));
+}
+
+function loadLocalSheetJs() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  if (sheetJsLoadingPromise) return sheetJsLoadingPromise;
+
+  sheetJsLoadingPromise = new Promise((resolve, reject) => {
+    const sheetJsScript = document.createElement("script");
+    sheetJsScript.src = "./vendor/xlsx.full.min.js";
+    sheetJsScript.async = true;
+    sheetJsScript.onload = () => {
+      if (window.XLSX) {
+        resolve(window.XLSX);
+      } else {
+        reject(new Error("A biblioteca local para exportação não foi inicializada."));
+      }
+    };
+    sheetJsScript.onerror = () => reject(new Error("Não foi possível carregar a biblioteca local para exportação."));
+    document.head.append(sheetJsScript);
+  }).catch((error) => {
+    sheetJsLoadingPromise = null;
+    throw error;
+  });
+
+  return sheetJsLoadingPromise;
+}
+
+function getSafeExcelText(value) {
+  const text = String(value ?? "");
+  return /^\s*[=+\-@]/.test(text) ? `'${text}` : text;
+}
+
+function getReportDeadlineLabel(project) {
+  if (!parseProjectDate(project.date)) return "Sem data";
+  return isOverdue(project) ? "Atrasado" : "Dentro do prazo";
+}
+
+function getExcelProjectRow(project) {
+  const taskSummary = getProjectTaskSummary(project);
+  return [
+    getSafeExcelText(project.name),
+    getSafeExcelText(project.description),
+    getSafeExcelText(project.goal),
+    getSafeExcelText(project.status),
+    getSafeExcelText(project.priority),
+    formatDate(project.date),
+    getReportDeadlineLabel(project),
+    taskSummary.totalTasks,
+    taskSummary.completedTasks,
+    taskSummary.pendingTasks,
+    taskSummary.progress / 100,
+  ];
+}
+
+function getExcelTaskRow({ project, task }) {
+  return [
+    getSafeExcelText(project.name),
+    getSafeExcelText(task.description),
+    task.completed ? "Concluída" : "Pendente",
+    formatDate(project.date),
+    getSafeExcelText(project.priority),
+  ];
+}
+
+function getExcelFilterRows() {
+  const selectedProject = projects.find((project) => String(project.id) === reportFilters.projectId);
+  const period = reportFilters.startDate && reportFilters.endDate
+    ? `${formatDate(reportFilters.startDate)} até ${formatDate(reportFilters.endDate)}`
+    : reportFilters.startDate
+      ? `A partir de ${formatDate(reportFilters.startDate)}`
+      : reportFilters.endDate
+        ? `Até ${formatDate(reportFilters.endDate)}`
+        : "Todos os períodos";
+  const deadlines = {
+    all: "Todos",
+    overdue: "Somente atrasados",
+    "on-time": "Somente dentro do prazo",
+  };
+
+  return [
+    ["Período", period],
+    ["Status", reportFilters.status === "all" ? "Todos" : reportFilters.status],
+    ["Prioridade", reportFilters.priority === "all" ? "Todas" : reportFilters.priority],
+    ["Projeto", selectedProject ? getSafeExcelText(selectedProject.name) : "Todos"],
+    ["Atraso", deadlines[reportFilters.deadline] ?? "Todos"],
+  ];
+}
+
+function createExcelTableWorksheet(XLSX, headers, rows, columnWidths, percentageColumnIndex = null) {
+  const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  worksheet["!cols"] = columnWidths.map((width) => ({ wch: width }));
+
+  if (rows.length > 0) {
+    worksheet["!autofilter"] = {
+      ref: XLSX.utils.encode_range({
+        s: { r: 0, c: 0 },
+        e: { r: rows.length, c: headers.length - 1 },
+      }),
+    };
+  }
+
+  if (Number.isInteger(percentageColumnIndex)) {
+    rows.forEach((_, index) => {
+      const cellAddress = XLSX.utils.encode_cell({ r: index + 1, c: percentageColumnIndex });
+      if (worksheet[cellAddress]) worksheet[cellAddress].z = "0%";
+    });
+  }
+
+  return worksheet;
+}
+
+function buildReportWorkbook(XLSX, report) {
+  const projectHeaders = ["Projeto", "Descrição", "Objetivo", "Status", "Prioridade", "Data", "Situação do prazo", "Total de tarefas", "Concluídas", "Pendentes", "Progresso %"];
+  const taskHeaders = ["Projeto", "Tarefa", "Status", "Data do projeto", "Prioridade do projeto"];
+  const overdueProjects = report.filteredProjects.filter(isOverdue);
+  const generatedAt = new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date());
+  const summaryRows = [
+    ["Relatório de Projetos de IA"],
+    [],
+    ["Gerado em", generatedAt],
+    [],
+    ["Filtros aplicados"],
+    ...getExcelFilterRows(),
+    [],
+    ["Indicador", "Valor"],
+    ["Total de projetos", report.metrics.totalProjects],
+    ["Ideias", report.metrics.ideaProjects],
+    ["Em andamento", report.metrics.inProgressProjects],
+    ["Pausados", report.metrics.pausedProjects],
+    ["Concluídos", report.metrics.completedProjects],
+    ["Projetos atrasados", report.metrics.overdueProjects],
+    ["Total de tarefas", report.metrics.totalTasks],
+    ["Tarefas concluídas", report.metrics.completedTasks],
+    ["Tarefas pendentes", report.metrics.pendingTasks],
+    ["Progresso médio", report.metrics.averageProgress],
+    ["Projetos de alta prioridade", report.executive.highPriorityProjects],
+    ["Itens que precisam de atenção", report.executive.attentionProjects],
+  ];
+  const workbook = XLSX.utils.book_new();
+  const summaryWorksheet = XLSX.utils.aoa_to_sheet(summaryRows);
+  summaryWorksheet["!cols"] = [{ wch: 32 }, { wch: 46 }];
+  const projectsWorksheet = createExcelTableWorksheet(
+    XLSX,
+    projectHeaders,
+    report.filteredProjects.map(getExcelProjectRow),
+    [28, 42, 42, 18, 14, 14, 20, 16, 13, 13, 14],
+    10,
+  );
+  const tasksWorksheet = createExcelTableWorksheet(
+    XLSX,
+    taskHeaders,
+    report.taskRows.map(getExcelTaskRow),
+    [28, 46, 14, 18, 20],
+  );
+  const overdueWorksheet = createExcelTableWorksheet(
+    XLSX,
+    projectHeaders,
+    overdueProjects.map(getExcelProjectRow),
+    [28, 42, 42, 18, 14, 14, 20, 16, 13, 13, 14],
+    10,
+  );
+
+  XLSX.utils.book_append_sheet(workbook, summaryWorksheet, "Resumo");
+  XLSX.utils.book_append_sheet(workbook, projectsWorksheet, "Projetos");
+  XLSX.utils.book_append_sheet(workbook, tasksWorksheet, "Tarefas");
+  XLSX.utils.book_append_sheet(workbook, overdueWorksheet, "Atrasados");
+  return workbook;
+}
+
+async function exportReportsToExcel() {
+  if (isExcelExportRunning) return;
+
+  const report = getReportData();
+  if (report.filteredProjects.length === 0) {
+    showReportMessage("Não há dados para exportar com os filtros selecionados.", "info");
+    return;
+  }
+
+  isExcelExportRunning = true;
+  setExcelExportLoading(true);
+
+  try {
+    const XLSX = await loadLocalSheetJs();
+    const workbook = buildReportWorkbook(XLSX, report);
+    XLSX.writeFileXLSX(workbook, `relatorio-projetos-ia-${getToday()}.xlsx`, { compression: true });
+    showReportMessage("Relatório Excel gerado com os filtros atuais.", "success");
+  } catch {
+    showReportMessage("Não foi possível gerar o arquivo Excel. Tente novamente.", "error");
+  } finally {
+    isExcelExportRunning = false;
+    setExcelExportLoading(false);
+  }
+}
 function renderProjects() {
   const filteredProjects = getFilteredProjects();
   const hasProjects = projects.length > 0;
@@ -1159,6 +1724,7 @@ function renderProjects() {
   projectsList.hidden = !hasFilteredProjects;
   projectsList.replaceChildren(...filteredProjects.map(createProjectCard));
   updateDashboard();
+  renderReports();
 }
 
 document.querySelectorAll("[data-open-project-modal]").forEach((button) => {
@@ -1189,6 +1755,21 @@ projectSort.addEventListener("change", (event) => {
 });
 
 clearProjectControlsButton.addEventListener("click", clearProjectControls);
+
+reportsFilterForm.addEventListener("submit", (event) => event.preventDefault());
+reportsFilterForm.addEventListener("input", syncReportFilters);
+reportsFilterForm.addEventListener("change", syncReportFilters);
+clearReportFiltersButton.addEventListener("click", clearReportFilters);
+exportExcelButton?.addEventListener("click", exportReportsToExcel);
+
+navigationLinks.forEach((link) => {
+  link.addEventListener("click", () => {
+    window.setTimeout(updateNavigationState, 0);
+    sidebar.classList.remove("is-open");
+  });
+});
+window.addEventListener("hashchange", updateNavigationState);
+updateNavigationState();
 
 modal.addEventListener("click", (event) => {
   if (event.target === modal) closeProjectModal();
