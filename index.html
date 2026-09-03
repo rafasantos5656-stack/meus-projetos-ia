@@ -133,6 +133,10 @@
           </a>
           <div class="nav-divider" aria-hidden="true"></div>
           <p class="nav-section-label">Gestão</p>
+          <a class="nav-link" href="#agenda">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4M16 3v4M4 10h16M8 14h3M8 17h6" /></svg>
+            Agenda
+          </a>
           <a class="nav-link" id="reports-navigation-link" href="#relatorios">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2" /></svg>
             Relatórios
@@ -269,6 +273,30 @@
               <div><span>Tarefas pendentes</span><strong id="pending-tasks">0</strong></div>
               <small>Etapas a realizar</small>
             </article>
+
+            <article class="stat-card deadline-overdue-card">
+              <div class="stat-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" /><path d="M12 7v5l3 2M7 4l-2 2M17 4l2 2" /></svg>
+              </div>
+              <div><span>Tarefas atrasadas</span><strong id="dashboard-overdue-tasks">0</strong></div>
+              <small>Precisam de atenção</small>
+            </article>
+
+            <article class="stat-card deadline-today-card">
+              <div class="stat-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4M16 3v4M4 10h16M12 13v3M12 13h2" /></svg>
+              </div>
+              <div><span>Vencendo hoje</span><strong id="dashboard-due-today-tasks">0</strong></div>
+              <small>Prioridade imediata</small>
+            </article>
+
+            <article class="stat-card deadline-week-card">
+              <div class="stat-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4M16 3v4M4 10h16M8 14h8M8 17h5" /></svg>
+              </div>
+              <div><span>Próximos 7 dias</span><strong id="dashboard-next-seven-tasks">0</strong></div>
+              <small>Planeje a próxima semana</small>
+            </article>
           </div>
         </section>
 
@@ -305,6 +333,17 @@
           </div>
         </section>
 
+        <section class="dashboard-commitments-section" aria-labelledby="dashboard-commitments-title">
+          <div class="section-heading compact-heading">
+            <div>
+              <p class="eyebrow">Prioridades de execução</p>
+              <h2 id="dashboard-commitments-title">Próximos compromissos</h2>
+            </div>
+            <a class="text-button" href="#agenda">Ver Agenda completa <span aria-hidden="true">→</span></a>
+          </div>
+          <div class="dashboard-commitments-list" id="dashboard-upcoming-commitments" aria-live="polite"></div>
+          <p class="dashboard-commitments-empty" id="dashboard-upcoming-commitments-empty">Nenhuma tarefa pendente para acompanhar neste momento.</p>
+        </section>
         <section class="visual-intelligence-section" id="dashboard-visuals" aria-labelledby="visual-intelligence-title">
           <div class="section-heading">
             <div>
@@ -451,6 +490,36 @@
           </div>
 
           <div class="projects-grid" id="projects-list" aria-live="polite" hidden></div>
+        </section>
+
+        <section id="agenda" class="agenda-section" aria-labelledby="agenda-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Planejamento de tarefas</p>
+              <h2 id="agenda-title">Agenda</h2>
+            </div>
+            <span class="period-label">Prazos da sua conta</span>
+          </div>
+
+          <div class="agenda-metrics-grid" aria-live="polite">
+            <article class="agenda-metric-card is-overdue"><span>Atrasadas</span><strong id="agenda-overdue-tasks">0</strong><small>Prazo vencido</small></article>
+            <article class="agenda-metric-card is-today"><span>Vencem hoje</span><strong id="agenda-due-today-tasks">0</strong><small>Prioridade imediata</small></article>
+            <article class="agenda-metric-card is-next-week"><span>Próximos 7 dias</span><strong id="agenda-next-seven-tasks">0</strong><small>Até a próxima semana</small></article>
+            <article class="agenda-metric-card"><span>Próximos 30 dias</span><strong id="agenda-next-thirty-tasks">0</strong><small>Do 8º ao 30º dia</small></article>
+            <article class="agenda-metric-card is-no-date"><span>Sem prazo</span><strong id="agenda-no-date-tasks">0</strong><small>Organize quando puder</small></article>
+          </div>
+
+          <article class="agenda-commitments-panel" aria-labelledby="agenda-commitments-title">
+            <div class="agenda-commitments-heading">
+              <div>
+                <span>Visão ordenada por urgência</span>
+                <h3 id="agenda-commitments-title">Próximos compromissos</h3>
+              </div>
+              <small id="agenda-pending-count">Nenhuma tarefa pendente</small>
+            </div>
+            <div class="agenda-commitments-list" id="agenda-upcoming-commitments" aria-live="polite"></div>
+            <p class="agenda-empty-state" id="agenda-upcoming-empty">Nenhuma tarefa pendente para mostrar na Agenda.</p>
+          </article>
         </section>
 
         <section id="relatorios" class="reports-section" aria-labelledby="reports-title">

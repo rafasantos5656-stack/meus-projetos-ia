@@ -85,6 +85,19 @@ const reportExecutiveAttention = document.querySelector("#report-executive-atten
 const reportExecutiveAttentionEmpty = document.querySelector("#report-executive-attention-empty");
 const reportsExecutiveInsight = document.querySelector("#reports-executive-insight");
 const reportsExecutiveInsightText = document.querySelector("#reports-executive-insight-text");
+const dashboardOverdueTasks = document.querySelector("#dashboard-overdue-tasks");
+const dashboardDueTodayTasks = document.querySelector("#dashboard-due-today-tasks");
+const dashboardNextSevenTasks = document.querySelector("#dashboard-next-seven-tasks");
+const dashboardUpcomingCommitments = document.querySelector("#dashboard-upcoming-commitments");
+const dashboardUpcomingCommitmentsEmpty = document.querySelector("#dashboard-upcoming-commitments-empty");
+const agendaOverdueTasks = document.querySelector("#agenda-overdue-tasks");
+const agendaDueTodayTasks = document.querySelector("#agenda-due-today-tasks");
+const agendaNextSevenTasks = document.querySelector("#agenda-next-seven-tasks");
+const agendaNextThirtyTasks = document.querySelector("#agenda-next-thirty-tasks");
+const agendaNoDateTasks = document.querySelector("#agenda-no-date-tasks");
+const agendaPendingCount = document.querySelector("#agenda-pending-count");
+const agendaUpcomingCommitments = document.querySelector("#agenda-upcoming-commitments");
+const agendaUpcomingEmpty = document.querySelector("#agenda-upcoming-empty");
 
 const localProjectsBackup = loadProjects();
 let projects = [];
@@ -351,6 +364,7 @@ function mapRemoteProjectToInterface(project, projectTasks) {
       id: String(task.id),
       description: String(task.description ?? ""),
       completed: Boolean(task.completed),
+      dueDate: String(task.due_date ?? ""),
     })),
   };
 
@@ -363,7 +377,7 @@ async function fetchRemoteProjectsAndTasks() {
   const userFilter = getUserFilter(context.userId);
   const projectPath = "projects?select=id,name,description,objective,status,priority,project_date&"
     + userFilter + "&order=created_at.desc";
-  const taskPath = "tasks?select=id,project_id,description,completed&"
+  const taskPath = "tasks?select=id,project_id,description,completed,due_date&"
     + userFilter + "&order=created_at.asc";
   const results = await Promise.all([
     supabaseDataRequest(projectPath, { context }),
@@ -459,7 +473,7 @@ async function updateRemoteProject(projectId, project) {
   return asSingleRow(payload, "O projeto não foi encontrado ou não pôde ser atualizado.");
 }
 
-async function createRemoteTask(projectId, description, legacyId = null) {
+async function createRemoteTask(projectId, description, legacyId = null, dueDate) {
   const context = await getAuthenticatedDataContext();
   const body = {
     project_id: projectId,
@@ -467,6 +481,7 @@ async function createRemoteTask(projectId, description, legacyId = null) {
     description,
     completed: false,
   };
+  if (dueDate !== undefined) body.due_date = normalizeOptionalTaskDueDate(dueDate);
   if (legacyId !== null && legacyId !== undefined) body.legacy_id = legacyId;
 
   const payload = await supabaseDataRequest("tasks", {
@@ -488,6 +503,21 @@ async function updateRemoteTaskCompletion(taskId, completed) {
       context,
       prefer: "return=representation",
       body: { completed },
+    },
+  );
+
+  return asSingleRow(payload, "A tarefa não foi encontrada ou não pôde ser atualizada.");
+}
+
+async function updateRemoteTaskDueDate(taskId, dueDate) {
+  const context = await getAuthenticatedDataContext();
+  const payload = await supabaseDataRequest(
+    "tasks?" + getIdFilter("id", taskId) + "&" + getUserFilter(context.userId),
+    {
+      method: "PATCH",
+      context,
+      prefer: "return=representation",
+      body: { due_date: normalizeOptionalTaskDueDate(dueDate) },
     },
   );
 
@@ -828,6 +858,82 @@ function isOverdue(project) {
   return projectDate < today;
 }
 
+const TASK_DEADLINE_ORDER = Object.freeze({
+  overdue: 0,
+  today: 1,
+  "next-7": 2,
+  "next-30": 3,
+  later: 4,
+  "no-date": 5,
+  completed: 6,
+});
+
+function normalizeOptionalTaskDueDate(value) {
+  const dueDate = String(value ?? "").trim();
+  return parseProjectDate(dueDate) ? dueDate : null;
+}
+
+function getCalendarDayDifference(firstDate, secondDate) {
+  const firstCalendarDay = Date.UTC(firstDate.getFullYear(), firstDate.getMonth(), firstDate.getDate());
+  const secondCalendarDay = Date.UTC(secondDate.getFullYear(), secondDate.getMonth(), secondDate.getDate());
+  return Math.round((firstCalendarDay - secondCalendarDay) / 86400000);
+}
+
+function getTaskDeadlineState(task, today = parseProjectDate(getToday())) {
+  const dueDate = parseProjectDate(task?.dueDate);
+  if (task?.completed) {
+    return { key: "completed", label: "Concluída", dueDate, daysUntil: null, isUrgent: false };
+  }
+  if (!dueDate) {
+    return { key: "no-date", label: "Sem prazo", dueDate: null, daysUntil: null, isUrgent: false };
+  }
+
+  const daysUntil = getCalendarDayDifference(dueDate, today);
+  if (daysUntil < 0) return { key: "overdue", label: "Atrasada", dueDate, daysUntil, isUrgent: true };
+  if (daysUntil === 0) return { key: "today", label: "Vence hoje", dueDate, daysUntil, isUrgent: true };
+  if (daysUntil <= 7) return { key: "next-7", label: "Próximos 7 dias", dueDate, daysUntil, isUrgent: false };
+  if (daysUntil <= 30) return { key: "next-30", label: "Próximos 30 dias", dueDate, daysUntil, isUrgent: false };
+  return { key: "later", label: "Mais adiante", dueDate, daysUntil, isUrgent: false };
+}
+
+function getTaskDeadlineRows(projectCollection = projects) {
+  const today = parseProjectDate(getToday());
+  const rows = [];
+  (projectCollection ?? []).forEach((project) => {
+    (project.tasks ?? []).forEach((task) => {
+      rows.push({ project, task, deadline: getTaskDeadlineState(task, today) });
+    });
+  });
+  return rows;
+}
+
+function compareTaskDeadlineRows(firstRow, secondRow) {
+  const categoryDifference = TASK_DEADLINE_ORDER[firstRow.deadline.key] - TASK_DEADLINE_ORDER[secondRow.deadline.key];
+  if (categoryDifference !== 0) return categoryDifference;
+  const firstDueTime = firstRow.deadline.dueDate?.getTime() ?? Number.POSITIVE_INFINITY;
+  const secondDueTime = secondRow.deadline.dueDate?.getTime() ?? Number.POSITIVE_INFINITY;
+  if (firstDueTime !== secondDueTime) return firstDueTime - secondDueTime;
+  const priorityDifference = getPriorityValue(secondRow.project.priority) - getPriorityValue(firstRow.project.priority);
+  if (priorityDifference !== 0) return priorityDifference;
+  return String(firstRow.task.description ?? "").localeCompare(String(secondRow.task.description ?? ""), "pt-BR", { sensitivity: "base" });
+}
+
+function getTaskDeadlineSummary(projectCollection = projects) {
+  const allRows = getTaskDeadlineRows(projectCollection);
+  const pendingRows = allRows.filter((row) => !row.task.completed).sort(compareTaskDeadlineRows);
+  const countByState = (state) => pendingRows.filter((row) => row.deadline.key === state).length;
+  return {
+    allRows,
+    pendingRows,
+    overdue: countByState("overdue"),
+    today: countByState("today"),
+    next7: countByState("next-7"),
+    next30: countByState("next-30"),
+    later: countByState("later"),
+    noDate: countByState("no-date"),
+  };
+}
+
 function hasPendingTasks(project) {
   return (project.tasks ?? []).some((task) => !task.completed);
 }
@@ -899,10 +1005,105 @@ function createActionButton(label, icon, action) {
   return button;
 }
 
-function createTaskItem(project, task) {
-  const item = document.createElement("li");
-  item.className = "task-item";
+function createTaskDeadlineBadge(deadline) {
+  const badge = document.createElement("span");
+  badge.className = `task-deadline-badge is-${deadline.key}`;
+  badge.textContent = deadline.label;
+  return badge;
+}
 
+function createTaskDeadlineEditor(project, task) {
+  const editor = document.createElement("form");
+  editor.className = "task-deadline-editor";
+  editor.dataset.taskDeadlineForm = "true";
+  editor.dataset.projectId = project.id;
+  editor.dataset.taskId = task.id;
+
+  const field = document.createElement("label");
+  field.className = "task-deadline-editor-field";
+  const fieldLabel = document.createElement("span");
+  fieldLabel.textContent = "Prazo";
+  const input = document.createElement("input");
+  input.type = "date";
+  input.name = "taskDueDate";
+  input.value = task.dueDate || "";
+  input.setAttribute("aria-label", `Prazo da tarefa: ${task.description}`);
+  field.append(fieldLabel, input);
+
+  const actions = document.createElement("div");
+  actions.className = "task-deadline-editor-actions";
+  const saveButton = document.createElement("button");
+  saveButton.type = "submit";
+  saveButton.className = "task-deadline-save-button";
+  saveButton.textContent = "Salvar prazo";
+
+  const removeButton = document.createElement("button");
+  removeButton.type = "button";
+  removeButton.className = "task-deadline-text-button";
+  removeButton.textContent = "Remover prazo";
+  removeButton.disabled = !task.dueDate;
+  removeButton.dataset.action = "remove-task-deadline";
+  removeButton.dataset.projectId = project.id;
+  removeButton.dataset.taskId = task.id;
+
+  const cancelButton = document.createElement("button");
+  cancelButton.type = "button";
+  cancelButton.className = "task-deadline-text-button";
+  cancelButton.textContent = "Cancelar";
+  cancelButton.dataset.action = "cancel-task-deadline-edit";
+  cancelButton.dataset.projectId = project.id;
+  cancelButton.dataset.taskId = task.id;
+
+  actions.append(saveButton, removeButton, cancelButton);
+  editor.append(field, actions);
+  return editor;
+}
+
+function openTaskDeadlineEditor(triggerButton, project, task) {
+  const taskItem = triggerButton.closest(".task-item");
+  if (!taskItem) return;
+
+  const existingEditor = taskItem.querySelector("[data-task-deadline-form]");
+  if (existingEditor) {
+    existingEditor.elements.taskDueDate?.focus();
+    return;
+  }
+
+  projectsList.querySelectorAll("[data-task-deadline-form]").forEach((editor) => editor.remove());
+  const editor = createTaskDeadlineEditor(project, task);
+  taskItem.append(editor);
+  editor.elements.taskDueDate?.focus();
+}
+
+function setTaskDeadlineEditorSaving(editor) {
+  editor.dataset.saving = "true";
+  editor.setAttribute("aria-busy", "true");
+  editor.querySelectorAll("input, button").forEach((control) => {
+    control.disabled = true;
+  });
+  const saveButton = editor.querySelector("button[type=submit]");
+  if (saveButton) saveButton.textContent = "Salvando…";
+}
+
+async function saveTaskDeadline(project, task, dueDate, editor) {
+  if (editor?.dataset.saving === "true" || !canManageSupabaseData()) return;
+
+  setTaskDeadlineEditorSaving(editor);
+  try {
+    const remoteTask = await updateRemoteTaskDueDate(task.id, dueDate);
+    task.dueDate = String(remoteTask.due_date ?? "");
+    renderProjects();
+    showDataMessage(task.dueDate ? "Prazo da tarefa atualizado." : "Prazo removido. A tarefa ficou sem prazo.");
+  } catch (error) {
+    // O prazo em memória só muda após a resposta do Supabase; a renderização restaura o valor original.
+    renderProjects();
+    showDataMessage(getDataErrorMessage(error, "Não foi possível atualizar o prazo da tarefa. Tente novamente."));
+  }
+}
+function createTaskItem(project, task) {
+  const deadline = getTaskDeadlineState(task);
+  const item = document.createElement("li");
+  item.className = `task-item is-deadline-${deadline.key}`;
   const label = document.createElement("label");
   label.className = "task-label";
   const checkbox = document.createElement("input");
@@ -912,12 +1113,30 @@ function createTaskItem(project, task) {
   checkbox.dataset.projectId = project.id;
   checkbox.dataset.taskId = task.id;
   checkbox.setAttribute("aria-label", `Marcar tarefa: ${task.description}`);
-
+  const copy = document.createElement("span");
+  copy.className = "task-copy";
   const description = document.createElement("span");
   description.className = "task-description";
   if (task.completed) description.classList.add("is-completed");
   description.textContent = task.description;
-  label.append(checkbox, description);
+  const deadlineInfo = document.createElement("span");
+  deadlineInfo.className = "task-deadline";
+  const deadlineDate = document.createElement("span");
+  deadlineDate.className = "task-deadline-date";
+  deadlineDate.textContent = task.dueDate ? `Prazo: ${formatDate(task.dueDate)}` : "Sem prazo definido";
+  deadlineInfo.append(deadlineDate, createTaskDeadlineBadge(deadline));
+  copy.append(description, deadlineInfo);
+  label.append(checkbox, copy);
+  const actions = document.createElement("div");
+  actions.className = "task-actions";
+  const editDeadlineButton = document.createElement("button");
+  editDeadlineButton.type = "button";
+  editDeadlineButton.className = "task-deadline-edit-button";
+  editDeadlineButton.textContent = "Editar prazo";
+  editDeadlineButton.dataset.action = "edit-task-deadline";
+  editDeadlineButton.dataset.projectId = project.id;
+  editDeadlineButton.dataset.taskId = task.id;
+  editDeadlineButton.setAttribute("aria-label", `Editar prazo da tarefa: ${task.description}`);
 
   const deleteButton = createActionButton(
     "Excluir tarefa",
@@ -927,8 +1146,8 @@ function createTaskItem(project, task) {
   deleteButton.classList.add("task-delete-button");
   deleteButton.dataset.projectId = project.id;
   deleteButton.dataset.taskId = task.id;
-
-  item.append(label, deleteButton);
+  actions.append(editDeadlineButton, deleteButton);
+  item.append(label, actions);
   return item;
 }
 
@@ -936,12 +1155,10 @@ function createTasksSection(project) {
   const section = document.createElement("section");
   section.className = "tasks-section";
   section.setAttribute("aria-label", `Tarefas do projeto ${project.name}`);
-
   const tasks = project.tasks ?? [];
   const completedTasks = tasks.filter((task) => task.completed).length;
   const pendingTasks = tasks.length - completedTasks;
   const progress = calculateProgress(project);
-
   const progressHeader = document.createElement("div");
   progressHeader.className = "progress-header";
   const progressLabel = document.createElement("span");
@@ -949,7 +1166,6 @@ function createTasksSection(project) {
   const progressValue = document.createElement("strong");
   progressValue.textContent = `${progress}%`;
   progressHeader.append(progressLabel, progressValue);
-
   const progressBar = document.createElement("div");
   progressBar.className = "progress-bar";
   progressBar.setAttribute("role", "progressbar");
@@ -960,7 +1176,6 @@ function createTasksSection(project) {
   const progressFill = document.createElement("span");
   progressFill.style.width = `${progress}%`;
   progressBar.append(progressFill);
-
   const tasksHeader = document.createElement("div");
   tasksHeader.className = "tasks-header";
   const title = document.createElement("h4");
@@ -968,7 +1183,6 @@ function createTasksSection(project) {
   const counter = document.createElement("span");
   counter.textContent = `${completedTasks}/${tasks.length} concluídas · ${pendingTasks} pendentes`;
   tasksHeader.append(title, counter);
-
   const taskList = document.createElement("ul");
   taskList.className = "task-list";
   if (tasks.length === 0) {
@@ -979,27 +1193,35 @@ function createTasksSection(project) {
   } else {
     taskList.append(...tasks.map((task) => createTaskItem(project, task)));
   }
-
   const addTaskForm = document.createElement("form");
   addTaskForm.className = "add-task-form";
   addTaskForm.dataset.taskForm = "true";
   addTaskForm.dataset.projectId = project.id;
   const taskInput = document.createElement("input");
+  taskInput.className = "task-description-input";
   taskInput.type = "text";
   taskInput.name = "taskDescription";
   taskInput.placeholder = "Adicionar uma tarefa";
   taskInput.setAttribute("aria-label", "Descrição da nova tarefa");
   taskInput.maxLength = 160;
   taskInput.required = true;
+  const dueDateField = document.createElement("label");
+  dueDateField.className = "task-due-date-field";
+  const dueDateLabel = document.createElement("span");
+  dueDateLabel.textContent = "Prazo";
+  const dueDateInput = document.createElement("input");
+  dueDateInput.className = "task-due-date-input";
+  dueDateInput.type = "date";
+  dueDateInput.name = "taskDueDate";
+  dueDateInput.setAttribute("aria-label", "Prazo opcional da nova tarefa");
+  dueDateField.append(dueDateLabel, dueDateInput);
   const addButton = document.createElement("button");
   addButton.type = "submit";
   addButton.textContent = "Adicionar";
-  addTaskForm.append(taskInput, addButton);
-
+  addTaskForm.append(taskInput, dueDateField, addButton);
   section.append(progressHeader, progressBar, tasksHeader, taskList, addTaskForm);
   return section;
 }
-
 function createProjectCard(project) {
   const card = document.createElement("article");
   card.className = "project-card";
@@ -1514,6 +1736,7 @@ function getDashboardData() {
   const averageProgressValue = projects.length === 0
     ? 0
     : Math.round(projects.reduce((total, project) => total + calculateProgress(project), 0) / projects.length);
+  const deadlineSummary = getTaskDeadlineSummary(projects);
 
   return {
     totalProjects: projects.length,
@@ -1526,7 +1749,78 @@ function getDashboardData() {
     pendingTasks: pendingTasksCount,
     averageProgress: averageProgressValue,
     attentionProjects,
+    deadlineSummary,
   };
+}
+
+function createDashboardCommitmentItem(row) {
+  const item = document.createElement("article");
+  item.className = `dashboard-commitment-item is-${row.deadline.key}`;
+  const copy = document.createElement("div");
+  copy.className = "dashboard-commitment-copy";
+  const title = document.createElement("strong");
+  title.textContent = row.task.description;
+  const details = document.createElement("span");
+  details.textContent = `${row.project.name} · ${row.task.dueDate ? formatDate(row.task.dueDate) : "Sem prazo"}`;
+  copy.append(title, details);
+  item.append(copy, createTaskDeadlineBadge(row.deadline));
+  return item;
+}
+
+function renderDashboardCommitments(deadlineSummary) {
+  if (!dashboardUpcomingCommitments || !dashboardUpcomingCommitmentsEmpty) return;
+  const urgentRows = deadlineSummary.pendingRows.slice(0, 4);
+  const hasCommitments = urgentRows.length > 0;
+  dashboardUpcomingCommitments.hidden = !hasCommitments;
+  dashboardUpcomingCommitmentsEmpty.hidden = hasCommitments;
+  dashboardUpcomingCommitments.replaceChildren(...urgentRows.map(createDashboardCommitmentItem));
+}
+
+function createAgendaBadge(text, className) {
+  const badge = document.createElement("span");
+  badge.className = className;
+  badge.textContent = text;
+  return badge;
+}
+
+function createAgendaCommitmentItem(row) {
+  const item = document.createElement("article");
+  item.className = `agenda-commitment-item is-${row.deadline.key}`;
+  const copy = document.createElement("div");
+  copy.className = "agenda-commitment-copy";
+  const taskName = document.createElement("strong");
+  taskName.textContent = row.task.description;
+  const projectName = document.createElement("span");
+  projectName.textContent = `${row.project.name} · ${row.task.dueDate ? `Prazo: ${formatDate(row.task.dueDate)}` : "Sem prazo definido"}`;
+  copy.append(taskName, projectName);
+  const metadata = document.createElement("div");
+  metadata.className = "agenda-commitment-meta";
+  metadata.append(
+    createTaskDeadlineBadge(row.deadline),
+    createAgendaBadge(`Prioridade ${row.project.priority}`, `badge priority-${formatClass(row.project.priority)}`),
+    createAgendaBadge(row.project.status, `badge status-${formatClass(row.project.status)}`),
+  );
+  item.append(copy, metadata);
+  return item;
+}
+
+function renderAgenda() {
+  if (!agendaUpcomingCommitments || !agendaUpcomingEmpty) return;
+  const deadlineSummary = getTaskDeadlineSummary(projects);
+  if (agendaOverdueTasks) agendaOverdueTasks.textContent = String(deadlineSummary.overdue);
+  if (agendaDueTodayTasks) agendaDueTodayTasks.textContent = String(deadlineSummary.today);
+  if (agendaNextSevenTasks) agendaNextSevenTasks.textContent = String(deadlineSummary.next7);
+  if (agendaNextThirtyTasks) agendaNextThirtyTasks.textContent = String(deadlineSummary.next30);
+  if (agendaNoDateTasks) agendaNoDateTasks.textContent = String(deadlineSummary.noDate);
+  if (agendaPendingCount) {
+    agendaPendingCount.textContent = deadlineSummary.pendingRows.length
+      ? `${deadlineSummary.pendingRows.length} tarefa${deadlineSummary.pendingRows.length === 1 ? "" : "s"} pendente${deadlineSummary.pendingRows.length === 1 ? "" : "s"}`
+      : "Nenhuma tarefa pendente";
+  }
+  const hasCommitments = deadlineSummary.pendingRows.length > 0;
+  agendaUpcomingCommitments.hidden = !hasCommitments;
+  agendaUpcomingEmpty.hidden = hasCommitments;
+  agendaUpcomingCommitments.replaceChildren(...deadlineSummary.pendingRows.map(createAgendaCommitmentItem));
 }
 
 function renderAttentionProjects(attentionProjects) {
@@ -1556,6 +1850,10 @@ function updateDashboard() {
   overviewCompletedTasks.textContent = dashboard.completedTasks;
   overviewPendingTasks.textContent = dashboard.pendingTasks;
   renderAttentionProjects(dashboard.attentionProjects);
+  if (dashboardOverdueTasks) dashboardOverdueTasks.textContent = String(dashboard.deadlineSummary.overdue);
+  if (dashboardDueTodayTasks) dashboardDueTodayTasks.textContent = String(dashboard.deadlineSummary.today);
+  if (dashboardNextSevenTasks) dashboardNextSevenTasks.textContent = String(dashboard.deadlineSummary.next7);
+  renderDashboardCommitments(dashboard.deadlineSummary);
   renderDashboardVisuals();
 }
 
@@ -2145,6 +2443,7 @@ function renderProjects() {
   projectsList.hidden = !hasFilteredProjects;
   projectsList.replaceChildren(...filteredProjects.map(createProjectCard));
   updateDashboard();
+  renderAgenda();
   renderReports();
 }
 
@@ -2307,25 +2606,44 @@ projectForm.addEventListener("submit", async (event) => {
 });
 
 projectsList.addEventListener("submit", async (event) => {
+  const taskDeadlineForm = event.target.closest("[data-task-deadline-form]");
+  if (taskDeadlineForm) {
+    event.preventDefault();
+    if (!taskDeadlineForm.reportValidity() || !canManageSupabaseData()) return;
+
+    const project = projects.find((item) => item.id === taskDeadlineForm.dataset.projectId);
+    const task = project?.tasks.find((item) => item.id === taskDeadlineForm.dataset.taskId);
+    if (!project || !task) return;
+
+    await saveTaskDeadline(
+      project,
+      task,
+      String(taskDeadlineForm.elements.taskDueDate?.value ?? ""),
+      taskDeadlineForm,
+    );
+    return;
+  }
+
   const addTaskForm = event.target.closest("[data-task-form]");
   if (!addTaskForm) return;
-
   event.preventDefault();
   if (!addTaskForm.reportValidity() || !canManageSupabaseData()) return;
 
   const project = projects.find((item) => item.id === addTaskForm.dataset.projectId);
   const taskDescription = addTaskForm.elements.taskDescription.value.trim();
+  const taskDueDate = String(addTaskForm.elements.taskDueDate?.value ?? "");
   if (!project || !taskDescription) return;
 
   const addButton = addTaskForm.querySelector("button[type=submit]");
   if (addButton) addButton.disabled = true;
 
   try {
-    const remoteTask = await createRemoteTask(project.id, taskDescription);
+    const remoteTask = await createRemoteTask(project.id, taskDescription, null, taskDueDate);
     project.tasks.push({
       id: String(remoteTask.id),
       description: String(remoteTask.description ?? taskDescription),
       completed: Boolean(remoteTask.completed),
+      dueDate: String(remoteTask.due_date ?? ""),
     });
     renderProjects();
     showDataMessage("Tarefa adicionada com sucesso.");
@@ -2365,6 +2683,32 @@ projectsList.addEventListener("click", async (event) => {
   const projectId = actionButton.dataset.projectId || actionButton.dataset.id;
   const project = projects.find((item) => item.id === projectId);
   if (!project) return;
+
+  if (actionButton.dataset.action === "edit-task-deadline") {
+    if (!canManageSupabaseData()) return;
+    const task = project.tasks.find((item) => item.id === actionButton.dataset.taskId);
+    if (!task) return;
+    openTaskDeadlineEditor(actionButton, project, task);
+    return;
+  }
+
+  if (actionButton.dataset.action === "cancel-task-deadline-edit") {
+    const editor = actionButton.closest("[data-task-deadline-form]");
+    editor?.remove();
+    const editButton = Array.from(projectsList.querySelectorAll('[data-action="edit-task-deadline"]'))
+      .find((button) => button.dataset.taskId === actionButton.dataset.taskId);
+    editButton?.focus();
+    return;
+  }
+
+  if (actionButton.dataset.action === "remove-task-deadline") {
+    if (!canManageSupabaseData()) return;
+    const task = project.tasks.find((item) => item.id === actionButton.dataset.taskId);
+    const editor = actionButton.closest("[data-task-deadline-form]");
+    if (!task || !editor || !task.dueDate) return;
+    await saveTaskDeadline(project, task, "", editor);
+    return;
+  }
 
   if (actionButton.dataset.action === "edit") {
     if (!canManageSupabaseData()) return;
