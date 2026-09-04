@@ -165,7 +165,10 @@
             <h1>Visão geral</h1>
           </div>
           <div class="user-actions">
-            <button class="profile-button" id="open-profile-from-header" type="button" aria-label="Abrir meu perfil">
+            <button class="notification-toggle" id="notification-toggle" type="button" aria-label="Abrir notificações" aria-expanded="false" aria-controls="notification-drawer">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg>
+              <span class="notification-count" id="notification-unread-count" hidden>0</span>
+            </button>            <button class="profile-button" id="open-profile-from-header" type="button" aria-label="Abrir meu perfil">
               <span class="avatar" id="user-avatar">MP</span>
               <span class="profile-name" id="authenticated-user-email">Meu perfil</span>
             </button>
@@ -343,6 +346,17 @@
           </div>
           <div class="dashboard-commitments-list" id="dashboard-upcoming-commitments" aria-live="polite"></div>
           <p class="dashboard-commitments-empty" id="dashboard-upcoming-commitments-empty">Nenhuma tarefa pendente para acompanhar neste momento.</p>
+        </section>
+        <section class="notification-attention-section" aria-labelledby="notification-attention-title">
+          <div class="section-heading compact-heading">
+            <div>
+              <p class="eyebrow">Decisões prioritárias</p>
+              <h2 id="notification-attention-title">O que exige sua atenção agora</h2>
+            </div>
+            <button class="text-button" id="open-notifications-from-dashboard" type="button">Ver central <span aria-hidden="true">→</span></button>
+          </div>
+          <div class="notification-attention-list" id="dashboard-notification-attention" aria-live="polite"></div>
+          <p class="notification-attention-empty" id="dashboard-notification-attention-empty">Nenhum alerta crítico no momento.</p>
         </section>
         <section class="visual-intelligence-section" id="dashboard-visuals" aria-labelledby="visual-intelligence-title">
           <div class="section-heading">
@@ -756,6 +770,32 @@
       </main>
     </div>
 
+<div class="notification-backdrop" id="notification-backdrop" hidden>
+      <aside class="notification-drawer" id="notification-drawer" role="dialog" aria-modal="true" aria-labelledby="notification-drawer-title" tabindex="-1">
+        <header class="notification-drawer-header">
+          <div>
+            <p class="eyebrow">Acompanhamento interno</p>
+            <h2 id="notification-drawer-title">Notificações</h2>
+          </div>
+          <button class="notification-close-button" id="notification-close-button" type="button" aria-label="Fechar notificações">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </header>
+        <div class="notification-drawer-controls">
+          <div class="notification-filter-list" role="group" aria-label="Filtrar notificações">
+            <button class="notification-filter-button is-active" type="button" data-notification-filter="all" aria-pressed="true">Todas</button>
+            <button class="notification-filter-button" type="button" data-notification-filter="unread" aria-pressed="false">Não lidas</button>
+            <button class="notification-filter-button" type="button" data-notification-filter="critical" aria-pressed="false">Críticas</button>
+            <button class="notification-filter-button" type="button" data-notification-filter="project" aria-pressed="false">Projetos</button>
+            <button class="notification-filter-button" type="button" data-notification-filter="task" aria-pressed="false">Tarefas</button>
+          </div>
+          <button class="notification-mark-all-button" id="notification-mark-all-button" type="button">Marcar todas como lidas</button>
+        </div>
+        <p class="notification-drawer-summary" id="notification-drawer-summary" aria-live="polite"></p>
+        <div class="notification-list" id="notification-list" aria-live="polite"></div>
+        <p class="notification-empty-state" id="notification-empty-state">Nenhuma notificação para este filtro.</p>
+      </aside>
+    </div>
 <p class="app-message" id="app-message" role="status" aria-live="polite" hidden></p>
 
     <div class="modal-backdrop" id="project-modal" aria-hidden="true">

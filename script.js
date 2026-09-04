@@ -98,6 +98,19 @@ const agendaNoDateTasks = document.querySelector("#agenda-no-date-tasks");
 const agendaPendingCount = document.querySelector("#agenda-pending-count");
 const agendaUpcomingCommitments = document.querySelector("#agenda-upcoming-commitments");
 const agendaUpcomingEmpty = document.querySelector("#agenda-upcoming-empty");
+const notificationToggle = document.querySelector("#notification-toggle");
+const notificationUnreadCount = document.querySelector("#notification-unread-count");
+const notificationBackdrop = document.querySelector("#notification-backdrop");
+const notificationDrawer = document.querySelector("#notification-drawer");
+const notificationCloseButton = document.querySelector("#notification-close-button");
+const notificationFilterButtons = document.querySelectorAll("[data-notification-filter]");
+const notificationMarkAllButton = document.querySelector("#notification-mark-all-button");
+const notificationDrawerSummary = document.querySelector("#notification-drawer-summary");
+const notificationList = document.querySelector("#notification-list");
+const notificationEmptyState = document.querySelector("#notification-empty-state");
+const dashboardNotificationAttention = document.querySelector("#dashboard-notification-attention");
+const dashboardNotificationAttentionEmpty = document.querySelector("#dashboard-notification-attention-empty");
+const openNotificationsFromDashboard = document.querySelector("#open-notifications-from-dashboard");
 
 const localProjectsBackup = loadProjects();
 let projects = [];
@@ -108,6 +121,15 @@ let isSupabaseDataReady = false;
 let isSupabaseDataLoading = false;
 let isMigrationRunning = false;
 let activeSupabaseUserId = null;
+const NOTIFICATION_STORAGE_PREFIX = "meus_projetos_ia_notifications_";
+const NOTIFICATION_LEVEL_ORDER = Object.freeze({ Crítico: 0, Alto: 1, Médio: 2, Informativo: 3 });
+const NOTIFICATION_READ_MAX_AGE_DAYS = 90;
+let activeNotificationFilter = "all";
+let notificationReadStateUserId = null;
+let notificationReadState = { read: {} };
+let currentNotifications = [];
+let notificationReturnFocus = null;
+let notificationMidnightTimer = null;
 let dataMessageTimeout;
 let confirmationResolver = null;
 let confirmationReturnFocus = null;
@@ -781,6 +803,7 @@ window.addEventListener("supabase-auth-signed-out", () => {
   isMigrationRunning = false;
   activeSupabaseUserId = null;
   projects = [];
+  closeNotificationDrawer(false);
   renderProjects();
 });
 
@@ -934,6 +957,532 @@ function getTaskDeadlineSummary(projectCollection = projects) {
   };
 }
 
+function getNotificationStorageKey(userId = activeSupabaseUserId) {
+  return userId ? `${NOTIFICATION_STORAGE_PREFIX}${userId}` : null;
+}
+
+function loadNotificationReadState(userId = activeSupabaseUserId) {
+  const storageKey = getNotificationStorageKey(userId);
+  if (!storageKey) return { read: {} };
+
+  try {
+    const savedState = JSON.parse(localStorage.getItem(storageKey) ?? "");
+    if (!savedState || typeof savedState !== "object" || !savedState.read || typeof savedState.read !== "object") {
+      return { read: {} };
+    }
+    const read = {};
+    Object.entries(savedState.read).forEach(([key, readAt]) => {
+      if (typeof key === "string" && typeof readAt === "string" && Number.isFinite(Date.parse(readAt))) {
+        read[key] = readAt;
+      }
+    });
+    return { read };
+  } catch {
+    return { read: {} };
+  }
+}
+
+function saveNotificationReadState() {
+  const storageKey = getNotificationStorageKey();
+  if (!storageKey) return;
+
+  try {
+    localStorage.setItem(storageKey, JSON.stringify({ read: notificationReadState.read }));
+  } catch {
+    // A central continua funcional durante a sessão se o navegador bloquear o armazenamento local.
+  }
+}
+
+function ensureNotificationReadState() {
+  if (notificationReadStateUserId === activeSupabaseUserId) return;
+  notificationReadStateUserId = activeSupabaseUserId;
+  notificationReadState = loadNotificationReadState(activeSupabaseUserId);
+}
+
+function createNotificationKey(...parts) {
+  return parts.map((part) => encodeURIComponent(String(part ?? ""))).join(":");
+}
+
+function getNotificationLevelClass(level) {
+  return { Crítico: "critical", Alto: "high", Médio: "medium", Informativo: "informative" }[level] ?? "informative";
+}
+
+function createNotification({ key, level, scope, category, title, description, project, task = null, dueDate = null, action }) {
+  return {
+    key,
+    level,
+    levelOrder: NOTIFICATION_LEVEL_ORDER[level] ?? NOTIFICATION_LEVEL_ORDER.Informativo,
+    scope,
+    category,
+    title,
+    description,
+    project,
+    task,
+    dueDate,
+    dueTime: parseProjectDate(dueDate)?.getTime() ?? Number.POSITIVE_INFINITY,
+    priorityValue: getPriorityValue(project?.priority),
+    progress: project ? calculateProgress(project) : 100,
+    action,
+  };
+}
+
+function getProjectNotificationCandidate(project) {
+  const tasks = project.tasks ?? [];
+  const progress = calculateProgress(project);
+
+  if (isOverdue(project)) {
+    const level = project.priority === "Alta" ? "Crítico" : "Alto";
+    return createNotification({
+      key: createNotificationKey("project-overdue", level, project.id),
+      level,
+      scope: "project",
+      category: "project-overdue",
+      title: level === "Crítico" ? "Projeto atrasado de alta prioridade" : "Projeto atrasado",
+      description: `${project.name} está com a data do projeto vencida.`,
+      project,
+      dueDate: project.date,
+      action: "reports-overdue",
+    });
+  }
+
+  if (project.priority === "Alta" && hasPendingTasks(project)) {
+    return createNotification({
+      key: createNotificationKey("project-high-pending", "Alto", project.id),
+      level: "Alto",
+      scope: "project",
+      category: "project-high-pending",
+      title: "Projeto de alta prioridade com pendências",
+      description: `${project.name} ainda possui tarefas pendentes.`,
+      project,
+      action: "project",
+    });
+  }
+
+  if (project.status === "Em andamento" && tasks.length > 0 && progress < 50) {
+    return createNotification({
+      key: createNotificationKey("project-low-progress", "Médio", project.id),
+      level: "Médio",
+      scope: "project",
+      category: "project-low-progress",
+      title: "Projeto em andamento com baixo progresso",
+      description: `${project.name} está em ${progress}% de progresso.`,
+      project,
+      action: "project",
+    });
+  }
+
+  if (tasks.length === 0) {
+    return createNotification({
+      key: createNotificationKey("project-no-tasks", "Informativo", project.id),
+      level: "Informativo",
+      scope: "project",
+      category: "project-no-tasks",
+      title: "Projeto sem tarefas cadastradas",
+      description: `${project.name} ainda não possui tarefas para acompanhar.`,
+      project,
+      action: "project",
+    });
+  }
+
+  return null;
+}
+
+function getTaskNotifications(project) {
+  const overdueRows = [];
+  const noDeadlineRows = [];
+  const alerts = [];
+  const today = parseProjectDate(getToday());
+
+  (project.tasks ?? []).forEach((task) => {
+    if (task.completed) return;
+    const deadline = getTaskDeadlineState(task, today);
+
+    if (deadline.key === "overdue") {
+      overdueRows.push({ task, deadline });
+      return;
+    }
+
+    if (deadline.key === "today") {
+      alerts.push(createNotification({
+        key: createNotificationKey("task-today", "Alto", project.id, task.id),
+        level: "Alto",
+        scope: "task",
+        category: "task-today",
+        title: "Tarefa vence hoje",
+        description: `${task.description} precisa ser concluída hoje.`,
+        project,
+        task,
+        dueDate: task.dueDate,
+        action: "agenda",
+      }));
+      return;
+    }
+
+    if (deadline.key === "next-7" && deadline.daysUntil <= 3) {
+      alerts.push(createNotification({
+        key: createNotificationKey("task-next-three-days", "Médio", project.id, task.id),
+        level: "Médio",
+        scope: "task",
+        category: "task-next-three-days",
+        title: "Tarefa vence nos próximos 3 dias",
+        description: `${task.description} vence em ${deadline.daysUntil} dia${deadline.daysUntil === 1 ? "" : "s"}.`,
+        project,
+        task,
+        dueDate: task.dueDate,
+        action: "agenda",
+      }));
+      return;
+    }
+
+    if (deadline.key === "no-date" && project.priority === "Alta") noDeadlineRows.push(task);
+  });
+
+  if (overdueRows.length) {
+    overdueRows.sort((first, second) => first.deadline.dueDate - second.deadline.dueDate);
+    const isCritical = project.priority === "Alta" || overdueRows.some((row) => row.deadline.daysUntil <= -7);
+    const level = isCritical ? "Crítico" : "Alto";
+    const taskIds = overdueRows.map((row) => row.task.id).sort().join(",");
+    const taskCount = overdueRows.length;
+    alerts.push(createNotification({
+      key: createNotificationKey("task-overdue", level, project.id, taskIds),
+      level,
+      scope: "task",
+      category: "task-overdue",
+      title: taskCount === 1 ? "Tarefa atrasada" : `${taskCount} tarefas atrasadas`,
+      description: taskCount === 1
+        ? `${overdueRows[0].task.description} está com o prazo vencido.`
+        : `${project.name} possui ${taskCount} tarefas com prazo vencido.`,
+      project,
+      task: overdueRows[0].task,
+      dueDate: overdueRows[0].task.dueDate,
+      action: "agenda",
+    }));
+  }
+
+  if (noDeadlineRows.length) {
+    const taskCount = noDeadlineRows.length;
+    alerts.push(createNotification({
+      key: createNotificationKey("task-no-deadline", "Médio", project.id),
+      level: "Médio",
+      scope: "task",
+      category: "task-no-deadline",
+      title: `${project.name} — ${taskCount} tarefa${taskCount === 1 ? "" : "s"} sem prazo`,
+      description: `Este projeto é de alta prioridade e possui ${taskCount} tarefa${taskCount === 1 ? "" : "s"} sem prazo definido.`,
+      project,
+      action: "view-tasks",
+    }));
+  }
+
+  return alerts;
+}
+
+function compareNotifications(first, second) {
+  if (first.levelOrder !== second.levelOrder) return first.levelOrder - second.levelOrder;
+  if (first.dueTime !== second.dueTime) return first.dueTime - second.dueTime;
+  if (first.priorityValue !== second.priorityValue) return second.priorityValue - first.priorityValue;
+  if (first.progress !== second.progress) return first.progress - second.progress;
+  return first.title.localeCompare(second.title, "pt-BR", { sensitivity: "base" });
+}
+
+function getNotifications() {
+  const taskAlerts = projects.flatMap((project) => getTaskNotifications(project));
+  const projectAlerts = projects
+    .map((project) => getProjectNotificationCandidate(project))
+    .filter(Boolean)
+    .filter((alert) => !taskAlerts.some((taskAlert) => (
+      taskAlert.project === alert.project && taskAlert.levelOrder <= alert.levelOrder
+    )));
+
+  return [...taskAlerts, ...projectAlerts].sort(compareNotifications);
+}
+
+function pruneNotificationReadState(alerts) {
+  ensureNotificationReadState();
+  if (!activeSupabaseUserId) return;
+
+  const activeKeys = new Set(alerts.map((alert) => alert.key));
+  const cutoff = Date.now() - NOTIFICATION_READ_MAX_AGE_DAYS * 86400000;
+  let changed = false;
+  Object.entries(notificationReadState.read).forEach(([key, readAt]) => {
+    if (!activeKeys.has(key) && Date.parse(readAt) < cutoff) {
+      delete notificationReadState.read[key];
+      changed = true;
+    }
+  });
+
+  const storedEntries = Object.entries(notificationReadState.read).sort((first, second) => Date.parse(second[1]) - Date.parse(first[1]));
+  if (storedEntries.length > 400) {
+    notificationReadState.read = Object.fromEntries(storedEntries.slice(0, 400));
+    changed = true;
+  }
+  if (changed) saveNotificationReadState();
+}
+
+function isNotificationRead(notification) {
+  return Boolean(notificationReadState.read[notification.key]);
+}
+
+function markNotificationAsRead(notification) {
+  if (!notification || !activeSupabaseUserId || isNotificationRead(notification)) return;
+  notificationReadState.read[notification.key] = new Date().toISOString();
+  saveNotificationReadState();
+  renderNotifications();
+}
+
+function markAllNotificationsAsRead() {
+  if (!activeSupabaseUserId) return;
+  const unreadNotifications = currentNotifications.filter((notification) => !isNotificationRead(notification));
+  if (!unreadNotifications.length) return;
+
+  const readAt = new Date().toISOString();
+  unreadNotifications.forEach((notification) => {
+    notificationReadState.read[notification.key] = readAt;
+  });
+  saveNotificationReadState();
+  renderNotifications();
+}
+function getNotificationActionLabel(notification) {
+  return {
+    agenda: "Abrir Agenda",
+    "reports-overdue": "Ver atrasados",
+    project: "Abrir projeto",
+    "edit-deadline": "Editar prazo",
+    "view-tasks": "Ver tarefas",
+  }[notification.action] ?? "Abrir";
+}
+
+function getFilteredNotifications(notifications) {
+  if (activeNotificationFilter === "unread") return notifications.filter((notification) => !isNotificationRead(notification));
+  if (activeNotificationFilter === "critical") return notifications.filter((notification) => notification.level === "Crítico");
+  if (activeNotificationFilter === "project") return notifications.filter((notification) => notification.scope === "project");
+  if (activeNotificationFilter === "task") return notifications.filter((notification) => notification.scope === "task");
+  return notifications;
+}
+
+function createNotificationMeta(text) {
+  const item = document.createElement("span");
+  item.textContent = text;
+  return item;
+}
+
+function createNotificationItem(notification) {
+  const item = document.createElement("article");
+  item.className = `notification-item${isNotificationRead(notification) ? "" : " is-unread"}`;
+  const header = document.createElement("div");
+  header.className = "notification-item-header";
+  const title = document.createElement("h3");
+  title.textContent = notification.title;
+  const level = document.createElement("span");
+  level.className = `notification-level is-${getNotificationLevelClass(notification.level)}`;
+  level.textContent = notification.level;
+  header.append(title, level);
+
+  const description = document.createElement("p");
+  description.textContent = notification.description;
+  const metadata = document.createElement("div");
+  metadata.className = "notification-meta";
+  metadata.append(createNotificationMeta(`Projeto: ${notification.project.name}`));
+  if (notification.task) metadata.append(createNotificationMeta(`Tarefa: ${notification.task.description}`));
+  if (notification.dueDate) metadata.append(createNotificationMeta(`Prazo: ${formatDate(notification.dueDate)}`));
+
+  const actions = document.createElement("div");
+  actions.className = "notification-item-actions";
+  const actionButton = document.createElement("button");
+  actionButton.type = "button";
+  actionButton.className = "notification-action-button";
+  actionButton.textContent = getNotificationActionLabel(notification);
+  actionButton.addEventListener("click", () => handleNotificationAction(notification));
+  actions.append(actionButton);
+
+  if (!isNotificationRead(notification)) {
+    const readButton = document.createElement("button");
+    readButton.type = "button";
+    readButton.className = "notification-read-button";
+    readButton.textContent = "Marcar como lida";
+    readButton.addEventListener("click", () => markNotificationAsRead(notification));
+    actions.append(readButton);
+  }
+
+  item.append(header, description, metadata, actions);
+  return item;
+}
+
+function renderNotificationDrawer(notifications) {
+  const filteredNotifications = getFilteredNotifications(notifications);
+  const unreadCount = notifications.filter((notification) => !isNotificationRead(notification)).length;
+  const hasNotifications = filteredNotifications.length > 0;
+
+  notificationFilterButtons.forEach((button) => {
+    const isActive = button.dataset.notificationFilter === activeNotificationFilter;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+  if (notificationDrawerSummary) {
+    notificationDrawerSummary.textContent = notifications.length
+      ? `${unreadCount} não lida${unreadCount === 1 ? "" : "s"} de ${notifications.length} alerta${notifications.length === 1 ? "" : "s"}.`
+      : "Nenhum alerta ativo no momento.";
+  }
+  if (notificationMarkAllButton) notificationMarkAllButton.disabled = unreadCount === 0;
+  if (notificationList) {
+    notificationList.hidden = !hasNotifications;
+    notificationList.replaceChildren(...filteredNotifications.map(createNotificationItem));
+  }
+  if (notificationEmptyState) notificationEmptyState.hidden = hasNotifications;
+}
+
+function createDashboardNotificationItem(notification) {
+  const item = document.createElement("button");
+  item.type = "button";
+  item.className = `notification-attention-item is-${getNotificationLevelClass(notification.level)}`;
+  const copy = document.createElement("span");
+  copy.className = "notification-attention-copy";
+  const title = document.createElement("strong");
+  title.textContent = notification.title;
+  const details = document.createElement("span");
+  details.textContent = `${notification.project.name}${notification.dueDate ? ` · ${formatDate(notification.dueDate)}` : ""}`;
+  copy.append(title, details);
+  const level = document.createElement("span");
+  level.className = `notification-level is-${getNotificationLevelClass(notification.level)}`;
+  level.textContent = notification.level;
+  item.append(copy, level);
+  item.addEventListener("click", () => handleNotificationAction(notification));
+  return item;
+}
+
+function renderDashboardNotificationAttention(notifications) {
+  if (!dashboardNotificationAttention || !dashboardNotificationAttentionEmpty) return;
+
+  const selectedProjects = new Set();
+  const dashboardAlerts = notifications.filter((notification) => notification.level !== "Informativo").filter((notification) => {
+    const projectKey = String(notification.project?.id ?? "");
+    if (selectedProjects.has(projectKey)) return false;
+    selectedProjects.add(projectKey);
+    return true;
+  }).slice(0, 5);
+  const hasAlerts = dashboardAlerts.length > 0;
+  dashboardNotificationAttention.hidden = !hasAlerts;
+  dashboardNotificationAttentionEmpty.hidden = hasAlerts;
+  dashboardNotificationAttention.replaceChildren(...dashboardAlerts.map(createDashboardNotificationItem));
+}
+
+function updateNotificationToggle(notifications) {
+  const unreadCount = notifications.filter((notification) => !isNotificationRead(notification)).length;
+  if (notificationUnreadCount) {
+    notificationUnreadCount.hidden = unreadCount === 0;
+    notificationUnreadCount.textContent = unreadCount > 9 ? "9+" : String(unreadCount);
+  }
+  if (notificationToggle) {
+    notificationToggle.setAttribute(
+      "aria-label",
+      unreadCount ? `Abrir notificações: ${unreadCount} não lida${unreadCount === 1 ? "" : "s"}` : "Abrir notificações",
+    );
+  }
+}
+
+function renderNotifications() {
+  ensureNotificationReadState();
+  const notifications = getNotifications();
+  pruneNotificationReadState(notifications);
+  currentNotifications = notifications;
+  updateNotificationToggle(notifications);
+  renderNotificationDrawer(notifications);
+  renderDashboardNotificationAttention(notifications);
+}
+
+function getNotificationFocusableElements() {
+  if (!notificationDrawer) return [];
+  return Array.from(notificationDrawer.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled])'));
+}
+
+function openNotificationDrawer(triggerElement = notificationToggle) {
+  if (!notificationBackdrop || !notificationDrawer) return;
+  notificationReturnFocus = triggerElement instanceof HTMLElement ? triggerElement : notificationToggle;
+  renderNotifications();
+  notificationBackdrop.hidden = false;
+  document.body.classList.add("notification-drawer-open");
+  if (notificationToggle) notificationToggle.setAttribute("aria-expanded", "true");
+  window.requestAnimationFrame(() => {
+    notificationBackdrop.classList.add("is-open");
+    notificationDrawer.focus();
+  });
+}
+
+function closeNotificationDrawer(restoreFocus = true) {
+  if (!notificationBackdrop || notificationBackdrop.hidden) return;
+  notificationBackdrop.classList.remove("is-open");
+  document.body.classList.remove("notification-drawer-open");
+  if (notificationToggle) notificationToggle.setAttribute("aria-expanded", "false");
+  window.setTimeout(() => {
+    if (!notificationBackdrop.classList.contains("is-open")) notificationBackdrop.hidden = true;
+  }, 210);
+  if (restoreFocus) notificationReturnFocus?.focus();
+  notificationReturnFocus = null;
+}
+
+function updateProjectFiltersForNotification(project) {
+  activeFilter = "all";
+  activeSearch = project.name;
+  projectSearch.value = project.name;
+  filterButtons.forEach((button) => {
+    const isActive = button.dataset.filter === "all";
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+  renderProjects();
+}
+
+function openProjectFromNotification(notification, editTaskDeadline = false, focusTasks = false) {
+  closeNotificationDrawer(false);
+  updateProjectFiltersForNotification(notification.project);
+  window.location.hash = "#projetos";
+  sidebar.classList.remove("is-open");
+  focusVisualDestination(focusTasks ? "#projects-list .tasks-section" : "#recentes-titulo");
+
+  if (!editTaskDeadline || !notification.task) return;
+  window.setTimeout(() => {
+    const editButton = Array.from(projectsList.querySelectorAll('[data-action="edit-task-deadline"]'))
+      .find((button) => button.dataset.taskId === notification.task.id);
+    if (editButton) openTaskDeadlineEditor(editButton, notification.project, notification.task);
+  }, 0);
+}
+
+function handleNotificationAction(notification) {
+  markNotificationAsRead(notification);
+
+  if (notification.action === "reports-overdue") {
+    closeNotificationDrawer(false);
+    openOverdueReportsFromDashboard();
+    return;
+  }
+  if (notification.action === "project") {
+    openProjectFromNotification(notification);
+    return;
+  }
+  if (notification.action === "edit-deadline") {
+    openProjectFromNotification(notification, true);
+    return;
+  }
+  if (notification.action === "view-tasks") {
+    openProjectFromNotification(notification, false, true);
+    return;
+  }
+
+  closeNotificationDrawer(false);
+  window.location.hash = "#agenda";
+  sidebar.classList.remove("is-open");
+  focusVisualDestination("#agenda-title");
+}
+
+function scheduleNotificationDayRefresh() {
+  if (notificationMidnightTimer) window.clearTimeout(notificationMidnightTimer);
+  const now = new Date();
+  const nextDay = new Date(now);
+  nextDay.setHours(24, 0, 2, 0);
+  notificationMidnightTimer = window.setTimeout(() => {
+    renderProjects();
+    scheduleNotificationDayRefresh();
+  }, Math.max(nextDay.getTime() - now.getTime(), 1000));
+}
 function hasPendingTasks(project) {
   return (project.tasks ?? []).some((task) => !task.completed);
 }
@@ -2445,6 +2994,7 @@ function renderProjects() {
   updateDashboard();
   renderAgenda();
   renderReports();
+  renderNotifications();
 }
 
 document.querySelectorAll("[data-open-project-modal]").forEach((button) => {
@@ -2492,6 +3042,19 @@ dashboardVisualsSection?.addEventListener("click", (event) => {
 });
 
 dashboardOverdueControl?.addEventListener("click", openOverdueReportsFromDashboard);
+notificationToggle?.addEventListener("click", () => openNotificationDrawer(notificationToggle));
+openNotificationsFromDashboard?.addEventListener("click", () => openNotificationDrawer(openNotificationsFromDashboard));
+notificationCloseButton?.addEventListener("click", () => closeNotificationDrawer());
+notificationMarkAllButton?.addEventListener("click", markAllNotificationsAsRead);
+notificationFilterButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    activeNotificationFilter = button.dataset.notificationFilter ?? "all";
+    renderNotifications();
+  });
+});
+notificationBackdrop?.addEventListener("click", (event) => {
+  if (event.target === notificationBackdrop) closeNotificationDrawer();
+});
 
 navigationLinks.forEach((link) => {
   link.addEventListener("click", () => {
@@ -2507,6 +3070,28 @@ modal.addEventListener("click", (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
+  if (notificationBackdrop && !notificationBackdrop.hidden) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeNotificationDrawer();
+      return;
+    }
+    if (event.key === "Tab") {
+      const focusableElements = getNotificationFocusableElements();
+      if (!focusableElements.length) return;
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    }
+    return;
+  }
+
   if (confirmationModalElement.classList.contains("is-visible")) {
     if (event.key === "Escape" && !isConfirmationBusy) {
       event.preventDefault();
@@ -2783,3 +3368,4 @@ projectsList.addEventListener("click", async (event) => {
 });
 
 renderProjects();
+scheduleNotificationDayRefresh();
