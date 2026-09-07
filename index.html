@@ -432,6 +432,18 @@
             <div class="executive-attention-list" id="dashboard-executive-attention" aria-live="polite"></div>
             <p class="visual-empty-state" id="dashboard-executive-attention-empty">Nenhum sinal de atenção identificado neste momento.</p>
           </article>
+
+          <article class="area-overview-card" aria-labelledby="dashboard-area-overview-title">
+            <div class="visual-card-heading">
+              <div>
+                <span>Organização do portfólio</span>
+                <h3 id="dashboard-area-overview-title">Visão por Área</h3>
+              </div>
+              <small>Visão da sua conta</small>
+            </div>
+            <div class="area-overview-grid" id="dashboard-area-overview" aria-live="polite"></div>
+            <p class="visual-empty-state" id="dashboard-area-overview-empty">Crie um projeto para acompanhar os resultados por área.</p>
+          </article>
         </section>
         <section class="attention-section" aria-labelledby="atencao-titulo">
           <div class="section-heading">
@@ -487,6 +499,33 @@
             <button class="filter-button" type="button" data-filter="Pausado" aria-pressed="false">Pausado</button>
             <button class="filter-button" type="button" data-filter="Concluído" aria-pressed="false">Concluído</button>
             <button class="filter-button" type="button" data-filter="high-priority" aria-pressed="false">Alta prioridade</button>
+          </div>
+
+          <div class="project-context-filters" aria-label="Filtrar projetos por contexto">
+            <label class="project-context-filter" for="project-category-filter">
+              <span>Categoria</span>
+              <select id="project-category-filter" data-project-context-filter="category">
+                <option value="all">Todas</option>
+                <option value="APEX Estratégia">APEX Estratégia</option>
+                <option value="Âncora Gestão Pública">Âncora Gestão Pública</option>
+                <option value="Projetos de IA">Projetos de IA</option>
+                <option value="Clientes">Clientes</option>
+                <option value="Pessoal">Pessoal</option>
+                <option value="Outros">Outros</option>
+              </select>
+            </label>
+            <label class="project-context-filter" for="project-client-filter">
+              <span>Cliente</span>
+              <select id="project-client-filter" data-project-context-filter="client"><option value="all">Todos</option></select>
+            </label>
+            <label class="project-context-filter" for="project-responsible-filter">
+              <span>Responsável</span>
+              <select id="project-responsible-filter" data-project-context-filter="responsible"><option value="all">Todos</option></select>
+            </label>
+            <label class="project-context-filter" for="project-tag-filter">
+              <span>Tag</span>
+              <select id="project-tag-filter" data-project-context-filter="tag"><option value="all">Todas</option></select>
+            </label>
           </div>
 
           <div class="empty-state" id="empty-projects">
@@ -599,6 +638,30 @@
                 <option value="overdue">Somente atrasados</option>
                 <option value="on-time">Somente dentro do prazo</option>
               </select>
+            </div>
+            <div class="report-filter-field">
+              <label for="report-category">Categoria</label>
+              <select id="report-category" name="category">
+                <option value="all">Todas</option>
+                <option value="APEX Estratégia">APEX Estratégia</option>
+                <option value="Âncora Gestão Pública">Âncora Gestão Pública</option>
+                <option value="Projetos de IA">Projetos de IA</option>
+                <option value="Clientes">Clientes</option>
+                <option value="Pessoal">Pessoal</option>
+                <option value="Outros">Outros</option>
+              </select>
+            </div>
+            <div class="report-filter-field">
+              <label for="report-client">Cliente</label>
+              <select id="report-client" name="client"><option value="all">Todos</option></select>
+            </div>
+            <div class="report-filter-field">
+              <label for="report-responsible">Responsável</label>
+              <select id="report-responsible" name="responsible"><option value="all">Todos</option></select>
+            </div>
+            <div class="report-filter-field">
+              <label for="report-tag">Tag</label>
+              <select id="report-tag" name="tag"><option value="all">Todas</option></select>
             </div>
             <button class="clear-filters-button reports-clear-button" type="button" data-clear-report-filters>Limpar filtros</button>
           </form>
@@ -724,6 +787,10 @@
                     <th scope="col">Projeto</th>
                     <th scope="col">Descrição</th>
                     <th scope="col">Objetivo</th>
+                    <th scope="col">Área/Categoria</th>
+                    <th scope="col">Cliente</th>
+                    <th scope="col">Responsável</th>
+                    <th scope="col">Tags</th>
                     <th scope="col">Status</th>
                     <th scope="col">Prioridade</th>
                     <th scope="col">Data</th>
@@ -818,6 +885,37 @@
               <label for="project-name">Nome do projeto</label>
               <input id="project-name" name="name" type="text" placeholder="Ex.: Assistente de atendimento" required />
             </div>
+
+            <fieldset class="project-context-fieldset form-field-full">
+              <legend>Contexto do projeto <span>Opcional</span></legend>
+              <div class="project-context-form-grid">
+                <div class="form-field">
+                  <label for="project-category">Área/Categoria</label>
+                  <select id="project-category" name="category">
+                    <option value="">Sem categoria</option>
+                    <option value="APEX Estratégia">APEX Estratégia</option>
+                    <option value="Âncora Gestão Pública">Âncora Gestão Pública</option>
+                    <option value="Projetos de IA">Projetos de IA</option>
+                    <option value="Clientes">Clientes</option>
+                    <option value="Pessoal">Pessoal</option>
+                    <option value="Outros">Outros</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label for="project-client-name">Cliente/Empresa</label>
+                  <input id="project-client-name" name="clientName" type="text" maxlength="120" autocomplete="organization" placeholder="Ex.: Empresa Parceira" />
+                </div>
+                <div class="form-field">
+                  <label for="project-responsible">Responsável</label>
+                  <input id="project-responsible" name="responsible" type="text" maxlength="120" autocomplete="name" placeholder="Ex.: Rafael Santos" />
+                </div>
+                <div class="form-field project-tags-field">
+                  <label for="project-tags">Tags</label>
+                  <input id="project-tags" name="tags" type="text" maxlength="360" placeholder="IA, Automação, Site" aria-describedby="project-tags-hint" />
+                  <small id="project-tags-hint">Separe as tags por vírgula. Máximo de 10 tags, com até 30 caracteres cada.</small>
+                </div>
+              </div>
+            </fieldset>
 
             <div class="form-field form-field-full">
               <label for="project-description">Descrição</label>

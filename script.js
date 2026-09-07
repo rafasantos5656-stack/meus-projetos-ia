@@ -7,6 +7,10 @@ const modal = document.querySelector("#project-modal");
 const projectForm = document.querySelector("#project-form");
 const projectIdInput = document.querySelector("#project-id");
 const projectNameInput = document.querySelector("#project-name");
+const projectCategoryInput = document.querySelector("#project-category");
+const projectClientNameInput = document.querySelector("#project-client-name");
+const projectResponsibleInput = document.querySelector("#project-responsible");
+const projectTagsInput = document.querySelector("#project-tags");
 const emptyProjects = document.querySelector("#empty-projects");
 const projectsList = document.querySelector("#projects-list");
 const modalTitle = document.querySelector("#modal-title");
@@ -33,6 +37,11 @@ const showAllProjectsButton = document.querySelector("[data-show-all-projects]")
 const projectSearch = document.querySelector("#project-search");
 const projectSort = document.querySelector("#project-sort");
 const clearProjectControlsButton = document.querySelector("[data-clear-project-controls]");
+const projectCategoryFilter = document.querySelector("#project-category-filter");
+const projectClientFilter = document.querySelector("#project-client-filter");
+const projectResponsibleFilter = document.querySelector("#project-responsible-filter");
+const projectTagFilter = document.querySelector("#project-tag-filter");
+const projectContextFilterInputs = document.querySelectorAll("[data-project-context-filter]");
 const dataStatusMessageElement = document.querySelector("#app-message");
 const confirmationModalElement = document.querySelector("#confirmation-modal");
 const confirmationModalTitleElement = document.querySelector("#confirmation-modal-title");
@@ -47,6 +56,10 @@ const reportStatusSelect = document.querySelector("#report-status");
 const reportPrioritySelect = document.querySelector("#report-priority");
 const reportProjectSelect = document.querySelector("#report-project");
 const reportDeadlineSelect = document.querySelector("#report-deadline");
+const reportCategorySelect = document.querySelector("#report-category");
+const reportClientSelect = document.querySelector("#report-client");
+const reportResponsibleSelect = document.querySelector("#report-responsible");
+const reportTagSelect = document.querySelector("#report-tag");
 const clearReportFiltersButton = document.querySelector("[data-clear-report-filters]");
 const reportFilterSummaryElement = document.querySelector("#reports-filter-summary");
 const reportProjectsBody = document.querySelector("#report-projects-body");
@@ -73,6 +86,8 @@ const dashboardExecutiveAttention = document.querySelector("#dashboard-executive
 const dashboardExecutiveAttentionEmpty = document.querySelector("#dashboard-executive-attention-empty");
 const dashboardOverdueCount = document.querySelector("#dashboard-overdue-count");
 const dashboardOverdueControl = document.querySelector("#dashboard-overdue-control");
+const dashboardAreaOverview = document.querySelector("#dashboard-area-overview");
+const dashboardAreaOverviewEmpty = document.querySelector("#dashboard-area-overview-empty");
 const reportStatusChart = document.querySelector("#report-status-chart");
 const reportStatusEmpty = document.querySelector("#report-status-empty");
 const reportPriorityChart = document.querySelector("#report-priority-chart");
@@ -117,6 +132,12 @@ let projects = [];
 let activeFilter = "all";
 let activeSearch = "";
 let activeSort = "newest";
+const PROJECT_CATEGORIES = Object.freeze(["APEX Estratégia", "Âncora Gestão Pública", "Projetos de IA", "Clientes", "Pessoal", "Outros"]);
+const UNCATEGORIZED_CATEGORY_LABEL = "Sem categoria";
+const MAX_PROJECT_TAGS = 10;
+const MAX_PROJECT_TAG_LENGTH = 30;
+const defaultProjectContextFilters = Object.freeze({ category: "all", client: "all", responsible: "all", tag: "all" });
+let projectContextFilters = { ...defaultProjectContextFilters };
 let isSupabaseDataReady = false;
 let isSupabaseDataLoading = false;
 let isMigrationRunning = false;
@@ -141,6 +162,10 @@ const defaultReportFilters = Object.freeze({
   priority: "all",
   projectId: "all",
   deadline: "all",
+  category: "all",
+  client: "all",
+  responsible: "all",
+  tag: "all",
 });
 let reportFilters = { ...defaultReportFilters };
 let isExcelExportRunning = false;
@@ -382,6 +407,10 @@ function mapRemoteProjectToInterface(project, projectTasks) {
     status: String(project.status ?? "Ideia"),
     priority: String(project.priority ?? "Média"),
     date: String(project.project_date ?? ""),
+    category: normalizeProjectCategory(project.category),
+    clientName: normalizeOptionalProjectText(project.client_name),
+    responsible: normalizeOptionalProjectText(project.responsible),
+    tags: normalizeStoredProjectTags(project.tags),
     tasks: projectTasks.map((task) => ({
       id: String(task.id),
       description: String(task.description ?? ""),
@@ -397,7 +426,7 @@ function mapRemoteProjectToInterface(project, projectTasks) {
 async function fetchRemoteProjectsAndTasks() {
   const context = await getAuthenticatedDataContext();
   const userFilter = getUserFilter(context.userId);
-  const projectPath = "projects?select=id,name,description,objective,status,priority,project_date&"
+  const projectPath = "projects?select=id,name,description,objective,status,priority,project_date,category,client_name,responsible,tags&"
     + userFilter + "&order=created_at.desc";
   const taskPath = "tasks?select=id,project_id,description,completed,due_date&"
     + userFilter + "&order=created_at.asc";
@@ -461,13 +490,25 @@ function getProjectDatabasePayload(project, userId, legacyId) {
   return payload;
 }
 
+function getProjectContextDatabasePayload(project) {
+  const tags = normalizeStoredProjectTags(project.tags);
+  return {
+    category: normalizeProjectCategory(project.category) || null,
+    client_name: normalizeOptionalProjectText(project.clientName) || null,
+    responsible: normalizeOptionalProjectText(project.responsible) || null,
+    tags: tags.length ? tags : null,
+  };
+}
+
 async function createRemoteProject(project, legacyId = null) {
   const context = await getAuthenticatedDataContext();
   const payload = await supabaseDataRequest("projects", {
     method: "POST",
     context,
     prefer: "return=representation",
-    body: getProjectDatabasePayload(project, context.userId, legacyId),
+    body: legacyId !== null && legacyId !== undefined
+      ? getProjectDatabasePayload(project, context.userId, legacyId)
+      : { ...getProjectDatabasePayload(project, context.userId, legacyId), ...getProjectContextDatabasePayload(project) },
   });
 
   return asSingleRow(payload, "Não foi possível confirmar a criação do projeto.");
@@ -488,6 +529,7 @@ async function updateRemoteProject(projectId, project) {
         status: project.status,
         priority: project.priority,
         project_date: project.date,
+        ...getProjectContextDatabasePayload(project),
       },
     },
   );
@@ -829,6 +871,10 @@ function openProjectModal(project) {
     document.querySelector("#project-status").value = project.status;
     document.querySelector("#project-priority").value = project.priority;
     document.querySelector("#project-date").value = project.date;
+    if (projectCategoryInput) projectCategoryInput.value = normalizeProjectCategory(project.category);
+    if (projectClientNameInput) projectClientNameInput.value = normalizeOptionalProjectText(project.clientName);
+    if (projectResponsibleInput) projectResponsibleInput.value = normalizeOptionalProjectText(project.responsible);
+    if (projectTagsInput) projectTagsInput.value = normalizeStoredProjectTags(project.tags).join(", ");
     modalTitle.textContent = "Editar projeto";
   }
 
@@ -1421,6 +1467,7 @@ function closeNotificationDrawer(restoreFocus = true) {
 
 function updateProjectFiltersForNotification(project) {
   activeFilter = "all";
+  resetProjectContextFilters();
   activeSearch = project.name;
   projectSearch.value = project.name;
   filterButtons.forEach((button) => {
@@ -1491,6 +1538,114 @@ function needsPriorityAttention(project) {
   return project.priority === "Alta"
     && project.status === "Em andamento"
     && hasPendingTasks(project);
+}
+
+function normalizeOptionalProjectText(value) {
+  return String(value ?? "").trim().replace(/\s+/g, " ");
+}
+
+function normalizeProjectCategory(value) {
+  const category = normalizeOptionalProjectText(value);
+  return PROJECT_CATEGORIES.includes(category) ? category : "";
+}
+
+function normalizeStoredProjectTags(value) {
+  if (!Array.isArray(value)) return [];
+  return value.map(normalizeOptionalProjectText).filter(Boolean);
+}
+
+function getProjectContextFilterKey(value) {
+  return normalizeOptionalProjectText(value).toLocaleLowerCase("pt-BR");
+}
+
+function parseProjectTags(value) {
+  const tags = [];
+  const seenTags = new Set();
+
+  for (const rawTag of String(value ?? "").split(",")) {
+    const tag = normalizeOptionalProjectText(rawTag);
+    if (!tag) continue;
+    if (tag.length > MAX_PROJECT_TAG_LENGTH) {
+      return { tags: [], error: `Cada tag pode ter no máximo ${MAX_PROJECT_TAG_LENGTH} caracteres.` };
+    }
+    const tagKey = getProjectContextFilterKey(tag);
+    if (seenTags.has(tagKey)) continue;
+    seenTags.add(tagKey);
+    tags.push(tag);
+    if (tags.length > MAX_PROJECT_TAGS) {
+      return { tags: [], error: `Use no máximo ${MAX_PROJECT_TAGS} tags por projeto.` };
+    }
+  }
+
+  return { tags, error: "" };
+}
+
+function getUniqueProjectContextOptions(values) {
+  const optionsByKey = new Map();
+  values.forEach((value) => {
+    const label = normalizeOptionalProjectText(value);
+    const key = getProjectContextFilterKey(label);
+    if (!label || optionsByKey.has(key)) return;
+    optionsByKey.set(key, label);
+  });
+  return [...optionsByKey.values()].sort((first, second) => first.localeCompare(second, "pt-BR", { sensitivity: "base" }));
+}
+
+function populateProjectContextFilter(select, filterName, values, allLabel) {
+  if (!select) return;
+  const requestedValue = projectContextFilters[filterName] ?? "all";
+  const options = document.createDocumentFragment();
+  const allOption = document.createElement("option");
+  allOption.value = "all";
+  allOption.textContent = allLabel;
+  options.append(allOption);
+  values.forEach((value) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    options.append(option);
+  });
+  select.replaceChildren(options);
+  const selectedOption = values.find((value) => (
+    getProjectContextFilterKey(value) === getProjectContextFilterKey(requestedValue)
+  ));
+  projectContextFilters[filterName] = selectedOption ?? "all";
+  select.value = projectContextFilters[filterName];
+}
+
+function refreshProjectContextFilterOptions() {
+  if (projectCategoryFilter) {
+    projectContextFilters.category = PROJECT_CATEGORIES.includes(projectContextFilters.category)
+      ? projectContextFilters.category
+      : "all";
+    projectCategoryFilter.value = projectContextFilters.category;
+  }
+  populateProjectContextFilter(
+    projectClientFilter,
+    "client",
+    getUniqueProjectContextOptions(projects.map((project) => project.clientName)),
+    "Todos",
+  );
+  populateProjectContextFilter(
+    projectResponsibleFilter,
+    "responsible",
+    getUniqueProjectContextOptions(projects.map((project) => project.responsible)),
+    "Todos",
+  );
+  populateProjectContextFilter(
+    projectTagFilter,
+    "tag",
+    getUniqueProjectContextOptions(projects.flatMap((project) => normalizeStoredProjectTags(project.tags))),
+    "Todas",
+  );
+}
+
+function resetProjectContextFilters() {
+  projectContextFilters = { ...defaultProjectContextFilters };
+  if (projectCategoryFilter) projectCategoryFilter.value = "all";
+  if (projectClientFilter) projectClientFilter.value = "all";
+  if (projectResponsibleFilter) projectResponsibleFilter.value = "all";
+  if (projectTagFilter) projectTagFilter.value = "all";
 }
 
 function normalizeText(value) {
@@ -1771,6 +1926,41 @@ function createTasksSection(project) {
   section.append(progressHeader, progressBar, tasksHeader, taskList, addTaskForm);
   return section;
 }
+function createProjectContext(project) {
+  const details = document.createElement("div");
+  details.className = "project-context-details";
+  const addDetail = (label, value) => {
+    const text = normalizeOptionalProjectText(value);
+    if (!text) return;
+    const detail = document.createElement("span");
+    detail.className = "project-context-detail";
+    const detailLabel = document.createElement("strong");
+    detailLabel.textContent = `${label}:`;
+    detail.append(detailLabel, document.createTextNode(text));
+    details.append(detail);
+  };
+  addDetail("Área", project.category);
+  addDetail("Cliente", project.clientName);
+  addDetail("Responsável", project.responsible);
+
+  const tags = normalizeStoredProjectTags(project.tags);
+  const tagList = document.createElement("div");
+  tagList.className = "project-context-tags";
+  tags.forEach((tag) => {
+    const tagElement = document.createElement("span");
+    tagElement.className = "project-context-tag";
+    tagElement.textContent = tag;
+    tagList.append(tagElement);
+  });
+
+  if (!details.childElementCount && !tagList.childElementCount) return null;
+  const context = document.createElement("div");
+  context.className = "project-context";
+  if (details.childElementCount) context.append(details);
+  if (tagList.childElementCount) context.append(tagList);
+  return context;
+}
+
 function createProjectCard(project) {
   const card = document.createElement("article");
   card.className = "project-card";
@@ -1822,6 +2012,8 @@ function createProjectCard(project) {
     badges.append(overdueBadge);
   }
 
+  const projectContext = createProjectContext(project);
+
   const goal = document.createElement("p");
   goal.className = "project-goal";
   const goalLabel = document.createElement("strong");
@@ -1837,7 +2029,9 @@ function createProjectCard(project) {
   date.textContent = `Data: ${formatDate(project.date)}`;
   footer.append(date);
 
-  card.append(header, description, badges, goal, tasksSection, footer);
+  card.append(header, description, badges);
+  if (projectContext) card.append(projectContext);
+  card.append(goal, tasksSection, footer);
   return card;
 }
 
@@ -2265,11 +2459,7 @@ function applyDashboardProjectFilter(filter) {
 
 function openOverdueReportsFromDashboard() {
   reportFilters = { ...defaultReportFilters, deadline: "overdue" };
-  reportStartDateInput.value = "";
-  reportEndDateInput.value = "";
-  reportStatusSelect.value = "all";
-  reportPrioritySelect.value = "all";
-  reportDeadlineSelect.value = "overdue";
+  syncReportFilterControls();
   renderReports();
   window.location.hash = "#relatorios";
   sidebar.classList.remove("is-open");
@@ -2300,6 +2490,81 @@ function getDashboardData() {
     attentionProjects,
     deadlineSummary,
   };
+}
+
+function getAreaOverviewData(projectCollection) {
+  const areas = new Map();
+
+  projectCollection.forEach((project) => {
+    const category = getProjectCategoryLabel(project);
+    const currentArea = areas.get(category) ?? {
+      category,
+      projectCount: 0,
+      progressTotal: 0,
+      pendingTasks: 0,
+      overdueProjects: 0,
+    };
+    const taskSummary = getProjectTaskSummary(project);
+    currentArea.projectCount += 1;
+    currentArea.progressTotal += taskSummary.progress;
+    currentArea.pendingTasks += taskSummary.pendingTasks;
+    currentArea.overdueProjects += isOverdue(project) ? 1 : 0;
+    areas.set(category, currentArea);
+  });
+
+  return [...areas.values()]
+    .map((area) => ({
+      ...area,
+      averageProgress: Math.round(area.progressTotal / area.projectCount),
+    }))
+    .sort((firstArea, secondArea) => {
+      const firstIndex = PROJECT_CATEGORIES.indexOf(firstArea.category);
+      const secondIndex = PROJECT_CATEGORIES.indexOf(secondArea.category);
+      const firstOrder = firstIndex < 0 ? PROJECT_CATEGORIES.length : firstIndex;
+      const secondOrder = secondIndex < 0 ? PROJECT_CATEGORIES.length : secondIndex;
+      if (firstOrder !== secondOrder) return firstOrder - secondOrder;
+      return firstArea.category.localeCompare(secondArea.category, "pt-BR", { sensitivity: "base" });
+    });
+}
+
+function createDashboardAreaOverviewItem(area) {
+  const item = document.createElement("article");
+  item.className = "area-overview-item";
+  const heading = document.createElement("div");
+  heading.className = "area-overview-item-heading";
+  const title = document.createElement("h4");
+  title.textContent = area.category;
+  const count = document.createElement("span");
+  count.textContent = formatReportCount(area.projectCount, "projeto");
+  heading.append(title, count);
+
+  const metrics = document.createElement("dl");
+  metrics.className = "area-overview-metrics";
+  const addMetric = (label, value, className = "") => {
+    const metric = document.createElement("div");
+    if (className) metric.className = className;
+    const term = document.createElement("dt");
+    term.textContent = label;
+    const detail = document.createElement("dd");
+    detail.textContent = value;
+    metric.append(term, detail);
+    metrics.append(metric);
+  };
+  addMetric("Progresso médio", `${area.averageProgress}%`);
+  addMetric("Tarefas pendentes", String(area.pendingTasks));
+  addMetric("Projetos atrasados", String(area.overdueProjects), area.overdueProjects ? "is-overdue" : "");
+  item.append(heading, metrics);
+  return item;
+}
+
+function renderDashboardAreaOverview(projectCollection) {
+  if (!dashboardAreaOverview || !dashboardAreaOverviewEmpty) return;
+
+  const areas = getAreaOverviewData(projectCollection);
+  const hasAreas = areas.length > 0;
+  dashboardAreaOverview.hidden = !hasAreas;
+  dashboardAreaOverviewEmpty.hidden = hasAreas;
+  dashboardAreaOverview.replaceChildren(...areas.map(createDashboardAreaOverviewItem));
 }
 
 function createDashboardCommitmentItem(row) {
@@ -2404,6 +2669,7 @@ function updateDashboard() {
   if (dashboardNextSevenTasks) dashboardNextSevenTasks.textContent = String(dashboard.deadlineSummary.next7);
   renderDashboardCommitments(dashboard.deadlineSummary);
   renderDashboardVisuals();
+  renderDashboardAreaOverview(projects);
 }
 
 function getFilteredProjects() {
@@ -2413,6 +2679,29 @@ function getFilteredProjects() {
     filteredProjects = filteredProjects.filter((project) => project.priority === "Alta");
   } else if (activeFilter !== "all") {
     filteredProjects = filteredProjects.filter((project) => project.status === activeFilter);
+  }
+
+  if (projectContextFilters.category !== "all") {
+    filteredProjects = filteredProjects.filter((project) => (
+      getProjectContextFilterKey(project.category) === getProjectContextFilterKey(projectContextFilters.category)
+    ));
+  }
+  if (projectContextFilters.client !== "all") {
+    filteredProjects = filteredProjects.filter((project) => (
+      getProjectContextFilterKey(project.clientName) === getProjectContextFilterKey(projectContextFilters.client)
+    ));
+  }
+  if (projectContextFilters.responsible !== "all") {
+    filteredProjects = filteredProjects.filter((project) => (
+      getProjectContextFilterKey(project.responsible) === getProjectContextFilterKey(projectContextFilters.responsible)
+    ));
+  }
+  if (projectContextFilters.tag !== "all") {
+    filteredProjects = filteredProjects.filter((project) => (
+      normalizeStoredProjectTags(project.tags).some((tag) => (
+        getProjectContextFilterKey(tag) === getProjectContextFilterKey(projectContextFilters.tag)
+      ))
+    ));
   }
 
   const normalizedSearch = normalizeText(activeSearch.trim());
@@ -2439,6 +2728,7 @@ function clearProjectControls() {
   activeFilter = "all";
   activeSearch = "";
   activeSort = "newest";
+  resetProjectContextFilters();
   projectSearch.value = "";
   projectSort.value = "newest";
   filterButtons.forEach((button) => {
@@ -2493,6 +2783,70 @@ function refreshReportProjectOptions() {
   reportProjectSelect.value = reportFilters.projectId;
 }
 
+function populateReportContextFilter(select, filterName, values, allLabel) {
+  if (!select) return;
+
+  const requestedValue = reportFilters[filterName] ?? "all";
+  const options = document.createDocumentFragment();
+  const allOption = document.createElement("option");
+  allOption.value = "all";
+  allOption.textContent = allLabel;
+  options.append(allOption);
+
+  values.forEach((value) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    options.append(option);
+  });
+
+  select.replaceChildren(options);
+  const selectedValue = values.find((value) => (
+    getProjectContextFilterKey(value) === getProjectContextFilterKey(requestedValue)
+  ));
+  reportFilters[filterName] = selectedValue ?? "all";
+  select.value = reportFilters[filterName];
+}
+
+function refreshReportContextFilterOptions() {
+  if (reportCategorySelect) {
+    reportFilters.category = PROJECT_CATEGORIES.includes(reportFilters.category)
+      ? reportFilters.category
+      : "all";
+    reportCategorySelect.value = reportFilters.category;
+  }
+  populateReportContextFilter(
+    reportClientSelect,
+    "client",
+    getUniqueProjectContextOptions(projects.map((project) => project.clientName)),
+    "Todos",
+  );
+  populateReportContextFilter(
+    reportResponsibleSelect,
+    "responsible",
+    getUniqueProjectContextOptions(projects.map((project) => project.responsible)),
+    "Todos",
+  );
+  populateReportContextFilter(
+    reportTagSelect,
+    "tag",
+    getUniqueProjectContextOptions(projects.flatMap((project) => normalizeStoredProjectTags(project.tags))),
+    "Todas",
+  );
+}
+
+function syncReportFilterControls() {
+  if (!reportsFilterForm) return;
+
+  reportStartDateInput.value = reportFilters.startDate;
+  reportEndDateInput.value = reportFilters.endDate;
+  reportStatusSelect.value = reportFilters.status;
+  reportPrioritySelect.value = reportFilters.priority;
+  reportDeadlineSelect.value = reportFilters.deadline;
+  refreshReportProjectOptions();
+  refreshReportContextFilterOptions();
+}
+
 function projectMatchesReportFilters(project) {
   const projectDate = parseProjectDate(project.date);
   const startDate = parseProjectDate(reportFilters.startDate);
@@ -2505,6 +2859,18 @@ function projectMatchesReportFilters(project) {
   if (reportFilters.projectId !== "all" && String(project.id) !== reportFilters.projectId) return false;
   if (reportFilters.deadline === "overdue" && !isOverdue(project)) return false;
   if (reportFilters.deadline === "on-time" && (!projectDate || isOverdue(project))) return false;
+  if (reportFilters.category !== "all" && (
+    getProjectContextFilterKey(project.category) !== getProjectContextFilterKey(reportFilters.category)
+  )) return false;
+  if (reportFilters.client !== "all" && (
+    getProjectContextFilterKey(project.clientName) !== getProjectContextFilterKey(reportFilters.client)
+  )) return false;
+  if (reportFilters.responsible !== "all" && (
+    getProjectContextFilterKey(project.responsible) !== getProjectContextFilterKey(reportFilters.responsible)
+  )) return false;
+  if (reportFilters.tag !== "all" && !normalizeStoredProjectTags(project.tags).some((tag) => (
+    getProjectContextFilterKey(tag) === getProjectContextFilterKey(reportFilters.tag)
+  ))) return false;
 
   return true;
 }
@@ -2600,6 +2966,19 @@ function createReportTextCell(text, className = "") {
   return cell;
 }
 
+function getProjectCategoryLabel(project) {
+  return normalizeProjectCategory(project.category) || UNCATEGORIZED_CATEGORY_LABEL;
+}
+
+function getProjectContextText(project, fieldName) {
+  return normalizeOptionalProjectText(project[fieldName]) || "—";
+}
+
+function getProjectTagsText(project) {
+  const tags = normalizeStoredProjectTags(project.tags);
+  return tags.length ? tags.join(", ") : "—";
+}
+
 function createReportBadge(text, className) {
   const badge = document.createElement("span");
   badge.className = className;
@@ -2650,6 +3029,10 @@ function createReportProjectRow(project) {
     createReportTextCell(project.name, "report-project-name"),
     createReportTextCell(project.description || "—", "report-description-cell"),
     createReportTextCell(project.goal || "—", "report-goal-cell"),
+    createReportTextCell(getProjectCategoryLabel(project), "report-context-cell"),
+    createReportTextCell(getProjectContextText(project, "clientName"), "report-context-cell"),
+    createReportTextCell(getProjectContextText(project, "responsible"), "report-context-cell"),
+    createReportTextCell(getProjectTagsText(project), "report-context-cell report-tags-cell"),
     statusCell,
     priorityCell,
     createReportTextCell(formatDate(project.date), "report-date-cell"),
@@ -2707,6 +3090,7 @@ function renderReports() {
   if (!reportsFilterForm) return;
 
   refreshReportProjectOptions();
+  refreshReportContextFilterOptions();
   const report = getReportData();
   const hasProjects = report.filteredProjects.length > 0;
   const hasTasks = report.taskRows.length > 0;
@@ -2739,6 +3123,10 @@ function syncReportFilters() {
     priority: reportPrioritySelect.value,
     projectId: reportProjectSelect.value,
     deadline: reportDeadlineSelect.value,
+    category: reportCategorySelect?.value ?? "all",
+    client: reportClientSelect?.value ?? "all",
+    responsible: reportResponsibleSelect?.value ?? "all",
+    tag: reportTagSelect?.value ?? "all",
   };
   renderReports();
 }
@@ -2746,6 +3134,7 @@ function syncReportFilters() {
 function clearReportFilters() {
   reportFilters = { ...defaultReportFilters };
   reportsFilterForm.reset();
+  syncReportFilterControls();
   renderReports();
 }
 
@@ -2830,6 +3219,10 @@ function getExcelProjectRow(project) {
     getSafeExcelText(project.name),
     getSafeExcelText(project.description),
     getSafeExcelText(project.goal),
+    getSafeExcelText(getProjectCategoryLabel(project)),
+    getSafeExcelText(getProjectContextText(project, "clientName")),
+    getSafeExcelText(getProjectContextText(project, "responsible")),
+    getSafeExcelText(getProjectTagsText(project)),
     getSafeExcelText(project.status),
     getSafeExcelText(project.priority),
     formatDate(project.date),
@@ -2872,7 +3265,18 @@ function getExcelFilterRows() {
     ["Prioridade", reportFilters.priority === "all" ? "Todas" : reportFilters.priority],
     ["Projeto", selectedProject ? getSafeExcelText(selectedProject.name) : "Todos"],
     ["Atraso", deadlines[reportFilters.deadline] ?? "Todos"],
+    ["Categoria", reportFilters.category === "all" ? "Todas" : getSafeExcelText(reportFilters.category)],
+    ["Cliente", reportFilters.client === "all" ? "Todos" : getSafeExcelText(reportFilters.client)],
+    ["Responsável", reportFilters.responsible === "all" ? "Todos" : getSafeExcelText(reportFilters.responsible)],
+    ["Tag", reportFilters.tag === "all" ? "Todas" : getSafeExcelText(reportFilters.tag)],
   ];
+}
+
+function getExcelCategorySummaryRows(projectCollection) {
+  const areas = getAreaOverviewData(projectCollection);
+  return areas.length
+    ? areas.map((area) => [getSafeExcelText(area.category), area.projectCount])
+    : [[UNCATEGORIZED_CATEGORY_LABEL, 0]];
 }
 
 function createExcelTableWorksheet(XLSX, headers, rows, columnWidths, percentageColumnIndex = null) {
@@ -2899,9 +3303,10 @@ function createExcelTableWorksheet(XLSX, headers, rows, columnWidths, percentage
 }
 
 function buildReportWorkbook(XLSX, report) {
-  const projectHeaders = ["Projeto", "Descrição", "Objetivo", "Status", "Prioridade", "Data", "Situação do prazo", "Total de tarefas", "Concluídas", "Pendentes", "Progresso %"];
+  const projectHeaders = ["Projeto", "Descrição", "Objetivo", "Área/Categoria", "Cliente", "Responsável", "Tags", "Status", "Prioridade", "Data", "Situação do prazo", "Total de tarefas", "Concluídas", "Pendentes", "Progresso %"];
   const taskHeaders = ["Projeto", "Tarefa", "Status", "Data do projeto", "Prioridade do projeto"];
   const overdueProjects = report.filteredProjects.filter(isOverdue);
+  const categorySummaryRows = getExcelCategorySummaryRows(report.filteredProjects);
   const generatedAt = new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
     timeStyle: "short",
@@ -2927,6 +3332,9 @@ function buildReportWorkbook(XLSX, report) {
     ["Progresso médio", report.metrics.averageProgress],
     ["Projetos de alta prioridade", report.executive.highPriorityProjects],
     ["Itens que precisam de atenção", report.executive.attentionProjects],
+    [],
+    ["Projetos por categoria", "Quantidade"],
+    ...categorySummaryRows,
   ];
   const workbook = XLSX.utils.book_new();
   const summaryWorksheet = XLSX.utils.aoa_to_sheet(summaryRows);
@@ -2935,8 +3343,8 @@ function buildReportWorkbook(XLSX, report) {
     XLSX,
     projectHeaders,
     report.filteredProjects.map(getExcelProjectRow),
-    [28, 42, 42, 18, 14, 14, 20, 16, 13, 13, 14],
-    10,
+    [28, 42, 42, 24, 26, 24, 34, 18, 14, 14, 20, 16, 13, 13, 14],
+    14,
   );
   const tasksWorksheet = createExcelTableWorksheet(
     XLSX,
@@ -2948,8 +3356,8 @@ function buildReportWorkbook(XLSX, report) {
     XLSX,
     projectHeaders,
     overdueProjects.map(getExcelProjectRow),
-    [28, 42, 42, 18, 14, 14, 20, 16, 13, 13, 14],
-    10,
+    [28, 42, 42, 24, 26, 24, 34, 18, 14, 14, 20, 16, 13, 13, 14],
+    14,
   );
 
   XLSX.utils.book_append_sheet(workbook, summaryWorksheet, "Resumo");
@@ -2984,6 +3392,7 @@ async function exportReportsToExcel() {
   }
 }
 function renderProjects() {
+  refreshProjectContextFilterOptions();
   const filteredProjects = getFilteredProjects();
   const hasProjects = projects.length > 0;
   const hasFilteredProjects = filteredProjects.length > 0;
@@ -3022,6 +3431,15 @@ projectSearch.addEventListener("input", (event) => {
 projectSort.addEventListener("change", (event) => {
   activeSort = event.target.value;
   renderProjects();
+});
+
+projectContextFilterInputs.forEach((filterInput) => {
+  filterInput.addEventListener("change", () => {
+    const filterName = filterInput.dataset.projectContextFilter;
+    if (!Object.hasOwn(projectContextFilters, filterName)) return;
+    projectContextFilters[filterName] = filterInput.value || "all";
+    renderProjects();
+  });
 });
 
 clearProjectControlsButton.addEventListener("click", clearProjectControls);
@@ -3150,6 +3568,11 @@ projectForm.addEventListener("submit", async (event) => {
   if (!projectForm.reportValidity() || !canManageSupabaseData()) return;
 
   const formData = new FormData(projectForm);
+  const parsedTags = parseProjectTags(formData.get("tags"));
+  if (parsedTags.error) {
+    showDataMessage(parsedTags.error);
+    return;
+  }
   const existingProject = projects.find((item) => item.id === projectIdInput.value);
   const project = {
     ...(existingProject ?? {}),
@@ -3159,6 +3582,10 @@ projectForm.addEventListener("submit", async (event) => {
     status: String(formData.get("status") ?? ""),
     priority: String(formData.get("priority") ?? ""),
     date: String(formData.get("date") ?? ""),
+    category: normalizeProjectCategory(formData.get("category")),
+    clientName: normalizeOptionalProjectText(formData.get("clientName")),
+    responsible: normalizeOptionalProjectText(formData.get("responsible")),
+    tags: parsedTags.tags,
     tasks: existingProject?.tasks ?? [],
   };
   const saveButton = projectForm.querySelector(".save-button");
