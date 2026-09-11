@@ -1,6 +1,6 @@
 // Autenticação via API pública do Supabase, sem SDK externo.
 const AUTH_SESSION_STORAGE_KEY = "meus_projetos_ia_auth_session";
-const supabaseAuthConfig = window.SUPABASE_CONFIG ?? {};
+let supabaseAuthConfig = {};
 
 const authScreenElement = document.querySelector("#auth-screen");
 const dashboardShellElement = document.querySelector("#dashboard-shell");
@@ -46,9 +46,21 @@ function authGetSettings() {
   return { url, anonKey };
 }
 
+async function authWaitForEnvironment() {
+  const ready = window.APP_ENVIRONMENT_READY;
+  const environmentState = ready && typeof ready.then === "function"
+    ? await ready
+    : window.APP_ENVIRONMENT;
+
+  supabaseAuthConfig = window.SUPABASE_CONFIG ?? {};
+  return environmentState ?? {};
+}
+
 function authIsConfigured() {
+  if (!window.APP_ENVIRONMENT?.validated) return false;
+
   const { url, anonKey } = authGetSettings();
-  const hasPlaceholder = url.includes("COLE_AQUI") || anonKey.includes("COLE_AQUI");
+  const hasPlaceholder = [url, anonKey].some((value) => /COLE_AQUI|SEU_PROJETO|YOUR_/i.test(value));
 
   try {
     const parsedUrl = new URL(url);
@@ -621,12 +633,19 @@ async function initializeAuth() {
   const recoveryCallback = authConsumeRecoveryCallback();
   authSetView("login");
 
-  if (!authIsConfigured()) {
+  authSetControlsDisabled(true);
+  const environmentState = await authWaitForEnvironment();
+
+  if (!environmentState.validated || !authIsConfigured()) {
     authShowScreen();
-    authSetControlsDisabled(true);
-    authSetMessage("Configure uma Project URL e uma Publishable/Anon Public Key válidas em supabase-config.js para habilitar o acesso.", "info");
+    authSetMessage(
+      environmentState.error || "A configuração segura do ambiente não está disponível. Nenhuma conexão com o Supabase foi iniciada.",
+      "error",
+    );
     return;
   }
+
+  authSetControlsDisabled(false);
 
   if (recoveryCallback?.mode === "reset") {
     authStartRecoveryMode(recoveryCallback.session);

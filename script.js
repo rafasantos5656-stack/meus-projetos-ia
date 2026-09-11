@@ -171,6 +171,37 @@ let reportFilters = { ...defaultReportFilters };
 let isExcelExportRunning = false;
 let sheetJsLoadingPromise = null;
 
+function renderEnvironmentBadge(environmentState = window.APP_ENVIRONMENT) {
+  const existingBadge = document.querySelector("#environment-badge");
+  const isDevelopment = environmentState?.validated && environmentState.environment === "development";
+
+  if (!isDevelopment) {
+    existingBadge?.remove();
+    return;
+  }
+
+  const userActions = document.querySelector(".user-actions");
+  if (!userActions || existingBadge) return;
+
+  const badge = document.createElement("span");
+  badge.id = "environment-badge";
+  badge.className = "environment-badge";
+  badge.setAttribute("role", "status");
+  badge.setAttribute("aria-label", "Ambiente de desenvolvimento");
+  badge.innerHTML = '<span aria-hidden="true">●</span> Desenvolvimento';
+  userActions.prepend(badge);
+}
+
+window.addEventListener("app-environment-ready", (event) => {
+  renderEnvironmentBadge(event.detail);
+});
+
+if (window.APP_ENVIRONMENT_READY && typeof window.APP_ENVIRONMENT_READY.then === "function") {
+  window.APP_ENVIRONMENT_READY.then(renderEnvironmentBadge);
+} else {
+  renderEnvironmentBadge();
+}
+
 menuButton?.addEventListener("click", () => {
   sidebar.classList.toggle("is-open");
 });
@@ -276,6 +307,13 @@ function createDataError(message, status = 0, code = "") {
 }
 
 function getSupabaseDataSettings() {
+  const environmentState = window.APP_ENVIRONMENT;
+  if (!environmentState?.validated) {
+    throw createDataError(
+      environmentState?.error || "O ambiente não foi validado. Nenhuma conexão com o Supabase é permitida.",
+    );
+  }
+
   const config = window.SUPABASE_CONFIG ?? {};
   const url = typeof config.url === "string" ? config.url.trim().replace(/\/$/, "") : "";
   const anonKey = typeof config.anonKey === "string" ? config.anonKey.trim() : "";

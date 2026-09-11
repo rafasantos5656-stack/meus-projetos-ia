@@ -3,18 +3,30 @@
 Thumbs.db
 Desktop.ini
 
-# Configura‡äes locais de editores
+# Configuraï¿½ï¿½es locais de editores
 .vscode/
 .idea/
 *.code-workspace
 
-# Dependˆncias, caches e arquivos gerados
+# Dependï¿½ncias, caches e arquivos gerados
 node_modules/
 dist/
 build/
 coverage/
 .cache/
 
-# Logs tempor rios
+# Logs temporï¿½rios
 *.log
 npm-debug.log*
+
+# ConfiguraÃ§Ãµes locais de ambiente e credenciais
+.env
+.env.*
+!.env.example
+config/supabase-config.development.local.js
+supabase/.temp/
+supabase/.branches/
+
+# Arquivos locais sensÃ­veis (nunca versionar)
+Usuario e Senha.txt
+senhas.docx

@@ -397,6 +397,8 @@ body.modal-open { overflow: hidden; }
 .auth-submit-button.is-loading::before, .save-button.is-loading::before { width: 12px; height: 12px; content: ""; border: 2px solid rgba(255, 255, 255, .45); border-top-color: #fff; border-radius: 50%; animation: auth-spinner .7s linear infinite; }
 .auth-help { margin: 20px 0 0; color: var(--ink-faint); font-size: 11px; line-height: 1.55; }
 .user-actions { display: flex; align-items: center; gap: 7px; }
+.environment-badge { display: inline-flex; align-items: center; gap: 5px; min-height: 27px; padding: 0 8px; color: #936215; border: 1px solid #efd8a9; border-radius: 999px; background: #fffaf0; font-size: 9px; font-weight: 780; letter-spacing: .07em; text-transform: uppercase; white-space: nowrap; }
+.environment-badge span { color: #c68018; font-size: 10px; line-height: 1; }
 .profile-button { max-width: 240px; cursor: default; }
 .profile-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sign-out-button { min-height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 9px; border: 1px solid transparent; border-radius: 8px; color: var(--ink-soft); background: transparent; font-size: 12px; font-weight: 680; transition: color .18s ease, border-color .18s ease, background .18s ease; }
@@ -424,6 +426,7 @@ body.modal-open { overflow: hidden; }
   .auth-intro h1 { font-size: 29px; }
   .auth-panel { padding: 29px 24px 32px; }
   .user-actions { gap: 3px; }
+  .environment-badge { min-height: 25px; padding: 0 6px; font-size: 8px; letter-spacing: .055em; }
   .profile-button { max-width: 138px; padding-right: 2px; }
   .profile-name { max-width: 88px; }
   .sign-out-button { padding: 0 7px; }

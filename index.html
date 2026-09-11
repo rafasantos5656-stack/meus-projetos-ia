@@ -5,13 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Painel para acompanhar seus projetos de inteligência artificial."
+      content="ÂNCORA — Inteligência e Gestão de Recursos Públicos."
     />
-    <title>Meus Projetos de IA</title>
+    <title>ÂNCORA — Inteligência e Gestão de Recursos Públicos</title>
     <link rel="stylesheet" href="./styles.css" />
-    <script src="./supabase-config.js" defer></script>
+    <link rel="stylesheet" href="./navigation.css" />
+    <link rel="stylesheet" href="./dashboard-premium.css" />
+    <script src="./config/environment-loader.js"></script>
     <script src="./script.js" defer></script>
     <script src="./auth.js" defer></script>
+    <script src="./navigation.js" defer></script>
   </head>
   <body>
     <main class="auth-page" id="auth-screen" aria-labelledby="auth-title">
@@ -107,62 +110,71 @@
 
     <div class="app-shell" id="dashboard-shell" hidden>
       <aside class="sidebar" aria-label="Navegação principal">
-        <a class="brand" href="#inicio" aria-label="Meus Projetos de IA - início">
+        <a class="brand anchor-brand" href="#/dashboard" data-platform-route="dashboard" aria-label="ÂNCORA - Dashboard">
           <span class="brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path d="M12 3v18M3 12h18" />
-              <circle cx="12" cy="12" r="4" />
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 8 4.7v8.6L12 21l-8-4.7V7.7L12 3Z" /><path d="m8.5 10 3.5 2 3.5-2M12 12v5.2" /></svg>
           </span>
-          <span>Meus Projetos <strong>de IA</strong></span>
+          <span class="anchor-brand-copy"><strong>ÂNCORA</strong><small>Inteligência e Gestão<br />de Recursos Públicos</small></span>
         </a>
 
-        <nav class="main-nav">
-          <p class="nav-section-label">Visão do produto</p>
-          <a class="nav-link active" href="#inicio" aria-current="page">
+        <nav class="main-nav" aria-label="Módulos da plataforma">
+          <a class="nav-link" href="#/dashboard" data-platform-route="dashboard">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V10Z" /></svg>
-            Dashboard
+            <span>Dashboard</span>
           </a>
-          <a class="nav-link" href="#projetos">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h5L12 6h6.5A1.5 1.5 0 0 1 20 7.5v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5v-13Z" /></svg>
-            Projetos
-          </a>
-          <a class="nav-link" href="#projetos">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" /></svg>
-            Tarefas
-          </a>
-          <div class="nav-divider" aria-hidden="true"></div>
-          <p class="nav-section-label">Gestão</p>
-          <a class="nav-link" href="#agenda">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4M16 3v4M4 10h16M8 14h3M8 17h6" /></svg>
-            Agenda
-          </a>
-          <a class="nav-link" id="reports-navigation-link" href="#relatorios">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2" /></svg>
-            Relatórios
-          </a>
+
+          <div class="nav-group">
+            <p class="nav-section-label">Inteligência</p>
+            <a class="nav-link" href="#/radar" data-platform-route="radar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7" /><circle cx="12" cy="12" r="2" /><path d="M12 3v2M12 19v2M3 12h2M19 12h2" /></svg><span>Radar Âncora</span></a>
+            <a class="nav-link" href="#/oportunidades" data-platform-route="oportunidades"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 9-8 9-8-9 8-9Z" /><path d="m9 12 2 2 4-4" /></svg><span>Oportunidades</span></a>
+          </div>
+
+          <div class="nav-group">
+            <p class="nav-section-label">Gestão</p>
+            <a class="nav-link" href="#/captacoes" data-platform-route="captacoes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v11H4z" /><path d="M8 7V5h8v2M8 12h8M12 10v4" /></svg><span>Captações</span></a>
+            <a class="nav-link" href="#/convenios" data-platform-route="convenios"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v12H7z" /><path d="M9.5 10h5M9.5 13h5M9.5 16h3" /></svg><span>Convênios</span></a>
+            <a class="nav-link" href="#/agenda" data-platform-route="agenda"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4M16 3v4M4 10h16M8 14h3M8 17h6" /></svg><span>Agenda</span></a>
+            <a class="nav-link" href="#/documentos" data-platform-route="documentos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7z" /><path d="M14 3v5h5M10 12h5M10 15h5" /></svg><span>Documentos</span></a>
+            <a class="nav-link" href="#/prestacao-contas" data-platform-route="prestacao-contas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z" /><path d="m8 12 2.5 2.5L16 9" /></svg><span>Prestação de Contas</span></a>
+          </div>
+
+          <div class="nav-group">
+            <p class="nav-section-label">Gestão municipal</p>
+            <a class="nav-link" href="#/prefeitura" data-platform-route="prefeitura"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M6 18V9h12v9M4 9h16L12 4 4 9ZM9 12v6M12 12v6M15 12v6" /></svg><span>Prefeitura</span></a>
+            <a class="nav-link" href="#/usuarios" data-platform-route="usuarios"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3" /><path d="M5 20a7 7 0 0 1 14 0M4 11H2M22 11h-2" /></svg><span>Usuários</span></a>
+          </div>
+
+          <div class="nav-group">
+            <p class="nav-section-label">Análise</p>
+            <a class="nav-link" href="#/relatorios" data-platform-route="relatorios"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2" /></svg><span>Relatórios</span></a>
+          </div>
+
+          <div class="nav-group nav-group-settings">
+            <p class="nav-section-label">Configurações</p>
+            <a class="nav-link" href="#/configuracoes" data-platform-route="configuracoes"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.1 2.1-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56v.1h-3v-.1a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-2.1-2.1.06-.06A1.7 1.7 0 0 0 7.06 15a1.7 1.7 0 0 0-1.56-1.03h-.1v-3h.1A1.7 1.7 0 0 0 7.06 9.94a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.1-2.1.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.56v-.1h3v.1a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.1 2.1-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.03h.1v3h-.1A1.7 1.7 0 0 0 19.4 15Z" /></svg><span>Configurações</span></a>
+          </div>
         </nav>
 
-        <div class="sidebar-footer">
-          <div class="tip-card">
-            <span class="tip-icon" aria-hidden="true">✦</span>
-            <p>Organize uma ideia, transforme-a em projeto e acompanhe cada avanço.</p>
-          </div>
-          <button class="nav-link nav-button" id="open-profile-modal" type="button">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.1 2.1-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56v.1h-3v-.1a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-2.1-2.1.06-.06A1.7 1.7 0 0 0 7.06 15a1.7 1.7 0 0 0-1.56-1.03h-.1v-3h.1A1.7 1.7 0 0 0 7.06 9.94a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.1-2.1.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.56v-.1h3v.1a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.1 2.1-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.03h.1v3h-.1A1.7 1.7 0 0 0 19.4 15Z" /></svg>
-            Meu Perfil
-          </button>
+        <div class="sidebar-footer anchor-sidebar-footer">
+          <p>Projetos e tarefas seguem disponíveis no Dashboard durante a transição.</p>
         </div>
       </aside>
 
-      <main id="inicio" class="main-content">
+      <main id="app-main" class="main-content" aria-labelledby="page-title">
         <header class="topbar">
           <button class="menu-button" type="button" aria-label="Abrir menu">
             <span></span><span></span><span></span>
           </button>
           <div class="page-context">
-            <p>Seu espaço de criação</p>
-            <h1>Visão geral</h1>
+            <p id="page-eyebrow">Visão estratégica</p>
+            <div class="page-title-row"><h1 id="page-title">Dashboard</h1><span class="environment-badge" id="environment-badge" hidden></span></div>
+          </div>
+          <div class="anchor-topbar-tools">
+            <label class="anchor-global-search" for="anchor-global-search-input">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" /></svg>
+              <input id="anchor-global-search-input" type="search" placeholder="Buscar oportunidades, convênios, documentos..." aria-label="Busca global em desenvolvimento" readonly />
+            </label>
+            <div class="anchor-municipality-context" aria-label="Município atual ainda não selecionado"><span>Município atual</span><strong>—</strong></div>
           </div>
           <div class="user-actions">
             <button class="notification-toggle" id="notification-toggle" type="button" aria-label="Abrir notificações" aria-expanded="false" aria-controls="notification-drawer">
@@ -179,33 +191,28 @@
           </div>
         </header>
 
-        <section class="welcome-card" aria-labelledby="boas-vindas">
-          <div class="welcome-copy">
-            <span class="eyebrow">Seu painel pessoal</span>
-            <h2 id="boas-vindas">Transforme ideias em<br /><em>projetos de IA.</em></h2>
-            <p>Organize suas iniciativas, acompanhe cada etapa e mantenha o foco no que importa.</p>
-            <button class="primary-button" type="button" data-open-project-modal>
-              <span aria-hidden="true">+</span>
-              Novo Projeto
-            </button>
-          </div>
-          <div class="welcome-visual" aria-hidden="true">
-            <div class="orb orb-one"></div>
-            <div class="orb orb-two"></div>
-            <div class="orbit orbit-one"></div>
-            <div class="orbit orbit-two"></div>
-            <div class="brain-card">
-              <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.2">
-                <path d="M50 19c-8-8-22-3-22 9 0 3 1 6 3 8-8 2-12 12-7 19-7 4-7 16 1 20 0 10 13 14 20 7 3 6 8 6 10 0 7 7 20 3 20-7 8-4 8-16 1-20 5-7 1-17-7-19 2-2 3-5 3-8 0-12-14-17-22-9Z" />
-                <path d="M50 19v62M34 36c5 0 8 3 8 8M28 55c7 0 11 4 11 10M66 36c-5 0-8 3-8 8M72 55c-7 0-11 4-11 10" />
-                <circle cx="34" cy="36" r="2.5" fill="currentColor" /><circle cx="28" cy="55" r="2.5" fill="currentColor" />
-                <circle cx="66" cy="36" r="2.5" fill="currentColor" /><circle cx="72" cy="55" r="2.5" fill="currentColor" />
-              </svg>
-            </div>
+        <div class="platform-view platform-dashboard-view is-active" id="dashboard" data-platform-view="dashboard" tabindex="-1">
+        <section class="welcome-card anchor-hero" aria-labelledby="boas-vindas">
+          <div class="welcome-copy"><span class="eyebrow">Plataforma Âncora</span><h2 id="boas-vindas">Boa tarde, <em class="anchor-hero-name">Rafael.</em></h2><p>Inteligência e gestão dos recursos públicos em um único lugar.</p><p class="anchor-hero-journey">Planejar <span>•</span> Captar <span>•</span> Executar <span>•</span> Prestar contas <span>•</span> Transformar</p></div>
+          <div class="anchor-hero-visual" aria-hidden="true"><div class="anchor-hero-line anchor-hero-line-one"></div><div class="anchor-hero-line anchor-hero-line-two"></div><div class="anchor-hero-seal"><span>Â</span></div><span class="anchor-hero-label">Visão institucional</span></div>
+        </section>
+
+        <section class="anchor-executive-metrics" aria-labelledby="anchor-executive-metrics-title">
+          <div class="anchor-section-heading"><div><p class="eyebrow">Visão executiva</p><h2 id="anchor-executive-metrics-title">Panorama estratégico</h2></div><span>Dados conectados aos módulos da plataforma</span></div>
+          <div class="anchor-executive-metrics-grid">
+            <article class="anchor-metric-card is-info"><span>Oportunidades identificadas</span><strong>—</strong><small>Módulo em desenvolvimento</small></article><article class="anchor-metric-card is-gold"><span>Potencial de recursos</span><strong>—</strong><small>Módulo em desenvolvimento</small></article><article class="anchor-metric-card is-blue"><span>Captações em andamento</span><strong>—</strong><small>Módulo em desenvolvimento</small></article><article class="anchor-metric-card is-success"><span>Convênios ativos</span><strong>—</strong><small>Módulo em desenvolvimento</small></article><article class="anchor-metric-card is-alert"><span>Prazos críticos</span><strong id="dashboard-overdue-tasks">0</strong><small>Tarefas atrasadas</small></article><article class="anchor-metric-card is-neutral"><span>Prestações de contas em andamento</span><strong>—</strong><small>Módulo em desenvolvimento</small></article>
           </div>
         </section>
 
-        <section class="stats-section" aria-labelledby="resumo-titulo">
+        <section class="anchor-dashboard-modules" aria-label="Visão institucional do Dashboard">
+          <article class="anchor-module-card anchor-radar-card" aria-labelledby="anchor-radar-title"><div class="anchor-card-heading"><div><p class="eyebrow">Inteligência</p><h2 id="anchor-radar-title">Radar de Oportunidades</h2></div><span class="anchor-card-status">Em preparação</span></div><p>Oportunidades de recursos federais e estaduais para o seu município.</p><div class="anchor-radar-visual" role="img" aria-label="Área reservada para o radar de oportunidades"><span class="anchor-radar-center">Radar<br />futuro</span><span class="anchor-radar-ring ring-one"></span><span class="anchor-radar-ring ring-two"></span><span class="anchor-radar-axis axis-one"></span><span class="anchor-radar-axis axis-two"></span></div><dl class="anchor-radar-meta"><div><dt>Alta compatibilidade</dt><dd>—</dd></div><div><dt>Em análise</dt><dd>—</dd></div><div><dt>Requer atenção</dt><dd>—</dd></div><div><dt>Baixa aderência</dt><dd>—</dd></div></dl><div class="anchor-radar-foot"><span>Programas ativos <strong>—</strong></span><span>Órgãos concedentes <strong>—</strong></span><span>Recursos disponíveis <strong>—</strong></span></div></article>
+          <article class="anchor-module-card anchor-opportunities-card" aria-labelledby="anchor-opportunities-title"><div class="anchor-card-heading"><div><p class="eyebrow">Monitoramento</p><h2 id="anchor-opportunities-title">Oportunidades recentes</h2></div><a href="#/oportunidades" data-platform-route="oportunidades">Ver todas <span aria-hidden="true">→</span></a></div><div class="anchor-empty-module-state"><span aria-hidden="true">◇</span><p>Nenhuma oportunidade disponível ainda.</p><small>As oportunidades aparecerão aqui quando o módulo estiver conectado.</small></div><div class="anchor-opportunity-columns" aria-hidden="true"><span>Situação</span><span>Programa / objeto</span><span>Órgão</span><span>Valor</span><span>Prazo</span></div></article>
+          <article class="anchor-module-card anchor-quick-access-card" aria-labelledby="anchor-quick-access-title"><div class="anchor-card-heading"><div><p class="eyebrow">Atalhos</p><h2 id="anchor-quick-access-title">Acesso rápido</h2></div></div><nav class="anchor-quick-access" aria-label="Acesso rápido aos módulos"><a href="#/oportunidades" data-platform-route="oportunidades"><span aria-hidden="true">◎</span>Buscar oportunidades</a><a href="#/captacoes" data-platform-route="captacoes"><span aria-hidden="true">▤</span>Captações</a><a href="#/convenios" data-platform-route="convenios"><span aria-hidden="true">▣</span>Convênios</a><a href="#/agenda" data-platform-route="agenda"><span aria-hidden="true">◷</span>Agenda</a><a href="#/documentos" data-platform-route="documentos"><span aria-hidden="true">▧</span>Documentos</a><a href="#/relatorios" data-platform-route="relatorios"><span aria-hidden="true">▥</span>Relatórios</a></nav></article>
+          <article class="anchor-module-card anchor-convenios-card" aria-labelledby="anchor-convenios-title"><div class="anchor-card-heading"><div><p class="eyebrow">Gestão</p><h2 id="anchor-convenios-title">Status dos convênios</h2></div><a href="#/convenios" data-platform-route="convenios">Abrir módulo <span aria-hidden="true">→</span></a></div><div class="anchor-convenios-list"><div><span>Em execução</span><strong>—</strong></div><div><span>Em análise</span><strong>—</strong></div><div><span>A iniciar</span><strong>—</strong></div><div><span>Concluídos</span><strong>—</strong></div></div><p class="anchor-module-note">Nenhum dado de convênios disponível enquanto o módulo não estiver conectado.</p></article>
+          <article class="anchor-module-card anchor-news-card" aria-labelledby="anchor-news-title"><div class="anchor-card-heading"><div><p class="eyebrow">Informações</p><h2 id="anchor-news-title">Notícias e avisos</h2></div></div><div class="anchor-empty-module-state compact"><span aria-hidden="true">✦</span><p>Não há avisos institucionais no momento.</p><small>Esta área será integrada a fontes oficiais futuramente.</small></div></article>
+        </section>
+
+        <section class="stats-section legacy-dashboard-bindings" aria-labelledby="resumo-titulo" hidden aria-hidden="true">
           <div class="section-heading">
             <div>
               <p class="eyebrow">Resumo rápido</p>
@@ -281,7 +288,7 @@
               <div class="stat-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" /><path d="M12 7v5l3 2M7 4l-2 2M17 4l2 2" /></svg>
               </div>
-              <div><span>Tarefas atrasadas</span><strong id="dashboard-overdue-tasks">0</strong></div>
+              <div><span>Tarefas atrasadas</span><strong id="legacy-dashboard-overdue-tasks">0</strong></div>
               <small>Precisam de atenção</small>
             </article>
 
@@ -340,9 +347,9 @@
           <div class="section-heading compact-heading">
             <div>
               <p class="eyebrow">Prioridades de execução</p>
-              <h2 id="dashboard-commitments-title">Próximos compromissos</h2>
+              <h2 id="dashboard-commitments-title">Minha agenda</h2>
             </div>
-            <a class="text-button" href="#agenda">Ver Agenda completa <span aria-hidden="true">→</span></a>
+            <a class="text-button" href="#/agenda" data-platform-route="agenda">Ver Agenda completa <span aria-hidden="true">→</span></a>
           </div>
           <div class="dashboard-commitments-list" id="dashboard-upcoming-commitments" aria-live="polite"></div>
           <p class="dashboard-commitments-empty" id="dashboard-upcoming-commitments-empty">Nenhuma tarefa pendente para acompanhar neste momento.</p>
@@ -449,7 +456,7 @@
           <div class="section-heading">
             <div>
               <p class="eyebrow">Prioridades do momento</p>
-              <h2 id="atencao-titulo">Projetos que precisam de atenção</h2>
+              <h2 id="atencao-titulo">Atenção estratégica</h2>
             </div>
             <span class="period-label" id="attention-count">Nenhum projeto</span>
           </div>
@@ -460,8 +467,9 @@
           </div>
           <div class="attention-grid" id="attention-projects" aria-live="polite" hidden></div>
         </section>
+        </div>
 
-        <section id="projetos" class="projects-section" aria-labelledby="recentes-titulo">
+        <section id="projetos" class="projects-section platform-view" data-platform-view="projects" tabindex="-1" aria-labelledby="recentes-titulo">
           <div class="section-heading">
             <div>
               <p class="eyebrow">Acompanhe seu trabalho</p>
@@ -545,7 +553,7 @@
           <div class="projects-grid" id="projects-list" aria-live="polite" hidden></div>
         </section>
 
-        <section id="agenda" class="agenda-section" aria-labelledby="agenda-title">
+        <section id="agenda" class="agenda-section platform-view" data-platform-view="agenda" tabindex="-1" aria-labelledby="agenda-title">
           <div class="section-heading">
             <div>
               <p class="eyebrow">Planejamento de tarefas</p>
@@ -575,7 +583,7 @@
           </article>
         </section>
 
-        <section id="relatorios" class="reports-section" aria-labelledby="reports-title">
+        <section id="relatorios" class="reports-section platform-view" data-platform-view="relatorios" tabindex="-1" aria-labelledby="reports-title">
           <div class="section-heading reports-heading">
             <div>
               <p class="eyebrow">Visão de gestão</p>
@@ -834,6 +842,39 @@
             </div>
           </section>
         </section>
+        <section class="platform-view module-placeholder" id="radar" data-platform-view="radar" tabindex="-1" aria-labelledby="radar-title" hidden>
+          <div class="module-placeholder-card"><span class="module-placeholder-icon" aria-hidden="true">◎</span><p class="eyebrow">Inteligência</p><h2 id="radar-title">Radar Âncora</h2><p>Uma visão integrada para acompanhar sinais e orientar decisões sobre recursos públicos.</p><span class="module-placeholder-status">Módulo em desenvolvimento</span></div>
+        </section>
+        <section class="platform-view module-placeholder" id="oportunidades" data-platform-view="oportunidades" tabindex="-1" aria-labelledby="oportunidades-title" hidden>
+          <div class="module-placeholder-card"><span class="module-placeholder-icon" aria-hidden="true">◇</span><p class="eyebrow">Inteligência</p><h2 id="oportunidades-title">Oportunidades</h2><p>Um espaço para organizar oportunidades de programas, chamadas e recursos públicos.</p><span class="module-placeholder-status">Módulo em desenvolvimento</span></div>
+        </section>
+        <section class="platform-view module-placeholder" id="captacoes" data-platform-view="captacoes" tabindex="-1" aria-labelledby="captacoes-title" hidden>
+          <div class="module-placeholder-card"><span class="module-placeholder-icon" aria-hidden="true">▤</span><p class="eyebrow">Gestão</p><h2 id="captacoes-title">Captações</h2><p>Planejamento e acompanhamento das estratégias de captação de recursos.</p><span class="module-placeholder-status">Módulo em desenvolvimento</span></div>
+        </section>
+        <section class="platform-view module-placeholder" id="convenios" data-platform-view="convenios" tabindex="-1" aria-labelledby="convenios-title" hidden>
+          <div class="module-placeholder-card"><span class="module-placeholder-icon" aria-hidden="true">▣</span><p class="eyebrow">Gestão</p><h2 id="convenios-title">Convênios</h2><p>Gestão centralizada do ciclo de convênios e instrumentos de transferência.</p><span class="module-placeholder-status">Módulo em desenvolvimento</span></div>
+        </section>
+        <section class="platform-view module-placeholder" id="documentos" data-platform-view="documentos" tabindex="-1" aria-labelledby="documentos-title" hidden>
+          <div class="module-placeholder-card"><span class="module-placeholder-icon" aria-hidden="true">▧</span><p class="eyebrow">Gestão</p><h2 id="documentos-title">Documentos</h2><p>Organização segura de documentos, certidões e evidências institucionais.</p><span class="module-placeholder-status">Módulo em desenvolvimento</span></div>
+        </section>
+        <section class="platform-view module-placeholder" id="prestacao-contas" data-platform-view="prestacao-contas" tabindex="-1" aria-labelledby="prestacao-contas-title" hidden>
+          <div class="module-placeholder-card"><span class="module-placeholder-icon" aria-hidden="true">✓</span><p class="eyebrow">Gestão</p><h2 id="prestacao-contas-title">Prestação de Contas</h2><p>Visibilidade para etapas, evidências e obrigações de prestação de contas.</p><span class="module-placeholder-status">Módulo em desenvolvimento</span></div>
+        </section>
+        <section class="platform-view module-placeholder" id="prefeitura" data-platform-view="prefeitura" tabindex="-1" aria-labelledby="prefeitura-title" hidden>
+          <div class="module-placeholder-card"><span class="module-placeholder-icon" aria-hidden="true">▦</span><p class="eyebrow">Gestão municipal</p><h2 id="prefeitura-title">Prefeitura</h2><p>Dados institucionais, estrutura, responsáveis e capacidade municipal serão organizados aqui.</p><span class="module-placeholder-status">Módulo em desenvolvimento</span></div>
+        </section>
+        <section class="platform-view module-placeholder" id="usuarios" data-platform-view="usuarios" tabindex="-1" aria-labelledby="usuarios-title" hidden>
+          <div class="module-placeholder-card"><span class="module-placeholder-icon" aria-hidden="true">♙</span><p class="eyebrow">Gestão municipal</p><h2 id="usuarios-title">Usuários</h2><p>Gestão de vínculos, setores e permissões municipais será disponibilizada neste módulo.</p><span class="module-placeholder-status">Módulo em desenvolvimento</span></div>
+        </section>
+        <section class="platform-view module-placeholder" id="configuracoes" data-platform-view="configuracoes" tabindex="-1" aria-labelledby="configuracoes-title" hidden>
+          <div class="module-placeholder-card"><span class="module-placeholder-icon" aria-hidden="true">⚙</span><p class="eyebrow">Conta e plataforma</p><h2 id="configuracoes-title">Configurações</h2><p>Preferências adicionais da plataforma serão concentradas nesta área.</p><span class="module-placeholder-status">Módulo em desenvolvimento</span></div>
+        </section>
+        <footer class="anchor-app-footer">
+          <div><strong>ÂNCORA</strong><span>Inteligência e Gestão de Recursos Públicos</span></div>
+          <p>Planejar <b>•</b> Captar <b>•</b> Executar <b>•</b> Transformar</p>
+          <span class="anchor-footer-environment">Ambiente de Desenvolvimento</span>
+          <small>Pense. Construa. Prospere.</small>
+        </footer>
       </main>
     </div>
 
