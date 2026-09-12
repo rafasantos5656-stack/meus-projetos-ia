@@ -61,6 +61,20 @@
   const addressState = document.querySelector("#municipality-address-state");
   const addressEmpty = document.querySelector("#municipality-address-empty");
   const addressError = document.querySelector("#municipality-address-error");
+  const addressEditButton = document.querySelector("#municipality-address-edit-button");
+  const addressForm = document.querySelector("#municipality-address-form");
+  const addressFormPostalCode = document.querySelector("#municipality-address-form-postal-code");
+  const addressFormStreet = document.querySelector("#municipality-address-form-street");
+  const addressFormNumber = document.querySelector("#municipality-address-form-number");
+  const addressFormComplement = document.querySelector("#municipality-address-form-complement");
+  const addressFormDistrict = document.querySelector("#municipality-address-form-district");
+  const addressFormCity = document.querySelector("#municipality-address-form-city");
+  const addressFormState = document.querySelector("#municipality-address-form-state");
+  const addressCancelButton = document.querySelector("#municipality-address-cancel-button");
+  const addressSaveButton = document.querySelector("#municipality-address-save-button");
+  const addressFormError = document.querySelector("#municipality-address-form-error");
+  const addressFeedback = document.querySelector("#municipality-address-feedback");
+  const addressFormFields = [addressFormPostalCode, addressFormStreet, addressFormNumber, addressFormComplement, addressFormDistrict, addressFormCity, addressFormState];
   const contactsList = document.querySelector("#municipality-contacts-list");
   const contactsCount = document.querySelector("#municipality-contacts-count");
   const contactsEmpty = document.querySelector("#municipality-contacts-empty");
@@ -68,7 +82,7 @@
   const tabButtons = Array.from(document.querySelectorAll("[data-municipality-tab]"));
   const panels = Array.from(document.querySelectorAll("[data-municipality-panel]"));
 
-  if (!municipalityPage || !selector || !content || !profileEditButton || !profileForm || !profileCancelButton || !profileSaveButton || !profileFormError || !profileFeedback || profileFormFields.some((field) => !field) || tabButtons.length === 0 || panels.length === 0) return;
+  if (!municipalityPage || !selector || !content || !profileEditButton || !profileForm || !profileCancelButton || !profileSaveButton || !profileFormError || !profileFeedback || profileFormFields.some((field) => !field) || !addressEditButton || !addressForm || !addressCancelButton || !addressSaveButton || !addressFormError || !addressFeedback || addressFormFields.some((field) => !field) || tabButtons.length === 0 || panels.length === 0) return;
 
   const roleLabels = Object.freeze({
     municipality_admin: "Administração municipal",
@@ -89,6 +103,9 @@
     profile: null,
     profileFailed: false,
     isProfileSaving: false,
+    address: null,
+    addressFailed: false,
+    isAddressSaving: false,
   };
 
   function isMunicipalityRoute() {
@@ -463,10 +480,11 @@
   function setProfileSaving(isSaving) {
     state.isProfileSaving = isSaving;
     profileEditButton.disabled = isSaving || state.profileFailed;
+    addressEditButton.disabled = isSaving || state.addressFailed;
     profileCancelButton.disabled = isSaving;
     profileSaveButton.disabled = isSaving;
     profileSaveButton.textContent = isSaving ? "Salvando…" : "Salvar dados";
-    selector.disabled = isSaving;
+    selector.disabled = isSaving || state.isAddressSaving;
     profileForm.setAttribute("aria-busy", String(isSaving));
     profileFormFields.forEach((field) => { field.disabled = isSaving; });
   }
@@ -632,7 +650,190 @@
     summaryPopulationMeta.textContent = `${record.reference_year} · ${source}`;
   }
 
+  function getOptionalPostalCodeValue() {
+    const value = typeof addressFormPostalCode.value === "string"
+      ? addressFormPostalCode.value.replace(/\s+/g, "")
+      : "";
+    return value || null;
+  }
+
+  function getOptionalAddressStateValue() {
+    const value = typeof addressFormState.value === "string" ? addressFormState.value.trim() : "";
+    return value ? value.toUpperCase() : null;
+  }
+
+  function validateMunicipalityAddressPayload() {
+    const payload = {
+      postal_code: getOptionalPostalCodeValue(),
+      street: getOptionalFieldValue(addressFormStreet),
+      number: getOptionalFieldValue(addressFormNumber),
+      complement: getOptionalFieldValue(addressFormComplement),
+      district: getOptionalFieldValue(addressFormDistrict),
+      city: getOptionalFieldValue(addressFormCity),
+      state: getOptionalAddressStateValue(),
+    };
+
+    if (payload.postal_code && !/^\d{5}-?\d{3}$/.test(payload.postal_code)) {
+      throw createRequestError("Informe um CEP no formato 00000-000 ou 00000000.");
+    }
+
+    if (payload.state && !/^[A-Z]{2}$/.test(payload.state)) {
+      throw createRequestError("Informe uma UF com exatamente duas letras.");
+    }
+
+    const sizeRules = [
+      ["street", 240, "logradouro"],
+      ["number", 40, "número"],
+      ["complement", 160, "complemento"],
+      ["district", 160, "bairro"],
+      ["city", 160, "município"],
+    ];
+    for (const [field, limit, label] of sizeRules) {
+      if (payload[field] && payload[field].length > limit) {
+        throw createRequestError(`O campo ${label} deve ter no máximo ${limit} caracteres.`);
+      }
+    }
+
+    return payload;
+  }
+
+  function setAddressFormError(message = "") {
+    addressFormError.hidden = !message;
+    addressFormError.textContent = message;
+  }
+
+  function setAddressFeedback(message = "", kind = "success") {
+    addressFeedback.hidden = !message;
+    addressFeedback.textContent = message;
+    if (message) addressFeedback.dataset.kind = kind;
+    else delete addressFeedback.dataset.kind;
+  }
+
+  function setAddressSaving(isSaving) {
+    state.isAddressSaving = isSaving;
+    addressEditButton.disabled = isSaving || state.addressFailed;
+    profileEditButton.disabled = isSaving || state.profileFailed;
+    addressCancelButton.disabled = isSaving;
+    addressSaveButton.disabled = isSaving;
+    addressSaveButton.textContent = isSaving ? "Salvando…" : "Salvar endereço";
+    selector.disabled = isSaving || state.isProfileSaving;
+    addressForm.setAttribute("aria-busy", String(isSaving));
+    addressFormFields.forEach((field) => { field.disabled = isSaving; });
+  }
+
+  function setAddressFormValues(address) {
+    addressFormPostalCode.value = address?.postal_code ?? "";
+    addressFormStreet.value = address?.street ?? "";
+    addressFormNumber.value = address?.number ?? "";
+    addressFormComplement.value = address?.complement ?? "";
+    addressFormDistrict.value = address?.district ?? "";
+    addressFormCity.value = address?.city ?? "";
+    addressFormState.value = address?.state ?? "";
+  }
+
+  function closeAddressEditor({ returnFocus = false } = {}) {
+    addressForm.hidden = true;
+    addressEditButton.setAttribute("aria-expanded", "false");
+    setAddressFormError();
+    if (returnFocus) addressEditButton.focus();
+  }
+
+  function openAddressEditor() {
+    if (state.addressFailed || state.isAddressSaving || state.isProfileSaving || !state.selectedMunicipalityId) return;
+    setAddressFeedback();
+    setAddressFormError();
+    setAddressFormValues(state.address);
+    addressForm.hidden = false;
+    addressEditButton.setAttribute("aria-expanded", "true");
+    window.requestAnimationFrame(() => addressFormPostalCode.focus());
+  }
+
+  async function reloadMunicipalityAddress(context) {
+    const municipalityId = state.selectedMunicipalityId;
+    if (!municipalityId) return;
+    const escapedMunicipalityId = encodeURIComponent(municipalityId);
+    const records = await municipalityRequest(
+      `municipality_addresses?select=municipality_id,postal_code,street,number,complement,district,city,state&municipality_id=eq.${escapedMunicipalityId}&limit=1`,
+      context,
+    );
+    state.address = records[0] ?? null;
+    state.addressFailed = false;
+    renderAddress(state.address, false);
+  }
+
+  async function submitMunicipalityAddress(event) {
+    event.preventDefault();
+    if (state.isAddressSaving || state.isProfileSaving || !state.selectedMunicipalityId) return;
+
+    let payload;
+    try {
+      payload = validateMunicipalityAddressPayload();
+    } catch (error) {
+      setAddressFormError(error.message || "Revise os dados informados.");
+      return;
+    }
+
+    const targetMunicipalityId = state.selectedMunicipalityId;
+    const hadAddress = Boolean(state.address);
+    if (!hadAddress && Object.values(payload).every((value) => value === null)) {
+      setAddressFormError("Informe pelo menos um dado para criar o endereço institucional.");
+      return;
+    }
+
+    setAddressFormError();
+    setAddressSaving(true);
+
+    try {
+      const context = await getAuthenticatedContext();
+      const escapedMunicipalityId = encodeURIComponent(targetMunicipalityId);
+      const result = hadAddress
+        ? await municipalityWriteRequest(
+          `municipality_addresses?municipality_id=eq.${escapedMunicipalityId}`,
+          "PATCH",
+          payload,
+          context,
+        )
+        : await municipalityWriteRequest(
+          "municipality_addresses",
+          "POST",
+          { municipality_id: targetMunicipalityId, ...payload },
+          context,
+        );
+
+      if (result.length === 0) {
+        throw createRequestError("permission denied", 403, "42501");
+      }
+
+      await reloadMunicipalityAddress(context);
+      closeAddressEditor();
+      setAddressFeedback("Endereço institucional atualizado com sucesso.", "success");
+    } catch (error) {
+      const isCreationConflict = !hadAddress && (Number(error?.status) === 409 || String(error?.code ?? "") === "23505");
+      if (isCreationConflict) {
+        try {
+          const context = await getAuthenticatedContext();
+          await reloadMunicipalityAddress(context);
+          closeAddressEditor();
+          setAddressFeedback("Um endereço foi criado por outra pessoa. Os dados foram recarregados; revise antes de tentar novamente.", "info");
+        } catch {
+          setAddressFormError("O endereço já existe, mas não foi possível recarregar os dados. Tente novamente.");
+        }
+      } else if (isProfilePermissionError(error)) {
+        setAddressFormError("Você não possui permissão para editar estes dados.");
+      } else {
+        setAddressFormError("Não foi possível salvar o endereço institucional. Revise os campos e tente novamente.");
+      }
+    } finally {
+      setAddressSaving(false);
+    }
+  }
   function renderAddress(address, failed) {
+    state.address = failed ? null : address;
+    state.addressFailed = failed;
+    addressEditButton.hidden = failed;
+    addressEditButton.disabled = state.isAddressSaving || failed;
+    if (failed && !state.isAddressSaving) closeAddressEditor();
+
     const hasAddress = Boolean(address) && !failed;
     addressGrid.hidden = failed || !hasAddress;
     addressEmpty.hidden = failed || hasAddress;
@@ -747,6 +948,10 @@
       closeProfileEditor();
       setProfileFeedback();
     }
+    if (!state.isAddressSaving) {
+      closeAddressEditor();
+      setAddressFeedback();
+    }
     const municipality = state.municipalities.find((item) => item.id === state.selectedMunicipalityId);
     if (!municipality) return;
 
@@ -812,6 +1017,8 @@
     state.selectedMunicipalityId = "";
     state.profile = null;
     state.profileFailed = false;
+    state.address = null;
+    state.addressFailed = false;
     state.requestId += 1;
     selector.replaceChildren();
     selectorField.hidden = true;
@@ -822,11 +1029,16 @@
     departmentsCount.textContent = "0";
     contactsCount.textContent = "0";
     closeProfileEditor();
+    closeAddressEditor();
     setProfileFeedback();
+    setAddressFeedback();
     setActiveTab("overview");
     setViewState("empty");
   }
 
+  addressEditButton.addEventListener("click", openAddressEditor);
+  addressCancelButton.addEventListener("click", () => closeAddressEditor({ returnFocus: true }));
+  addressForm.addEventListener("submit", (event) => { void submitMunicipalityAddress(event); });
   profileEditButton.addEventListener("click", openProfileEditor);
   profileCancelButton.addEventListener("click", () => closeProfileEditor({ returnFocus: true }));
   profileForm.addEventListener("submit", (event) => { void submitInstitutionalProfile(event); });

@@ -969,7 +969,7 @@
 
             <section class="municipality-panel" id="municipality-panel-address" data-municipality-panel="address" role="tabpanel" aria-labelledby="municipality-tab-address" hidden>
               <section class="municipality-data-section" aria-labelledby="municipality-address-title">
-                <header class="municipality-section-heading"><span class="municipality-section-icon" aria-hidden="true">⌖</span><div><p class="eyebrow">Localização institucional</p><h3 id="municipality-address-title">Endereço</h3></div></header>
+                <header class="municipality-section-heading"><span class="municipality-section-icon" aria-hidden="true">⌖</span><div><p class="eyebrow">Localização institucional</p><h3 id="municipality-address-title">Endereço</h3></div><button class="municipality-edit-button" id="municipality-address-edit-button" type="button" aria-controls="municipality-address-form" aria-expanded="false">Editar endereço</button></header>
                 <dl class="municipality-address-grid" id="municipality-address-grid">
                   <div class="municipality-detail"><dt>CEP</dt><dd id="municipality-address-postal-code">Não informado</dd></div>
                   <div class="municipality-detail municipality-address-street"><dt>Logradouro</dt><dd id="municipality-address-street">Não informado</dd></div>
@@ -981,6 +981,21 @@
                 </dl>
                 <p class="municipality-section-empty" id="municipality-address-empty" hidden>Nenhum endereço institucional foi informado para esta Prefeitura.</p>
                 <p class="municipality-section-error" id="municipality-address-error" hidden>Não foi possível carregar o endereço institucional.</p>
+                <p class="municipality-form-feedback" id="municipality-address-feedback" role="status" aria-live="polite" hidden></p>
+                <form class="municipality-profile-form municipality-address-form" id="municipality-address-form" novalidate hidden>
+                  <div class="municipality-profile-form-grid">
+                    <label for="municipality-address-form-postal-code"><span>CEP</span><input id="municipality-address-form-postal-code" name="postal_code" type="text" maxlength="9" inputmode="numeric" autocomplete="postal-code" placeholder="00000-000" /></label>
+                    <label for="municipality-address-form-street"><span>Logradouro</span><input id="municipality-address-form-street" name="street" type="text" maxlength="240" autocomplete="street-address" /></label>
+                    <label for="municipality-address-form-number"><span>Número</span><input id="municipality-address-form-number" name="number" type="text" maxlength="40" autocomplete="address-line2" placeholder="Ex.: 123 ou s/n" /></label>
+                    <label for="municipality-address-form-complement"><span>Complemento</span><input id="municipality-address-form-complement" name="complement" type="text" maxlength="160" autocomplete="address-line2" /></label>
+                    <label for="municipality-address-form-district"><span>Bairro</span><input id="municipality-address-form-district" name="district" type="text" maxlength="160" autocomplete="address-level3" /></label>
+                    <label for="municipality-address-form-city"><span>Município</span><input id="municipality-address-form-city" name="city" type="text" maxlength="160" autocomplete="address-level2" /></label>
+                    <label for="municipality-address-form-state"><span>UF</span><input id="municipality-address-form-state" name="state" type="text" maxlength="2" inputmode="text" autocomplete="address-level1" placeholder="SP" /></label>
+                  </div>
+                  <p class="municipality-form-hint">Os campos são opcionais, mas um novo endereço não pode ser totalmente vazio. O município do contexto atual não pode ser alterado.</p>
+                  <p class="municipality-form-error" id="municipality-address-form-error" role="alert" hidden></p>
+                  <div class="municipality-form-actions"><button class="municipality-cancel-button" id="municipality-address-cancel-button" type="button">Cancelar</button><button class="municipality-save-button" id="municipality-address-save-button" type="submit">Salvar endereço</button></div>
+                </form>
               </section>
             </section>
 
