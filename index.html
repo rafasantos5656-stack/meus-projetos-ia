@@ -11,10 +11,12 @@
     <link rel="stylesheet" href="./styles.css" />
     <link rel="stylesheet" href="./navigation.css" />
     <link rel="stylesheet" href="./dashboard-premium.css" />
+    <link rel="stylesheet" href="./municipality.css" />
     <script src="./config/environment-loader.js"></script>
     <script src="./script.js" defer></script>
     <script src="./auth.js" defer></script>
     <script src="./navigation.js" defer></script>
+    <script src="./municipality.js" defer></script>
   </head>
   <body>
     <main class="auth-page" id="auth-screen" aria-labelledby="auth-title">
@@ -860,8 +862,146 @@
         <section class="platform-view module-placeholder" id="prestacao-contas" data-platform-view="prestacao-contas" tabindex="-1" aria-labelledby="prestacao-contas-title" hidden>
           <div class="module-placeholder-card"><span class="module-placeholder-icon" aria-hidden="true">✓</span><p class="eyebrow">Gestão</p><h2 id="prestacao-contas-title">Prestação de Contas</h2><p>Visibilidade para etapas, evidências e obrigações de prestação de contas.</p><span class="module-placeholder-status">Módulo em desenvolvimento</span></div>
         </section>
-        <section class="platform-view module-placeholder" id="prefeitura" data-platform-view="prefeitura" tabindex="-1" aria-labelledby="prefeitura-title" hidden>
-          <div class="module-placeholder-card"><span class="module-placeholder-icon" aria-hidden="true">▦</span><p class="eyebrow">Gestão municipal</p><h2 id="prefeitura-title">Prefeitura</h2><p>Dados institucionais, estrutura, responsáveis e capacidade municipal serão organizados aqui.</p><span class="module-placeholder-status">Módulo em desenvolvimento</span></div>
+        <section class="platform-view municipality-page" id="prefeitura" data-platform-view="prefeitura" tabindex="-1" aria-labelledby="prefeitura-title" hidden>
+          <header class="municipality-page-header">
+            <div>
+              <p class="eyebrow">Gestão municipal</p>
+              <h2 id="prefeitura-title">Prefeitura</h2>
+              <p>Visão institucional e estrutura administrativa disponível para o seu contexto de acesso.</p>
+            </div>
+            <label class="municipality-selector-field" id="municipality-selector-field" for="municipality-selector" hidden>
+              <span>Contexto municipal</span>
+              <select id="municipality-selector" aria-label="Selecionar Prefeitura"></select>
+            </label>
+          </header>
+
+          <div class="municipality-view-state municipality-loading-state" id="municipality-loading-state" role="status" aria-live="polite">
+            <span class="municipality-loading-mark" aria-hidden="true"></span>
+            <div><strong>Carregando contexto municipal</strong><p>Consultando apenas as informações autorizadas para sua sessão.</p></div>
+          </div>
+
+          <div class="municipality-view-state municipality-error-state" id="municipality-error-state" role="alert" hidden>
+            <span aria-hidden="true">!</span>
+            <div><strong>Não foi possível carregar a Prefeitura</strong><p id="municipality-error-message">Tente novamente em instantes.</p></div>
+            <button id="municipality-retry-button" type="button">Tentar novamente</button>
+          </div>
+
+          <div class="municipality-view-state municipality-empty-state" id="municipality-empty-state" role="status" hidden>
+            <span aria-hidden="true">▦</span>
+            <div><strong>Nenhuma Prefeitura disponível</strong><p>Não há um contexto municipal liberado para esta conta no momento.</p></div>
+          </div>
+
+          <div class="municipality-content" id="municipality-content" hidden>
+            <nav class="municipality-tabs" aria-label="Seções da Prefeitura" role="tablist">
+              <button class="municipality-tab is-active" id="municipality-tab-overview" type="button" role="tab" aria-selected="true" aria-controls="municipality-panel-overview" data-municipality-tab="overview">Visão geral</button>
+              <button class="municipality-tab" id="municipality-tab-institutional" type="button" role="tab" aria-selected="false" aria-controls="municipality-panel-institutional" data-municipality-tab="institutional" tabindex="-1">Dados institucionais</button>
+              <button class="municipality-tab" id="municipality-tab-address" type="button" role="tab" aria-selected="false" aria-controls="municipality-panel-address" data-municipality-tab="address" tabindex="-1">Endereço</button>
+              <button class="municipality-tab" id="municipality-tab-structure" type="button" role="tab" aria-selected="false" aria-controls="municipality-panel-structure" data-municipality-tab="structure" tabindex="-1">Estrutura administrativa</button>
+              <button class="municipality-tab" id="municipality-tab-contacts" type="button" role="tab" aria-selected="false" aria-controls="municipality-panel-contacts" data-municipality-tab="contacts" tabindex="-1">Responsáveis</button>
+            </nav>
+
+            <section class="municipality-panel" id="municipality-panel-overview" data-municipality-panel="overview" role="tabpanel" aria-labelledby="municipality-tab-overview">
+              <section class="municipality-institutional-card" aria-labelledby="municipality-institutional-title">
+                <header class="municipality-section-heading">
+                  <span class="municipality-section-icon" aria-hidden="true">▦</span>
+                  <div><p class="eyebrow">Identificação</p><h3 id="municipality-institutional-title">Dados institucionais</h3></div>
+                  <span class="municipality-status-badge" id="municipality-status">—</span>
+                </header>
+                <dl class="municipality-details-grid">
+                  <div class="municipality-detail municipality-detail-name"><dt>Prefeitura</dt><dd id="municipality-name">—</dd></div>
+                  <div class="municipality-detail"><dt>UF</dt><dd id="municipality-state">—</dd></div>
+                  <div class="municipality-detail"><dt>Código IBGE</dt><dd id="municipality-ibge-code">—</dd></div>
+                  <div class="municipality-detail"><dt>CNPJ principal</dt><dd id="municipality-primary-cnpj">—</dd></div>
+                  <div class="municipality-detail"><dt>Fuso horário</dt><dd id="municipality-timezone">—</dd></div>
+                </dl>
+              </section>
+
+              <section class="municipality-overview-section" aria-labelledby="municipality-overview-summary-title">
+                <header class="municipality-section-heading">
+                  <span class="municipality-section-icon" aria-hidden="true">◈</span>
+                  <div><p class="eyebrow">Perfil municipal</p><h3 id="municipality-overview-summary-title">Resumo institucional</h3></div>
+                </header>
+                <div class="municipality-overview-summary-grid">
+                  <article class="municipality-overview-summary-item"><span>Prefeito(a)</span><strong id="municipality-summary-mayor">Não informado</strong></article>
+                  <article class="municipality-overview-summary-item"><span>População mais recente</span><strong id="municipality-summary-population">Não informado</strong><small id="municipality-summary-population-meta">Sem registro disponível</small></article>
+                  <article class="municipality-overview-summary-item"><span>Site oficial</span><strong id="municipality-summary-website">Não informado</strong></article>
+                  <article class="municipality-overview-summary-item"><span>Contato institucional</span><strong id="municipality-summary-phone">Não informado</strong><small id="municipality-summary-email">Não informado</small></article>
+                </div>
+              </section>
+
+              <section class="municipality-overview-section" aria-labelledby="municipality-overview-structure-title">
+                <header class="municipality-section-heading">
+                  <span class="municipality-section-icon" aria-hidden="true">◇</span>
+                  <div><p class="eyebrow">Estrutura e equipe</p><h3 id="municipality-overview-structure-title">Panorama administrativo</h3></div>
+                </header>
+                <div class="municipality-overview-structure-grid">
+                  <div class="municipality-overview-departments"><span class="municipality-overview-label">Secretarias e departamentos</span><div class="municipality-overview-departments-list" id="municipality-overview-departments-list"></div><p class="municipality-section-empty" id="municipality-overview-departments-empty" hidden>Nenhuma secretaria ou departamento disponível neste contexto.</p><p class="municipality-section-error" id="municipality-overview-departments-error" hidden>Não foi possível carregar as secretarias disponíveis.</p></div>
+                  <div class="municipality-overview-team"><span class="municipality-overview-label">Equipe vinculada</span><div class="municipality-members-list" id="municipality-members-list"></div><p class="municipality-section-empty" id="municipality-members-empty" hidden>Nenhum membro visível neste contexto.</p><p class="municipality-section-error" id="municipality-members-error" hidden>Não foi possível carregar os membros disponíveis.</p></div>
+                </div>
+              </section>
+            </section>
+
+            <section class="municipality-panel" id="municipality-panel-institutional" data-municipality-panel="institutional" role="tabpanel" aria-labelledby="municipality-tab-institutional" hidden>
+              <section class="municipality-data-section" aria-labelledby="municipality-profile-title">
+                <header class="municipality-section-heading"><span class="municipality-section-icon" aria-hidden="true">◈</span><div><p class="eyebrow">Perfil institucional</p><h3 id="municipality-profile-title">Dados institucionais</h3></div><button class="municipality-edit-button" id="municipality-profile-edit-button" type="button" aria-controls="municipality-profile-form" aria-expanded="false">Editar dados</button></header>
+                <div class="municipality-profile-grid" id="municipality-profile-grid">
+                  <article class="municipality-profile-item"><span>Prefeito(a)</span><strong id="municipality-profile-mayor">Não informado</strong></article>
+                  <article class="municipality-profile-item"><span>Site oficial</span><a id="municipality-profile-website" hidden rel="noopener noreferrer" target="_blank"></a><strong id="municipality-profile-website-empty">Não informado</strong></article>
+                  <article class="municipality-profile-item"><span>Telefone institucional</span><strong id="municipality-profile-phone">Não informado</strong></article>
+                  <article class="municipality-profile-item"><span>E-mail institucional</span><strong id="municipality-profile-email">Não informado</strong></article>
+                </div>
+                <p class="municipality-section-empty" id="municipality-profile-empty" hidden>Nenhum perfil institucional foi informado para esta Prefeitura.</p>
+                <p class="municipality-section-error" id="municipality-profile-error" hidden>Não foi possível carregar os dados institucionais.</p>
+                <p class="municipality-form-feedback" id="municipality-profile-feedback" role="status" aria-live="polite" hidden></p>
+                <form class="municipality-profile-form" id="municipality-profile-form" novalidate hidden>
+                  <div class="municipality-profile-form-grid">
+                    <label for="municipality-profile-form-mayor"><span>Prefeito(a)</span><input id="municipality-profile-form-mayor" name="mayor_name" type="text" maxlength="160" autocomplete="name" /></label>
+                    <label for="municipality-profile-form-website"><span>Site oficial</span><input id="municipality-profile-form-website" name="official_website" type="url" maxlength="500" inputmode="url" autocomplete="url" placeholder="https://www.prefeitura.gov.br" /></label>
+                    <label for="municipality-profile-form-phone"><span>Telefone institucional</span><input id="municipality-profile-form-phone" name="institutional_phone" type="tel" maxlength="40" autocomplete="tel" /></label>
+                    <label for="municipality-profile-form-email"><span>E-mail institucional</span><input id="municipality-profile-form-email" name="institutional_email" type="email" maxlength="320" inputmode="email" autocomplete="email" /></label>
+                  </div>
+                  <p class="municipality-form-hint">Os campos são opcionais. O município do contexto atual não pode ser alterado.</p>
+                  <p class="municipality-form-error" id="municipality-profile-form-error" role="alert" hidden></p>
+                  <div class="municipality-form-actions"><button class="municipality-cancel-button" id="municipality-profile-cancel-button" type="button">Cancelar</button><button class="municipality-save-button" id="municipality-profile-save-button" type="submit">Salvar dados</button></div>
+                </form>
+              </section>
+            </section>
+
+            <section class="municipality-panel" id="municipality-panel-address" data-municipality-panel="address" role="tabpanel" aria-labelledby="municipality-tab-address" hidden>
+              <section class="municipality-data-section" aria-labelledby="municipality-address-title">
+                <header class="municipality-section-heading"><span class="municipality-section-icon" aria-hidden="true">⌖</span><div><p class="eyebrow">Localização institucional</p><h3 id="municipality-address-title">Endereço</h3></div></header>
+                <dl class="municipality-address-grid" id="municipality-address-grid">
+                  <div class="municipality-detail"><dt>CEP</dt><dd id="municipality-address-postal-code">Não informado</dd></div>
+                  <div class="municipality-detail municipality-address-street"><dt>Logradouro</dt><dd id="municipality-address-street">Não informado</dd></div>
+                  <div class="municipality-detail"><dt>Número</dt><dd id="municipality-address-number">Não informado</dd></div>
+                  <div class="municipality-detail"><dt>Complemento</dt><dd id="municipality-address-complement">Não informado</dd></div>
+                  <div class="municipality-detail"><dt>Bairro</dt><dd id="municipality-address-district">Não informado</dd></div>
+                  <div class="municipality-detail"><dt>Cidade</dt><dd id="municipality-address-city">Não informado</dd></div>
+                  <div class="municipality-detail"><dt>UF</dt><dd id="municipality-address-state">Não informado</dd></div>
+                </dl>
+                <p class="municipality-section-empty" id="municipality-address-empty" hidden>Nenhum endereço institucional foi informado para esta Prefeitura.</p>
+                <p class="municipality-section-error" id="municipality-address-error" hidden>Não foi possível carregar o endereço institucional.</p>
+              </section>
+            </section>
+
+            <section class="municipality-panel" id="municipality-panel-structure" data-municipality-panel="structure" role="tabpanel" aria-labelledby="municipality-tab-structure" hidden>
+              <section class="municipality-data-section" aria-labelledby="municipality-departments-title">
+                <header class="municipality-section-heading"><span class="municipality-section-icon" aria-hidden="true">◇</span><div><p class="eyebrow">Estrutura administrativa</p><h3 id="municipality-departments-title">Secretarias e departamentos</h3></div><span class="municipality-section-count" id="municipality-departments-count">0</span></header>
+                <div class="municipality-departments-list" id="municipality-departments-list"></div>
+                <p class="municipality-section-empty" id="municipality-departments-empty" hidden>Nenhuma secretaria ou departamento disponível neste contexto.</p>
+                <p class="municipality-section-error" id="municipality-departments-error" hidden>Não foi possível carregar as secretarias disponíveis.</p>
+              </section>
+            </section>
+
+            <section class="municipality-panel" id="municipality-panel-contacts" data-municipality-panel="contacts" role="tabpanel" aria-labelledby="municipality-tab-contacts" hidden>
+              <section class="municipality-data-section" aria-labelledby="municipality-contacts-title">
+                <header class="municipality-section-heading"><span class="municipality-section-icon" aria-hidden="true">♙</span><div><p class="eyebrow">Referências institucionais</p><h3 id="municipality-contacts-title">Responsáveis por departamento</h3></div><span class="municipality-section-count" id="municipality-contacts-count">0</span></header>
+                <div class="municipality-contacts-list" id="municipality-contacts-list"></div>
+                <p class="municipality-section-empty" id="municipality-contacts-empty" hidden>Nenhum responsável institucional foi informado para esta Prefeitura.</p>
+                <p class="municipality-section-error" id="municipality-contacts-error" hidden>Não foi possível carregar os responsáveis institucionais.</p>
+              </section>
+            </section>
+          </div>
         </section>
         <section class="platform-view module-placeholder" id="usuarios" data-platform-view="usuarios" tabindex="-1" aria-labelledby="usuarios-title" hidden>
           <div class="module-placeholder-card"><span class="module-placeholder-icon" aria-hidden="true">♙</span><p class="eyebrow">Gestão municipal</p><h2 id="usuarios-title">Usuários</h2><p>Gestão de vínculos, setores e permissões municipais será disponibilizada neste módulo.</p><span class="module-placeholder-status">Módulo em desenvolvimento</span></div>
