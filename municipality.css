@@ -666,3 +666,67 @@
   #dashboard-shell:not([hidden]) .municipality-department-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   #dashboard-shell:not([hidden]) .municipality-department-action { width: 100%; }
 }
+
+/* Gestão de responsáveis institucionais. */
+#dashboard-shell:not([hidden]) .municipality-contacts-heading { flex-wrap: wrap; }
+#dashboard-shell:not([hidden]) .municipality-contacts-heading .municipality-section-count { margin-left: auto; }
+#dashboard-shell:not([hidden]) .municipality-contact-new-button { margin-left: 0; }
+#dashboard-shell:not([hidden]) .municipality-contact-form { margin-top: 13px; }
+#dashboard-shell:not([hidden]) .municipality-contact-primary-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  margin-top: 13px;
+  color: #c6d5e2;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+#dashboard-shell:not([hidden]) .municipality-contact-primary-field input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #e2bb57;
+}
+#dashboard-shell:not([hidden]) .municipality-contact-primary-field:focus-within { outline: 2px solid #ead180; outline-offset: 3px; border-radius: 4px; }
+#dashboard-shell:not([hidden]) .municipality-contact-item { align-items: flex-start; }
+#dashboard-shell:not([hidden]) .municipality-contact-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+#dashboard-shell:not([hidden]) .municipality-contact-action {
+  min-height: 29px;
+  padding: 0 9px;
+  color: #d4e1ec;
+  border: 1px solid rgba(148, 177, 207, .25);
+  border-radius: 7px;
+  background: rgba(5, 19, 37, .36);
+  cursor: pointer;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 750;
+  transition: color .18s ease, border-color .18s ease, background .18s ease;
+}
+#dashboard-shell:not([hidden]) .municipality-contact-action:hover:not(:disabled) { color: #071a2f; border-color: #f2c45a; background: #f2c45a; }
+#dashboard-shell:not([hidden]) .municipality-contact-action.is-status { color: #f1d082; }
+#dashboard-shell:not([hidden]) .municipality-contact-action.is-status:hover:not(:disabled) { color: #071a2f; }
+#dashboard-shell:not([hidden]) .municipality-contact-action:disabled { cursor: wait; opacity: .6; }
+#dashboard-shell:not([hidden]) .municipality-contact-action:focus-visible { outline: 2px solid #ead180; outline-offset: 2px; }
+
+@media (max-width: 700px) {
+  #dashboard-shell:not([hidden]) .municipality-contact-item { align-items: stretch; flex-wrap: wrap; }
+  #dashboard-shell:not([hidden]) .municipality-contact-copy { flex: 1 1 180px; }
+  #dashboard-shell:not([hidden]) .municipality-contact-tags { margin-left: 0; justify-content: flex-start; }
+  #dashboard-shell:not([hidden]) .municipality-contact-actions { flex: 1 1 100%; justify-content: flex-start; }
+}
+
+@media (max-width: 560px) {
+  #dashboard-shell:not([hidden]) .municipality-contacts-heading .municipality-section-count { margin-left: 0; }
+  #dashboard-shell:not([hidden]) .municipality-contact-new-button { width: 100%; }
+  #dashboard-shell:not([hidden]) .municipality-contact-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #dashboard-shell:not([hidden]) .municipality-contact-action { width: 100%; }
+}

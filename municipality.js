@@ -92,10 +92,25 @@
   const contactsCount = document.querySelector("#municipality-contacts-count");
   const contactsEmpty = document.querySelector("#municipality-contacts-empty");
   const contactsError = document.querySelector("#municipality-contacts-error");
+  const contactNewButton = document.querySelector("#municipality-contact-new-button");
+  const contactForm = document.querySelector("#municipality-contact-form");
+  const contactFormTitle = document.querySelector("#municipality-contact-form-title");
+  const contactFormName = document.querySelector("#municipality-contact-form-name");
+  const contactFormJobTitle = document.querySelector("#municipality-contact-form-job-title");
+  const contactFormDepartment = document.querySelector("#municipality-contact-form-department");
+  const contactFormStatus = document.querySelector("#municipality-contact-form-status");
+  const contactFormEmail = document.querySelector("#municipality-contact-form-email");
+  const contactFormPhone = document.querySelector("#municipality-contact-form-phone");
+  const contactFormPrimary = document.querySelector("#municipality-contact-form-primary");
+  const contactCancelButton = document.querySelector("#municipality-contact-cancel-button");
+  const contactSaveButton = document.querySelector("#municipality-contact-save-button");
+  const contactFormError = document.querySelector("#municipality-contact-form-error");
+  const contactFeedback = document.querySelector("#municipality-contact-feedback");
+  const contactFormFields = [contactFormName, contactFormJobTitle, contactFormDepartment, contactFormStatus, contactFormEmail, contactFormPhone, contactFormPrimary];
   const tabButtons = Array.from(document.querySelectorAll("[data-municipality-tab]"));
   const panels = Array.from(document.querySelectorAll("[data-municipality-panel]"));
 
-  if (!municipalityPage || !selector || !content || !profileEditButton || !profileForm || !profileCancelButton || !profileSaveButton || !profileFormError || !profileFeedback || profileFormFields.some((field) => !field) || !addressEditButton || !addressForm || !addressCancelButton || !addressSaveButton || !addressFormError || !addressFeedback || addressFormFields.some((field) => !field) || !departmentNewButton || !departmentForm || !departmentFormTitle || !departmentCancelButton || !departmentSaveButton || !departmentFormError || !departmentFeedback || departmentFormFields.some((field) => !field) || tabButtons.length === 0 || panels.length === 0) return;
+  if (!municipalityPage || !selector || !content || !profileEditButton || !profileForm || !profileCancelButton || !profileSaveButton || !profileFormError || !profileFeedback || profileFormFields.some((field) => !field) || !addressEditButton || !addressForm || !addressCancelButton || !addressSaveButton || !addressFormError || !addressFeedback || addressFormFields.some((field) => !field) || !departmentNewButton || !departmentForm || !departmentFormTitle || !departmentCancelButton || !departmentSaveButton || !departmentFormError || !departmentFeedback || departmentFormFields.some((field) => !field) || !contactNewButton || !contactForm || !contactFormTitle || !contactCancelButton || !contactSaveButton || !contactFormError || !contactFeedback || contactFormFields.some((field) => !field) || tabButtons.length === 0 || panels.length === 0) return;
 
   const roleLabels = Object.freeze({
     municipality_admin: "Administração municipal",
@@ -139,6 +154,10 @@
     structureCanManage: false,
     isDepartmentSaving: false,
     editingDepartmentId: "",
+    contactsCanManage: false,
+    isContactSaving: false,
+    editingContactId: "",
+    editingContactMembershipId: null,
   };
 
   function isMunicipalityRoute() {
@@ -300,6 +319,10 @@
   }
 
   function getDepartmentStatusLabel(status) {
+    return String(status ?? "").toLowerCase() === "inactive" ? "Inativo" : "Ativo";
+  }
+
+  function getContactStatusLabel(status) {
     return String(status ?? "").toLowerCase() === "inactive" ? "Inativo" : "Ativo";
   }
 
@@ -1184,31 +1207,247 @@
     setOptionalValue(addressState, address.state);
   }
 
+  function setContactFormError(message = "") {
+    contactFormError.hidden = !message;
+    contactFormError.textContent = message;
+  }
+
+  function setContactFeedback(message = "", kind = "success") {
+    contactFeedback.hidden = !message;
+    contactFeedback.textContent = message;
+    if (message) contactFeedback.dataset.kind = kind;
+    else delete contactFeedback.dataset.kind;
+  }
+
+  function updateContactWriteControls() {
+    const canManage = state.contactsCanManage && !state.contactsFailed && !state.departmentsFailed;
+    contactNewButton.hidden = !canManage;
+    contactNewButton.disabled = !canManage || state.isContactSaving;
+    if (!canManage && !state.isContactSaving) closeContactEditor();
+  }
+
+  function setContactSaving(isSaving) {
+    state.isContactSaving = isSaving;
+    const canManage = state.contactsCanManage && !state.contactsFailed && !state.departmentsFailed;
+    contactNewButton.disabled = isSaving || !canManage;
+    contactCancelButton.disabled = isSaving;
+    contactSaveButton.disabled = isSaving;
+    contactSaveButton.textContent = isSaving ? "Salvando…" : "Salvar responsável";
+    selector.disabled = isSaving || state.isProfileSaving || state.isAddressSaving || state.isDepartmentSaving;
+    contactForm.setAttribute("aria-busy", String(isSaving));
+    contactFormFields.forEach((field) => { field.disabled = isSaving; });
+    contactsList.querySelectorAll("button").forEach((button) => { button.disabled = isSaving; });
+  }
+
+  function populateContactDepartmentOptions(selectedDepartmentId = "") {
+    contactFormDepartment.replaceChildren();
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Selecione uma unidade";
+    contactFormDepartment.append(placeholder);
+
+    getDepartmentHierarchy(state.departments).forEach(({ department, depth }) => {
+      const option = document.createElement("option");
+      option.value = String(department.id ?? "");
+      const inactiveLabel = String(department.status ?? "active").toLowerCase() === "inactive" ? " · Inativa" : "";
+      option.textContent = `${"— ".repeat(Math.min(depth, 3))}${department.name || "Unidade sem nome"} — ${getDepartmentTypeLabel(department.unit_type)}${inactiveLabel}`;
+      option.selected = option.value === String(selectedDepartmentId ?? "");
+      contactFormDepartment.append(option);
+    });
+  }
+
+  function setContactFormValues(contact = null) {
+    const isEditing = Boolean(contact);
+    state.editingContactId = isEditing ? String(contact.id ?? "") : "";
+    state.editingContactMembershipId = isEditing && contact.membership_id ? String(contact.membership_id) : null;
+    contactFormTitle.textContent = isEditing ? "Editar responsável" : "Novo responsável";
+    contactSaveButton.textContent = "Salvar responsável";
+    contactFormName.value = contact?.full_name ?? "";
+    contactFormJobTitle.value = contact?.job_title ?? "";
+    contactFormEmail.value = contact?.email ?? "";
+    contactFormPhone.value = contact?.phone ?? "";
+    contactFormPrimary.checked = Boolean(contact?.is_primary);
+    contactFormStatus.value = departmentStatusValues.has(String(contact?.status ?? "").toLowerCase())
+      ? String(contact.status).toLowerCase()
+      : "active";
+    populateContactDepartmentOptions(contact?.department_id ?? "");
+  }
+
+  function closeContactEditor({ returnFocus = false, focusTarget = null } = {}) {
+    contactForm.hidden = true;
+    contactNewButton.setAttribute("aria-expanded", "false");
+    state.editingContactId = "";
+    state.editingContactMembershipId = null;
+    setContactFormError();
+    if (returnFocus) (focusTarget || contactNewButton).focus();
+  }
+
+  function openContactEditor(contact = null, focusTarget = null) {
+    if (!state.contactsCanManage || state.contactsFailed || state.departmentsFailed || state.isContactSaving || state.isProfileSaving || state.isAddressSaving || state.isDepartmentSaving || !state.selectedMunicipalityId) return;
+    setContactFeedback();
+    setContactFormError();
+    setContactFormValues(contact);
+    contactForm.hidden = false;
+    contactNewButton.setAttribute("aria-expanded", "true");
+    window.requestAnimationFrame(() => contactFormName.focus());
+  }
+
+  function validateContactPayload() {
+    const fullName = typeof contactFormName.value === "string" ? contactFormName.value.trim() : "";
+    const jobTitle = getOptionalFieldValue(contactFormJobTitle);
+    const email = getOptionalFieldValue(contactFormEmail);
+    const phone = getOptionalFieldValue(contactFormPhone);
+    const departmentId = String(contactFormDepartment.value ?? "");
+    const status = String(contactFormStatus.value ?? "").toLowerCase();
+
+    if (!fullName) throw createRequestError("Informe o nome completo do responsável.");
+    if (fullName.length > 160) throw createRequestError("O nome completo deve ter no máximo 160 caracteres.");
+    if (jobTitle && jobTitle.length > 160) throw createRequestError("O cargo/função deve ter no máximo 160 caracteres.");
+    if (!departmentId || !state.departments.some((department) => String(department.id ?? "") === departmentId)) {
+      throw createRequestError("Selecione uma unidade administrativa válida deste município.");
+    }
+    if (email && (email.length < 3 || email.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
+      throw createRequestError("Informe um e-mail válido.");
+    }
+    if (phone && (phone.length < 8 || phone.length > 40)) {
+      throw createRequestError("Informe um telefone entre 8 e 40 caracteres.");
+    }
+    if (!departmentStatusValues.has(status)) throw createRequestError("Selecione um status válido.");
+
+    return {
+      department_id: departmentId,
+      membership_id: state.editingContactMembershipId,
+      full_name: fullName,
+      job_title: jobTitle,
+      email,
+      phone,
+      is_primary: Boolean(contactFormPrimary.checked),
+      status,
+    };
+  }
+
+  function getContactWriteError(error) {
+    if (isProfilePermissionError(error)) return "Você não possui permissão para alterar os responsáveis deste município.";
+    if (String(error?.code ?? "") === "23505") return "Já existe um responsável principal ativo para esta unidade.";
+    if (String(error?.code ?? "") === "23503") return "A unidade administrativa selecionada não está disponível neste município.";
+    return "Não foi possível salvar o responsável. Revise os dados e tente novamente.";
+  }
+
+  async function reloadMunicipalityContacts(context) {
+    const municipalityId = state.selectedMunicipalityId;
+    if (!municipalityId) return;
+    const records = await municipalityRequest(
+      `municipality_department_contacts?select=id,municipality_id,department_id,membership_id,full_name,job_title,email,phone,is_primary,status&municipality_id=eq.${encodeURIComponent(municipalityId)}&order=department_id.asc,is_primary.desc,full_name.asc`,
+      context,
+    );
+    if (municipalityId !== state.selectedMunicipalityId) return;
+    state.contacts = records;
+    state.contactsFailed = false;
+    renderContacts(records, state.departments, false);
+  }
+
+  async function submitMunicipalityContact(event) {
+    event.preventDefault();
+    if (!state.contactsCanManage || state.contactsFailed || state.departmentsFailed || state.isContactSaving || state.isProfileSaving || state.isAddressSaving || state.isDepartmentSaving || !state.selectedMunicipalityId) return;
+
+    let payload;
+    try {
+      payload = validateContactPayload();
+    } catch (error) {
+      setContactFormError(error.message || "Revise os dados informados.");
+      return;
+    }
+
+    const targetMunicipalityId = state.selectedMunicipalityId;
+    const editingContactId = state.editingContactId;
+    const isEditing = Boolean(editingContactId);
+    setContactFormError();
+    setContactSaving(true);
+
+    try {
+      const context = await getAuthenticatedContext();
+      const result = isEditing
+        ? await municipalityWriteRequest(
+          `municipality_department_contacts?id=eq.${encodeURIComponent(editingContactId)}&municipality_id=eq.${encodeURIComponent(targetMunicipalityId)}`,
+          "PATCH",
+          payload,
+          context,
+        )
+        : await municipalityWriteRequest(
+          "municipality_department_contacts",
+          "POST",
+          { municipality_id: targetMunicipalityId, ...payload },
+          context,
+        );
+
+      if (result.length === 0) throw createRequestError("permission denied", 403, "42501");
+      await reloadMunicipalityContacts(context);
+      closeContactEditor();
+      setContactFeedback(isEditing ? "Responsável atualizado com sucesso." : "Responsável criado com sucesso.", "success");
+    } catch (error) {
+      setContactFormError(getContactWriteError(error));
+    } finally {
+      setContactSaving(false);
+    }
+  }
+
+  async function updateContactStatus(contact, focusTarget = null) {
+    if (!state.contactsCanManage || state.contactsFailed || state.isContactSaving || !state.selectedMunicipalityId || !contact?.id) return;
+    const targetMunicipalityId = state.selectedMunicipalityId;
+    const nextStatus = String(contact.status ?? "active").toLowerCase() === "inactive" ? "active" : "inactive";
+    setContactFeedback();
+    setContactSaving(true);
+
+    try {
+      const context = await getAuthenticatedContext();
+      const result = await municipalityWriteRequest(
+        `municipality_department_contacts?id=eq.${encodeURIComponent(contact.id)}&municipality_id=eq.${encodeURIComponent(targetMunicipalityId)}`,
+        "PATCH",
+        { status: nextStatus },
+        context,
+      );
+      if (result.length === 0) throw createRequestError("permission denied", 403, "42501");
+      await reloadMunicipalityContacts(context);
+      setContactFeedback(nextStatus === "inactive" ? "Responsável inativado com sucesso." : "Responsável reativado com sucesso.", "success");
+      if (focusTarget && document.contains(focusTarget)) focusTarget.focus();
+    } catch (error) {
+      setContactFeedback(getContactWriteError(error), "error");
+    } finally {
+      setContactSaving(false);
+    }
+  }
+
   function renderContacts(contacts, departments, failed) {
     contactsList.replaceChildren();
     contactsCount.textContent = String(contacts.length);
     contactsEmpty.hidden = failed || contacts.length > 0;
     contactsError.hidden = !failed;
+    updateContactWriteControls();
     if (failed) return;
 
-    const departmentNames = new Map(departments.map((department) => [department.id, department.name]));
+    const departmentsById = new Map(departments.map((department) => [String(department.id ?? ""), department]));
     const contactsByDepartment = new Map();
     contacts.forEach((contact) => {
-      const current = contactsByDepartment.get(contact.department_id) ?? [];
+      const departmentId = String(contact.department_id ?? "");
+      const current = contactsByDepartment.get(departmentId) ?? [];
       current.push(contact);
-      contactsByDepartment.set(contact.department_id, current);
+      contactsByDepartment.set(departmentId, current);
     });
 
-    contactsByDepartment.forEach((departmentContacts, departmentId) => {
+    getDepartmentHierarchy(departments).forEach(({ department }) => {
+      const departmentId = String(department.id ?? "");
+      const departmentContacts = contactsByDepartment.get(departmentId) ?? [];
+      if (!departmentContacts.length) return;
+
       const group = createElement("article", "municipality-contact-group");
       const heading = createElement("header", "municipality-contact-group-heading");
-      heading.append(createElement("strong", "", departmentNames.get(departmentId) || "Departamento institucional"));
+      heading.append(createElement("strong", "", `${department.name || "Unidade institucional"} — ${getDepartmentTypeLabel(department.unit_type)}`));
       heading.append(createElement("span", "", `${departmentContacts.length} ${departmentContacts.length === 1 ? "responsável" : "responsáveis"}`));
       group.append(heading);
 
       const list = createElement("div", "municipality-contact-group-list");
       departmentContacts.forEach((contact) => {
-        const item = createElement("div", "municipality-contact-item");
+        const item = createElement("article", "municipality-contact-item");
         const copy = createElement("div", "municipality-contact-copy");
         copy.append(createElement("strong", "", contact.full_name || "Responsável não informado"));
         copy.append(createElement("span", "", contact.job_title || "Função não informada"));
@@ -1219,18 +1458,52 @@
         if (!contact.email && !contact.phone) metadata.append(createElement("span", "is-not-informed", "Contato não informado"));
 
         const tags = createElement("div", "municipality-contact-tags");
-        if (contact.is_primary) tags.append(createElement("span", "municipality-role-tag is-primary", "Principal"));
-        if (String(contact.status ?? "active").toLowerCase() === "inactive") tags.append(createElement("span", "municipality-mini-status is-inactive", "Inativo"));
-
+        if (contact.is_primary) tags.append(createElement("span", "municipality-role-tag is-primary", "Responsável principal"));
+        tags.append(createElement("span", `municipality-mini-status is-${String(contact.status ?? "active").toLowerCase()}`, getContactStatusLabel(contact.status)));
         item.append(copy, metadata, tags);
+
+        if (state.contactsCanManage) {
+          const actions = createElement("div", "municipality-contact-actions");
+          const editButton = createElement("button", "municipality-contact-action", "Editar");
+          editButton.type = "button";
+          editButton.addEventListener("click", () => openContactEditor(contact, editButton));
+          const isInactive = String(contact.status ?? "active").toLowerCase() === "inactive";
+          const statusButton = createElement("button", "municipality-contact-action is-status", isInactive ? "Reativar" : "Inativar");
+          statusButton.type = "button";
+          statusButton.addEventListener("click", () => { void updateContactStatus(contact, statusButton); });
+          actions.append(editButton, statusButton);
+          item.append(actions);
+        }
         list.append(item);
       });
+      group.append(list);
+      contactsList.append(group);
+      contactsByDepartment.delete(departmentId);
+    });
 
+    // Dados inconsistentes não são esperados devido à FK composta; se algum
+    // registro legado escapar da consulta de unidades, ele continua legível sem
+    // expor identificadores técnicos ou controles de escrita.
+    contactsByDepartment.forEach((departmentContacts, departmentId) => {
+      if (departmentsById.has(departmentId)) return;
+      const group = createElement("article", "municipality-contact-group");
+      const heading = createElement("header", "municipality-contact-group-heading");
+      heading.append(createElement("strong", "", "Unidade institucional indisponível"));
+      heading.append(createElement("span", "", `${departmentContacts.length} ${departmentContacts.length === 1 ? "responsável" : "responsáveis"}`));
+      group.append(heading);
+      const list = createElement("div", "municipality-contact-group-list");
+      departmentContacts.forEach((contact) => {
+        const item = createElement("article", "municipality-contact-item");
+        const copy = createElement("div", "municipality-contact-copy");
+        copy.append(createElement("strong", "", contact.full_name || "Responsável não informado"));
+        copy.append(createElement("span", "", contact.job_title || "Função não informada"));
+        item.append(copy);
+        list.append(item);
+      });
       group.append(list);
       contactsList.append(group);
     });
   }
-
   async function fetchSelectedContext(municipalityId, context) {
     const escapedMunicipalityId = encodeURIComponent(municipalityId);
     const [departmentsResult, membersResult, profileResult, addressResult, populationResult, contactsResult] = await Promise.allSettled([
@@ -1239,7 +1512,7 @@
       municipalityRequest(`municipality_institutional_profiles?select=municipality_id,mayor_name,official_website,institutional_phone,institutional_email&municipality_id=eq.${escapedMunicipalityId}&limit=1`, context),
       municipalityRequest(`municipality_addresses?select=municipality_id,postal_code,street,number,complement,district,city,state&municipality_id=eq.${escapedMunicipalityId}&limit=1`, context),
       municipalityRequest(`municipality_population_records?select=municipality_id,reference_year,population,source_name,source_url,source_checked_at&municipality_id=eq.${escapedMunicipalityId}&order=reference_year.desc,source_checked_at.desc.nullslast&limit=1`, context),
-      municipalityRequest(`municipality_department_contacts?select=municipality_id,department_id,full_name,job_title,email,phone,is_primary,status&municipality_id=eq.${escapedMunicipalityId}&order=department_id.asc,is_primary.desc,full_name.asc`, context),
+      municipalityRequest(`municipality_department_contacts?select=id,municipality_id,department_id,membership_id,full_name,job_title,email,phone,is_primary,status&municipality_id=eq.${escapedMunicipalityId}&order=department_id.asc,is_primary.desc,full_name.asc`, context),
     ]);
 
     const departments = departmentsResult.status === "fulfilled" ? departmentsResult.value : [];
@@ -1291,6 +1564,10 @@
       closeDepartmentEditor();
       setDepartmentFeedback();
     }
+    if (!state.isContactSaving) {
+      closeContactEditor();
+      setContactFeedback();
+    }
     const municipality = state.municipalities.find((item) => item.id === state.selectedMunicipalityId);
     if (!municipality) return;
 
@@ -1306,6 +1583,7 @@
       state.contacts = details.contacts;
       state.contactsFailed = details.contactsFailed;
       state.structureCanManage = !details.departmentsFailed && getStructureWritePermission(details.members, details.roles, context.userId);
+      state.contactsCanManage = state.structureCanManage && !details.contactsFailed;
 
       renderInstitutionalData(municipality);
       renderDepartments(details.departments, details.departmentsFailed);
@@ -1377,6 +1655,10 @@
     state.structureCanManage = false;
     state.isDepartmentSaving = false;
     state.editingDepartmentId = "";
+    state.contactsCanManage = false;
+    state.isContactSaving = false;
+    state.editingContactId = "";
+    state.editingContactMembershipId = null;
     state.requestId += 1;
     selector.replaceChildren();
     selectorField.hidden = true;
@@ -1389,9 +1671,11 @@
     closeProfileEditor();
     closeAddressEditor();
     closeDepartmentEditor();
+    closeContactEditor();
     setProfileFeedback();
     setAddressFeedback();
     setDepartmentFeedback();
+    setContactFeedback();
     setActiveTab("overview");
     setViewState("empty");
   }
@@ -1399,6 +1683,9 @@
   departmentNewButton.addEventListener("click", () => openDepartmentEditor());
   departmentCancelButton.addEventListener("click", () => closeDepartmentEditor({ returnFocus: true }));
   departmentForm.addEventListener("submit", (event) => { void submitMunicipalityDepartment(event); });
+  contactNewButton.addEventListener("click", () => openContactEditor());
+  contactCancelButton.addEventListener("click", () => closeContactEditor({ returnFocus: true }));
+  contactForm.addEventListener("submit", (event) => { void submitMunicipalityContact(event); });
   addressEditButton.addEventListener("click", openAddressEditor);
   addressCancelButton.addEventListener("click", () => closeAddressEditor({ returnFocus: true }));
   addressForm.addEventListener("submit", (event) => { void submitMunicipalityAddress(event); });

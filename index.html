@@ -1023,7 +1023,23 @@
             </section>
             <section class="municipality-panel" id="municipality-panel-contacts" data-municipality-panel="contacts" role="tabpanel" aria-labelledby="municipality-tab-contacts" hidden>
               <section class="municipality-data-section" aria-labelledby="municipality-contacts-title">
-                <header class="municipality-section-heading"><span class="municipality-section-icon" aria-hidden="true">♙</span><div><p class="eyebrow">Referências institucionais</p><h3 id="municipality-contacts-title">Responsáveis por departamento</h3></div><span class="municipality-section-count" id="municipality-contacts-count">0</span></header>
+                <header class="municipality-section-heading municipality-contacts-heading"><span class="municipality-section-icon" aria-hidden="true">♙</span><div><p class="eyebrow">Referências institucionais</p><h3 id="municipality-contacts-title">Responsáveis por departamento</h3></div><span class="municipality-section-count" id="municipality-contacts-count">0</span><button class="municipality-edit-button municipality-contact-new-button" id="municipality-contact-new-button" type="button" aria-controls="municipality-contact-form" aria-expanded="false" hidden>+ Novo responsável</button></header>
+                <p class="municipality-form-feedback" id="municipality-contact-feedback" role="status" aria-live="polite" hidden></p>
+                <form class="municipality-profile-form municipality-contact-form" id="municipality-contact-form" novalidate hidden>
+                  <div class="municipality-form-title-row"><div><p class="eyebrow">Gestão de responsáveis</p><h4 id="municipality-contact-form-title">Novo responsável</h4></div></div>
+                  <div class="municipality-profile-form-grid">
+                    <label for="municipality-contact-form-name"><span>Nome completo *</span><input id="municipality-contact-form-name" name="full_name" type="text" maxlength="160" autocomplete="name" required /></label>
+                    <label for="municipality-contact-form-job-title"><span>Cargo/Função</span><input id="municipality-contact-form-job-title" name="job_title" type="text" maxlength="160" autocomplete="organization-title" /></label>
+                    <label for="municipality-contact-form-department"><span>Unidade administrativa *</span><select id="municipality-contact-form-department" name="department_id" required><option value="">Selecione uma unidade</option></select></label>
+                    <label for="municipality-contact-form-status"><span>Status</span><select id="municipality-contact-form-status" name="status"><option value="active" selected>Ativo</option><option value="inactive">Inativo</option></select></label>
+                    <label for="municipality-contact-form-email"><span>E-mail</span><input id="municipality-contact-form-email" name="email" type="email" maxlength="320" inputmode="email" autocomplete="email" /></label>
+                    <label for="municipality-contact-form-phone"><span>Telefone</span><input id="municipality-contact-form-phone" name="phone" type="tel" maxlength="40" autocomplete="tel" /></label>
+                  </div>
+                  <label class="municipality-contact-primary-field" for="municipality-contact-form-primary"><input id="municipality-contact-form-primary" name="is_primary" type="checkbox" /><span>Responsável principal desta unidade</span></label>
+                  <p class="municipality-form-hint">O vínculo com usuário da plataforma não é alterado nesta versão. O município do contexto atual não pode ser alterado.</p>
+                  <p class="municipality-form-error" id="municipality-contact-form-error" role="alert" hidden></p>
+                  <div class="municipality-form-actions"><button class="municipality-cancel-button" id="municipality-contact-cancel-button" type="button">Cancelar</button><button class="municipality-save-button" id="municipality-contact-save-button" type="submit">Salvar responsável</button></div>
+                </form>
                 <div class="municipality-contacts-list" id="municipality-contacts-list"></div>
                 <p class="municipality-section-empty" id="municipality-contacts-empty" hidden>Nenhum responsável institucional foi informado para esta Prefeitura.</p>
                 <p class="municipality-section-error" id="municipality-contacts-error" hidden>Não foi possível carregar os responsáveis institucionais.</p>
