@@ -20,6 +20,19 @@
   const departmentsCount = document.querySelector("#municipality-departments-count");
   const departmentsEmpty = document.querySelector("#municipality-departments-empty");
   const departmentsError = document.querySelector("#municipality-departments-error");
+  const departmentNewButton = document.querySelector("#municipality-department-new-button");
+  const departmentForm = document.querySelector("#municipality-department-form");
+  const departmentFormTitle = document.querySelector("#municipality-department-form-title");
+  const departmentFormName = document.querySelector("#municipality-department-form-name");
+  const departmentFormAbbreviation = document.querySelector("#municipality-department-form-abbreviation");
+  const departmentFormUnitType = document.querySelector("#municipality-department-form-unit-type");
+  const departmentFormParent = document.querySelector("#municipality-department-form-parent");
+  const departmentFormStatus = document.querySelector("#municipality-department-form-status");
+  const departmentCancelButton = document.querySelector("#municipality-department-cancel-button");
+  const departmentSaveButton = document.querySelector("#municipality-department-save-button");
+  const departmentFormError = document.querySelector("#municipality-department-form-error");
+  const departmentFeedback = document.querySelector("#municipality-department-feedback");
+  const departmentFormFields = [departmentFormName, departmentFormAbbreviation, departmentFormUnitType, departmentFormParent, departmentFormStatus];
   const overviewDepartmentsList = document.querySelector("#municipality-overview-departments-list");
   const overviewDepartmentsEmpty = document.querySelector("#municipality-overview-departments-empty");
   const overviewDepartmentsError = document.querySelector("#municipality-overview-departments-error");
@@ -82,7 +95,7 @@
   const tabButtons = Array.from(document.querySelectorAll("[data-municipality-tab]"));
   const panels = Array.from(document.querySelectorAll("[data-municipality-panel]"));
 
-  if (!municipalityPage || !selector || !content || !profileEditButton || !profileForm || !profileCancelButton || !profileSaveButton || !profileFormError || !profileFeedback || profileFormFields.some((field) => !field) || !addressEditButton || !addressForm || !addressCancelButton || !addressSaveButton || !addressFormError || !addressFeedback || addressFormFields.some((field) => !field) || tabButtons.length === 0 || panels.length === 0) return;
+  if (!municipalityPage || !selector || !content || !profileEditButton || !profileForm || !profileCancelButton || !profileSaveButton || !profileFormError || !profileFeedback || profileFormFields.some((field) => !field) || !addressEditButton || !addressForm || !addressCancelButton || !addressSaveButton || !addressFormError || !addressFeedback || addressFormFields.some((field) => !field) || !departmentNewButton || !departmentForm || !departmentFormTitle || !departmentCancelButton || !departmentSaveButton || !departmentFormError || !departmentFeedback || departmentFormFields.some((field) => !field) || tabButtons.length === 0 || panels.length === 0) return;
 
   const roleLabels = Object.freeze({
     municipality_admin: "Administração municipal",
@@ -93,6 +106,15 @@
     procurement: "Licitações e compras",
     auditor: "Consulta e auditoria",
   });
+
+  const departmentTypeLabels = Object.freeze({
+    secretariat: "Secretaria",
+    department: "Departamento",
+    sector: "Setor",
+    unit: "Unidade",
+  });
+  const departmentTypeValues = new Set(Object.keys(departmentTypeLabels));
+  const departmentStatusValues = new Set(["active", "inactive"]);
 
   const state = {
     currentUserId: "",
@@ -106,6 +128,17 @@
     address: null,
     addressFailed: false,
     isAddressSaving: false,
+    departments: [],
+    departmentsFailed: false,
+    members: [],
+    membersFailed: false,
+    memberDepartments: [],
+    roles: [],
+    contacts: [],
+    contactsFailed: false,
+    structureCanManage: false,
+    isDepartmentSaving: false,
+    editingDepartmentId: "",
   };
 
   function isMunicipalityRoute() {
@@ -325,40 +358,118 @@
     municipalityStatus.className = `municipality-status-badge is-${String(municipality.status ?? "").toLowerCase() || "unknown"}`;
   }
 
-  function createDepartmentItem(department) {
+  function getDepartmentTypeLabel(unitType) {
+    return departmentTypeLabels[String(unitType ?? "unit").toLowerCase()] ?? "Unidade";
+  }
+
+  function compareDepartmentNames(first, second) {
+    return String(first?.name ?? "").localeCompare(String(second?.name ?? ""), "pt-BR", { sensitivity: "base" });
+  }
+
+  function getDepartmentHierarchy(departments) {
+    const byId = new Map(departments.map((department) => [String(department.id ?? ""), department]));
+    const childrenByParent = new Map();
+    const roots = [];
+
+    departments.forEach((department) => {
+      const parentId = String(department.parent_department_id ?? "");
+      if (!parentId || !byId.has(parentId)) {
+        roots.push(department);
+        return;
+      }
+      const children = childrenByParent.get(parentId) ?? [];
+      children.push(department);
+      childrenByParent.set(parentId, children);
+    });
+
+    const ordered = [];
+    const visited = new Set();
+    const appendBranch = (department, depth = 0) => {
+      const departmentId = String(department.id ?? "");
+      if (!departmentId || visited.has(departmentId)) return;
+      visited.add(departmentId);
+      const parent = byId.get(String(department.parent_department_id ?? ""));
+      ordered.push({ department, depth, parentName: parent?.name ?? "" });
+      (childrenByParent.get(departmentId) ?? []).sort(compareDepartmentNames).forEach((child) => appendBranch(child, depth + 1));
+    };
+
+    roots.sort(compareDepartmentNames).forEach((department) => appendBranch(department));
+    departments.slice().sort(compareDepartmentNames).forEach((department) => appendBranch(department));
+    return ordered;
+  }
+
+  function createDepartmentItem(department, { depth = 0, parentName = "", showActions = false } = {}) {
     const item = createElement("article", "municipality-department-item");
+    item.classList.toggle("is-child", depth > 0);
+    item.style.setProperty("--municipality-department-depth", String(Math.min(depth, 5)));
+
+    if (depth > 0) item.append(createElement("span", "municipality-department-tree-guide"));
+
     const copy = createElement("div", "municipality-department-copy");
-    copy.append(createElement("strong", "", department.name || "Secretaria sem nome informado"));
+    copy.append(createElement("strong", "", department.name || "Unidade sem nome informado"));
 
     const metadata = createElement("span", "");
     const details = [];
     if (department.abbreviation) details.push(department.abbreviation);
-    details.push(getDepartmentStatusLabel(department.status));
+    details.push(getDepartmentTypeLabel(department.unit_type));
+    if (parentName) details.push(`Vinculado a: ${parentName}`);
     metadata.textContent = details.join(" · ");
     copy.append(metadata);
 
-    const status = createElement("span", `municipality-mini-status is-${String(department.status ?? "active").toLowerCase()}`, getDepartmentStatusLabel(department.status));
-    item.append(copy, status);
+    const tags = createElement("div", "municipality-department-tags");
+    tags.append(createElement("span", "municipality-role-tag municipality-department-type", getDepartmentTypeLabel(department.unit_type)));
+    tags.append(createElement("span", `municipality-mini-status is-${String(department.status ?? "active").toLowerCase()}`, getDepartmentStatusLabel(department.status)));
+
+    item.append(copy, tags);
+
+    if (showActions) {
+      const actions = createElement("div", "municipality-department-actions");
+      const editButton = createElement("button", "municipality-department-action", "Editar");
+      editButton.type = "button";
+      editButton.addEventListener("click", () => openDepartmentEditor(department, editButton));
+
+      const isInactive = String(department.status ?? "active").toLowerCase() === "inactive";
+      const statusButton = createElement("button", "municipality-department-action is-status", isInactive ? "Reativar" : "Inativar");
+      statusButton.type = "button";
+      statusButton.addEventListener("click", () => { void updateDepartmentStatus(department, statusButton); });
+      actions.append(editButton, statusButton);
+      item.append(actions);
+    }
+
     return item;
   }
 
-  function renderDepartmentList(target, departments, failed, emptyElement, errorElement, limit = 0) {
+  function renderDepartmentList(target, departments, failed, emptyElement, errorElement, limit = 0, showActions = false) {
     target.replaceChildren();
     emptyElement.hidden = failed || departments.length > 0;
     errorElement.hidden = !failed;
     if (failed) return;
 
-    const visibleDepartments = limit > 0 ? departments.slice(0, limit) : departments;
-    visibleDepartments.forEach((department) => target.append(createDepartmentItem(department)));
-    if (limit > 0 && departments.length > limit) {
-      target.append(createElement("p", "municipality-list-more", `+ ${departments.length - limit} departamentos disponíveis na aba Estrutura administrativa.`));
+    const hierarchy = getDepartmentHierarchy(departments);
+    const visibleDepartments = limit > 0 ? hierarchy.slice(0, limit) : hierarchy;
+    visibleDepartments.forEach(({ department, depth, parentName }) => {
+      target.append(createDepartmentItem(department, { depth, parentName, showActions }));
+    });
+
+    if (limit > 0 && hierarchy.length > limit) {
+      target.append(createElement("p", "municipality-list-more", `+ ${hierarchy.length - limit} unidades disponíveis na aba Estrutura administrativa.`));
     }
   }
 
+  function updateDepartmentWriteControls() {
+    const canManage = state.structureCanManage && !state.departmentsFailed;
+    departmentNewButton.hidden = !canManage;
+    departmentNewButton.disabled = !canManage || state.isDepartmentSaving;
+    if (!canManage && !state.isDepartmentSaving) closeDepartmentEditor();
+  }
+
   function renderDepartments(departments, failed) {
+    state.departments = failed ? [] : departments;
+    state.departmentsFailed = failed;
     departmentsCount.textContent = String(departments.length);
-    renderDepartmentList(departmentsList, departments, failed, departmentsEmpty, departmentsError);
+    renderDepartmentList(departmentsList, departments, failed, departmentsEmpty, departmentsError, 0, state.structureCanManage && !failed);
     renderDepartmentList(overviewDepartmentsList, departments, failed, overviewDepartmentsEmpty, overviewDepartmentsError, 3);
+    updateDepartmentWriteControls();
   }
 
   function renderMembers(members, memberDepartments, roles, departments, failed, currentUserId) {
@@ -484,7 +595,7 @@
     profileCancelButton.disabled = isSaving;
     profileSaveButton.disabled = isSaving;
     profileSaveButton.textContent = isSaving ? "Salvando…" : "Salvar dados";
-    selector.disabled = isSaving || state.isAddressSaving;
+    selector.disabled = isSaving || state.isAddressSaving || state.isDepartmentSaving;
     profileForm.setAttribute("aria-busy", String(isSaving));
     profileFormFields.forEach((field) => { field.disabled = isSaving; });
   }
@@ -520,6 +631,230 @@
       || String(error?.code ?? "") === "42501"
       || message.includes("permission denied")
       || message.includes("row-level security");
+  }
+
+  function getStructureWritePermission(members, roles, currentUserId) {
+    const activeCurrentMembershipIds = new Set(
+      members
+        .filter((member) => member.user_id === currentUserId && String(member.status ?? "").toLowerCase() === "active")
+        .map((member) => String(member.id ?? "")),
+    );
+    const isMunicipalityAdmin = roles.some((role) => (
+      activeCurrentMembershipIds.has(String(role.membership_id ?? ""))
+      && role.role_code === "municipality_admin"
+    ));
+
+    // A policy de leitura de memberships só mostra outros vínculos ao
+    // anchor_superadmin. Isto serve apenas de pista visual; o RLS decide a escrita.
+    const hasSuperadminReadScope = members.some((member) => member.user_id && member.user_id !== currentUserId);
+    return isMunicipalityAdmin || hasSuperadminReadScope;
+  }
+
+  function setDepartmentFormError(message = "") {
+    departmentFormError.hidden = !message;
+    departmentFormError.textContent = message;
+  }
+
+  function setDepartmentFeedback(message = "", kind = "success") {
+    departmentFeedback.hidden = !message;
+    departmentFeedback.textContent = message;
+    if (message) departmentFeedback.dataset.kind = kind;
+    else delete departmentFeedback.dataset.kind;
+  }
+
+  function setDepartmentSaving(isSaving) {
+    state.isDepartmentSaving = isSaving;
+    const canManage = state.structureCanManage && !state.departmentsFailed;
+    departmentNewButton.disabled = isSaving || !canManage;
+    departmentCancelButton.disabled = isSaving;
+    departmentSaveButton.disabled = isSaving;
+    departmentSaveButton.textContent = isSaving ? "Salvando…" : "Salvar unidade";
+    selector.disabled = isSaving || state.isProfileSaving || state.isAddressSaving;
+    departmentForm.setAttribute("aria-busy", String(isSaving));
+    departmentFormFields.forEach((field) => { field.disabled = isSaving; });
+    departmentsList.querySelectorAll("button").forEach((button) => { button.disabled = isSaving; });
+  }
+
+  function populateDepartmentParentOptions(selectedParentId = "", editingDepartmentId = "") {
+    departmentFormParent.replaceChildren();
+    const noParentOption = document.createElement("option");
+    noParentOption.value = "";
+    noParentOption.textContent = "Nenhuma — unidade de nível principal";
+    departmentFormParent.append(noParentOption);
+
+    getDepartmentHierarchy(state.departments).forEach(({ department, depth }) => {
+      if (String(department.id ?? "") === String(editingDepartmentId ?? "")) return;
+      const option = document.createElement("option");
+      option.value = department.id;
+      option.textContent = `${"— ".repeat(Math.min(depth, 3))}${department.name || "Unidade sem nome"} — ${getDepartmentTypeLabel(department.unit_type)}`;
+      option.selected = String(department.id ?? "") === String(selectedParentId ?? "");
+      departmentFormParent.append(option);
+    });
+  }
+
+  function setDepartmentFormValues(department = null) {
+    const isEditing = Boolean(department);
+    state.editingDepartmentId = isEditing ? String(department.id ?? "") : "";
+    departmentFormTitle.textContent = isEditing ? "Editar unidade" : "Nova unidade";
+    departmentSaveButton.textContent = "Salvar unidade";
+    departmentFormName.value = department?.name ?? "";
+    departmentFormAbbreviation.value = department?.abbreviation ?? "";
+    departmentFormUnitType.value = departmentTypeValues.has(String(department?.unit_type ?? "").toLowerCase())
+      ? String(department.unit_type).toLowerCase()
+      : "unit";
+    departmentFormStatus.value = departmentStatusValues.has(String(department?.status ?? "").toLowerCase())
+      ? String(department.status).toLowerCase()
+      : "active";
+    populateDepartmentParentOptions(department?.parent_department_id ?? "", state.editingDepartmentId);
+  }
+
+  function closeDepartmentEditor({ returnFocus = false, focusTarget = null } = {}) {
+    departmentForm.hidden = true;
+    departmentNewButton.setAttribute("aria-expanded", "false");
+    state.editingDepartmentId = "";
+    setDepartmentFormError();
+    if (returnFocus) (focusTarget || departmentNewButton).focus();
+  }
+
+  function openDepartmentEditor(department = null, focusTarget = null) {
+    if (!state.structureCanManage || state.departmentsFailed || state.isDepartmentSaving || state.isProfileSaving || state.isAddressSaving || !state.selectedMunicipalityId) return;
+    setDepartmentFeedback();
+    setDepartmentFormError();
+    setDepartmentFormValues(department);
+    departmentForm.hidden = false;
+    departmentNewButton.setAttribute("aria-expanded", "true");
+    departmentForm.dataset.returnFocus = focusTarget ? "action" : "new";
+    window.requestAnimationFrame(() => departmentFormName.focus());
+  }
+
+  function validateDepartmentPayload() {
+    const name = typeof departmentFormName.value === "string" ? departmentFormName.value.trim() : "";
+    const abbreviation = getOptionalFieldValue(departmentFormAbbreviation);
+    const unitType = String(departmentFormUnitType.value ?? "").toLowerCase();
+    const status = String(departmentFormStatus.value ?? "").toLowerCase();
+    const parentDepartmentId = String(departmentFormParent.value ?? "") || null;
+
+    if (!name) throw createRequestError("Informe o nome da unidade administrativa.");
+    if (abbreviation && abbreviation.length > 30) throw createRequestError("A sigla deve ter no máximo 30 caracteres.");
+    if (!departmentTypeValues.has(unitType)) throw createRequestError("Selecione um tipo de unidade válido.");
+    if (!departmentStatusValues.has(status)) throw createRequestError("Selecione um status válido.");
+    if (parentDepartmentId && parentDepartmentId === state.editingDepartmentId) {
+      throw createRequestError("Uma unidade não pode ser sua própria unidade superior.");
+    }
+    if (parentDepartmentId && !state.departments.some((department) => String(department.id ?? "") === parentDepartmentId)) {
+      throw createRequestError("Selecione uma unidade superior válida deste município.");
+    }
+
+    return {
+      name,
+      abbreviation,
+      unit_type: unitType,
+      parent_department_id: parentDepartmentId,
+      status,
+    };
+  }
+
+  function isDepartmentCycleError(error) {
+    const message = String(error?.message ?? "").toLowerCase();
+    return String(error?.code ?? "") === "23514"
+      && (message.includes("ciclo") || message.includes("própria unidade superior"))
+      || message.includes("não pode conter ciclos")
+      || message.includes("própria unidade superior");
+  }
+
+  async function reloadMunicipalityDepartments(context) {
+    const municipalityId = state.selectedMunicipalityId;
+    if (!municipalityId) return;
+    const escapedMunicipalityId = encodeURIComponent(municipalityId);
+    const departments = await municipalityRequest(
+      `municipality_departments?select=id,municipality_id,name,abbreviation,status,unit_type,parent_department_id&municipality_id=eq.${escapedMunicipalityId}&order=name.asc`,
+      context,
+    );
+    if (municipalityId !== state.selectedMunicipalityId) return;
+    state.departments = departments;
+    state.departmentsFailed = false;
+    renderDepartments(departments, false);
+    renderMembers(state.members, state.memberDepartments, state.roles, departments, state.membersFailed, state.currentUserId);
+    renderContacts(state.contacts, departments, state.contactsFailed);
+  }
+
+  function getDepartmentWriteError(error) {
+    if (isProfilePermissionError(error)) return "Você não possui permissão para alterar a estrutura administrativa deste município.";
+    if (isDepartmentCycleError(error)) return "Essa alteração criaria um ciclo na estrutura administrativa. Escolha outra unidade superior.";
+    if (String(error?.code ?? "") === "23505") return "Já existe uma unidade com esse nome nesta Prefeitura.";
+    return "Não foi possível salvar a unidade administrativa. Revise os dados e tente novamente.";
+  }
+
+  async function submitMunicipalityDepartment(event) {
+    event.preventDefault();
+    if (!state.structureCanManage || state.isDepartmentSaving || state.isProfileSaving || state.isAddressSaving || !state.selectedMunicipalityId) return;
+
+    let payload;
+    try {
+      payload = validateDepartmentPayload();
+    } catch (error) {
+      setDepartmentFormError(error.message || "Revise os dados informados.");
+      return;
+    }
+
+    const targetMunicipalityId = state.selectedMunicipalityId;
+    const editingDepartmentId = state.editingDepartmentId;
+    const isEditing = Boolean(editingDepartmentId);
+    setDepartmentFormError();
+    setDepartmentSaving(true);
+
+    try {
+      const context = await getAuthenticatedContext();
+      const result = isEditing
+        ? await municipalityWriteRequest(
+          `municipality_departments?id=eq.${encodeURIComponent(editingDepartmentId)}&municipality_id=eq.${encodeURIComponent(targetMunicipalityId)}`,
+          "PATCH",
+          payload,
+          context,
+        )
+        : await municipalityWriteRequest(
+          "municipality_departments",
+          "POST",
+          { municipality_id: targetMunicipalityId, ...payload },
+          context,
+        );
+
+      if (result.length === 0) throw createRequestError("permission denied", 403, "42501");
+      await reloadMunicipalityDepartments(context);
+      closeDepartmentEditor();
+      setDepartmentFeedback(isEditing ? "Unidade administrativa atualizada com sucesso." : "Unidade administrativa criada com sucesso.", "success");
+    } catch (error) {
+      setDepartmentFormError(getDepartmentWriteError(error));
+    } finally {
+      setDepartmentSaving(false);
+    }
+  }
+
+  async function updateDepartmentStatus(department, focusTarget = null) {
+    if (!state.structureCanManage || state.isDepartmentSaving || !state.selectedMunicipalityId || !department?.id) return;
+    const targetMunicipalityId = state.selectedMunicipalityId;
+    const currentStatus = String(department.status ?? "active").toLowerCase();
+    const nextStatus = currentStatus === "inactive" ? "active" : "inactive";
+    setDepartmentFeedback();
+    setDepartmentSaving(true);
+
+    try {
+      const context = await getAuthenticatedContext();
+      const result = await municipalityWriteRequest(
+        `municipality_departments?id=eq.${encodeURIComponent(department.id)}&municipality_id=eq.${encodeURIComponent(targetMunicipalityId)}`,
+        "PATCH",
+        { status: nextStatus },
+        context,
+      );
+      if (result.length === 0) throw createRequestError("permission denied", 403, "42501");
+      await reloadMunicipalityDepartments(context);
+      setDepartmentFeedback(nextStatus === "inactive" ? "Unidade administrativa inativada com sucesso." : "Unidade administrativa reativada com sucesso.", "success");
+      if (focusTarget && document.contains(focusTarget)) focusTarget.focus();
+    } catch (error) {
+      setDepartmentFeedback(getDepartmentWriteError(error), "error");
+    } finally {
+      setDepartmentSaving(false);
+    }
   }
 
   async function reloadInstitutionalProfile(context) {
@@ -716,7 +1051,7 @@
     addressCancelButton.disabled = isSaving;
     addressSaveButton.disabled = isSaving;
     addressSaveButton.textContent = isSaving ? "Salvando…" : "Salvar endereço";
-    selector.disabled = isSaving || state.isProfileSaving;
+    selector.disabled = isSaving || state.isProfileSaving || state.isDepartmentSaving;
     addressForm.setAttribute("aria-busy", String(isSaving));
     addressFormFields.forEach((field) => { field.disabled = isSaving; });
   }
@@ -899,7 +1234,7 @@
   async function fetchSelectedContext(municipalityId, context) {
     const escapedMunicipalityId = encodeURIComponent(municipalityId);
     const [departmentsResult, membersResult, profileResult, addressResult, populationResult, contactsResult] = await Promise.allSettled([
-      municipalityRequest(`municipality_departments?select=id,municipality_id,name,abbreviation,status&municipality_id=eq.${escapedMunicipalityId}&order=name.asc`, context),
+      municipalityRequest(`municipality_departments?select=id,municipality_id,name,abbreviation,status,unit_type,parent_department_id&municipality_id=eq.${escapedMunicipalityId}&order=name.asc`, context),
       municipalityRequest(`municipality_members?select=id,municipality_id,user_id,status&municipality_id=eq.${escapedMunicipalityId}&order=created_at.asc`, context),
       municipalityRequest(`municipality_institutional_profiles?select=municipality_id,mayor_name,official_website,institutional_phone,institutional_email&municipality_id=eq.${escapedMunicipalityId}&limit=1`, context),
       municipalityRequest(`municipality_addresses?select=municipality_id,postal_code,street,number,complement,district,city,state&municipality_id=eq.${escapedMunicipalityId}&limit=1`, context),
@@ -952,6 +1287,10 @@
       closeAddressEditor();
       setAddressFeedback();
     }
+    if (!state.isDepartmentSaving) {
+      closeDepartmentEditor();
+      setDepartmentFeedback();
+    }
     const municipality = state.municipalities.find((item) => item.id === state.selectedMunicipalityId);
     if (!municipality) return;
 
@@ -959,6 +1298,14 @@
     try {
       const details = await fetchSelectedContext(municipality.id, context);
       if (!isCurrentRequest(requestId)) return;
+
+      state.members = details.members;
+      state.membersFailed = details.membersFailed;
+      state.memberDepartments = details.memberDepartments;
+      state.roles = details.roles;
+      state.contacts = details.contacts;
+      state.contactsFailed = details.contactsFailed;
+      state.structureCanManage = !details.departmentsFailed && getStructureWritePermission(details.members, details.roles, context.userId);
 
       renderInstitutionalData(municipality);
       renderDepartments(details.departments, details.departmentsFailed);
@@ -1019,6 +1366,17 @@
     state.profileFailed = false;
     state.address = null;
     state.addressFailed = false;
+    state.departments = [];
+    state.departmentsFailed = false;
+    state.members = [];
+    state.membersFailed = false;
+    state.memberDepartments = [];
+    state.roles = [];
+    state.contacts = [];
+    state.contactsFailed = false;
+    state.structureCanManage = false;
+    state.isDepartmentSaving = false;
+    state.editingDepartmentId = "";
     state.requestId += 1;
     selector.replaceChildren();
     selectorField.hidden = true;
@@ -1030,12 +1388,17 @@
     contactsCount.textContent = "0";
     closeProfileEditor();
     closeAddressEditor();
+    closeDepartmentEditor();
     setProfileFeedback();
     setAddressFeedback();
+    setDepartmentFeedback();
     setActiveTab("overview");
     setViewState("empty");
   }
 
+  departmentNewButton.addEventListener("click", () => openDepartmentEditor());
+  departmentCancelButton.addEventListener("click", () => closeDepartmentEditor({ returnFocus: true }));
+  departmentForm.addEventListener("submit", (event) => { void submitMunicipalityDepartment(event); });
   addressEditButton.addEventListener("click", openAddressEditor);
   addressCancelButton.addEventListener("click", () => closeAddressEditor({ returnFocus: true }));
   addressForm.addEventListener("submit", (event) => { void submitMunicipalityAddress(event); });

@@ -1001,13 +1001,26 @@
 
             <section class="municipality-panel" id="municipality-panel-structure" data-municipality-panel="structure" role="tabpanel" aria-labelledby="municipality-tab-structure" hidden>
               <section class="municipality-data-section" aria-labelledby="municipality-departments-title">
-                <header class="municipality-section-heading"><span class="municipality-section-icon" aria-hidden="true">◇</span><div><p class="eyebrow">Estrutura administrativa</p><h3 id="municipality-departments-title">Secretarias e departamentos</h3></div><span class="municipality-section-count" id="municipality-departments-count">0</span></header>
+                <header class="municipality-section-heading municipality-structure-heading"><span class="municipality-section-icon" aria-hidden="true">◇</span><div><p class="eyebrow">Estrutura administrativa</p><h3 id="municipality-departments-title">Secretarias e departamentos</h3></div><span class="municipality-section-count" id="municipality-departments-count">0</span><button class="municipality-edit-button municipality-department-new-button" id="municipality-department-new-button" type="button" aria-controls="municipality-department-form" aria-expanded="false" hidden>+ Nova unidade</button></header>
+                <p class="municipality-form-feedback" id="municipality-department-feedback" role="status" aria-live="polite" hidden></p>
+                <form class="municipality-profile-form municipality-department-form" id="municipality-department-form" novalidate hidden>
+                  <div class="municipality-form-title-row"><div><p class="eyebrow">Gestão da estrutura</p><h4 id="municipality-department-form-title">Nova unidade</h4></div></div>
+                  <div class="municipality-profile-form-grid">
+                    <label for="municipality-department-form-name"><span>Nome *</span><input id="municipality-department-form-name" name="name" type="text" autocomplete="organization" required /></label>
+                    <label for="municipality-department-form-abbreviation"><span>Sigla</span><input id="municipality-department-form-abbreviation" name="abbreviation" type="text" maxlength="30" /></label>
+                    <label for="municipality-department-form-unit-type"><span>Tipo *</span><select id="municipality-department-form-unit-type" name="unit_type"><option value="secretariat">Secretaria</option><option value="department">Departamento</option><option value="sector">Setor</option><option value="unit" selected>Unidade</option></select></label>
+                    <label for="municipality-department-form-parent"><span>Unidade superior</span><select id="municipality-department-form-parent" name="parent_department_id"><option value="">Nenhuma — unidade de nível principal</option></select></label>
+                    <label for="municipality-department-form-status"><span>Status</span><select id="municipality-department-form-status" name="status"><option value="active" selected>Ativo</option><option value="inactive">Inativo</option></select></label>
+                  </div>
+                  <p class="municipality-form-hint">A hierarquia é validada no banco. O município do contexto atual não pode ser alterado.</p>
+                  <p class="municipality-form-error" id="municipality-department-form-error" role="alert" hidden></p>
+                  <div class="municipality-form-actions"><button class="municipality-cancel-button" id="municipality-department-cancel-button" type="button">Cancelar</button><button class="municipality-save-button" id="municipality-department-save-button" type="submit">Salvar unidade</button></div>
+                </form>
                 <div class="municipality-departments-list" id="municipality-departments-list"></div>
                 <p class="municipality-section-empty" id="municipality-departments-empty" hidden>Nenhuma secretaria ou departamento disponível neste contexto.</p>
                 <p class="municipality-section-error" id="municipality-departments-error" hidden>Não foi possível carregar as secretarias disponíveis.</p>
               </section>
             </section>
-
             <section class="municipality-panel" id="municipality-panel-contacts" data-municipality-panel="contacts" role="tabpanel" aria-labelledby="municipality-tab-contacts" hidden>
               <section class="municipality-data-section" aria-labelledby="municipality-contacts-title">
                 <header class="municipality-section-heading"><span class="municipality-section-icon" aria-hidden="true">♙</span><div><p class="eyebrow">Referências institucionais</p><h3 id="municipality-contacts-title">Responsáveis por departamento</h3></div><span class="municipality-section-count" id="municipality-contacts-count">0</span></header>
