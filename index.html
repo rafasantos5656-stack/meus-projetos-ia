@@ -898,6 +898,7 @@
               <button class="municipality-tab" id="municipality-tab-address" type="button" role="tab" aria-selected="false" aria-controls="municipality-panel-address" data-municipality-tab="address" tabindex="-1">Endereço</button>
               <button class="municipality-tab" id="municipality-tab-structure" type="button" role="tab" aria-selected="false" aria-controls="municipality-panel-structure" data-municipality-tab="structure" tabindex="-1">Estrutura administrativa</button>
               <button class="municipality-tab" id="municipality-tab-contacts" type="button" role="tab" aria-selected="false" aria-controls="municipality-panel-contacts" data-municipality-tab="contacts" tabindex="-1">Responsáveis</button>
+              <button class="municipality-tab" id="municipality-tab-profile-capacity" type="button" role="tab" aria-selected="false" aria-controls="municipality-panel-profile-capacity" data-municipality-tab="profile-capacity" tabindex="-1">Perfil e Capacidade</button>
             </nav>
 
             <section class="municipality-panel" id="municipality-panel-overview" data-municipality-panel="overview" role="tabpanel" aria-labelledby="municipality-tab-overview">
@@ -1043,6 +1044,54 @@
                 <div class="municipality-contacts-list" id="municipality-contacts-list"></div>
                 <p class="municipality-section-empty" id="municipality-contacts-empty" hidden>Nenhum responsável institucional foi informado para esta Prefeitura.</p>
                 <p class="municipality-section-error" id="municipality-contacts-error" hidden>Não foi possível carregar os responsáveis institucionais.</p>
+              </section>
+            </section>
+            <section class="municipality-panel" id="municipality-panel-profile-capacity" data-municipality-panel="profile-capacity" role="tabpanel" aria-labelledby="municipality-tab-profile-capacity" hidden>
+              <section class="municipality-data-section municipality-profile-capacity-section" aria-labelledby="municipality-priority-areas-title">
+                <header class="municipality-section-heading">
+                  <span class="municipality-section-icon" aria-hidden="true">◎</span>
+                  <div>
+                    <p class="eyebrow">Perfil e capacidade</p>
+                    <h3 id="municipality-priority-areas-title">Áreas prioritárias</h3>
+                  </div>
+                <button class="municipality-edit-button municipality-priority-new-button" id="municipality-priority-area-new-button" type="button" aria-controls="municipality-priority-area-form" aria-expanded="false" hidden>+ Adicionar área prioritária</button>
+                </header>
+                <p class="municipality-section-description">Defina as áreas estratégicas da Prefeitura para orientar a captação de recursos e a análise de oportunidades.</p>
+                <p class="municipality-form-feedback" id="municipality-priority-area-feedback" role="status" aria-live="polite" hidden></p>
+                <form class="municipality-profile-form municipality-priority-form" id="municipality-priority-area-form" novalidate hidden>
+                  <div class="municipality-form-title-row"><div><p class="eyebrow">Planejamento estratégico</p><h4 id="municipality-priority-area-form-title">Adicionar área prioritária</h4></div></div>
+                  <div class="municipality-profile-form-grid">
+                    <label for="municipality-priority-area-form-policy-area"><span>Área *</span><select id="municipality-priority-area-form-policy-area" name="policy_area_id" required><option value="">Selecione uma área</option></select></label>
+                    <label for="municipality-priority-area-form-level"><span>Prioridade *</span><select id="municipality-priority-area-form-level" name="priority_level" required><option value="high">Alta</option><option value="medium" selected>Média</option><option value="low">Baixa</option></select></label>
+                    <label for="municipality-priority-area-form-status"><span>Status *</span><select id="municipality-priority-area-form-status" name="status" required><option value="active" selected>Ativa</option><option value="inactive">Inativa</option></select></label>
+                    <label class="municipality-priority-notes-field" for="municipality-priority-area-form-notes"><span>Observações</span><textarea id="municipality-priority-area-form-notes" name="notes" maxlength="2000" rows="4"></textarea></label>
+                  </div>
+                  <p class="municipality-form-hint">A área é vinculada somente à Prefeitura selecionada e não poderá ser alterada após o cadastro.</p>
+                  <p class="municipality-form-error" id="municipality-priority-area-form-error" role="alert" hidden></p>
+                  <div class="municipality-form-actions"><button class="municipality-cancel-button" id="municipality-priority-area-cancel-button" type="button">Cancelar</button><button class="municipality-save-button" id="municipality-priority-area-save-button" type="submit">Salvar área</button></div>
+                </form>
+                <div class="municipality-priority-indicators" aria-label="Indicadores das áreas prioritárias">
+                  <article class="municipality-priority-indicator">
+                    <span>Áreas ativas</span>
+                    <strong id="municipality-priority-areas-active-count">0</strong>
+                    <small>Em acompanhamento</small>
+                  </article>
+                  <article class="municipality-priority-indicator is-high">
+                    <span>Prioridades altas</span>
+                    <strong id="municipality-priority-areas-high-count">0</strong>
+                    <small>Com foco estratégico</small>
+                  </article>
+                </div>
+                <div class="municipality-priority-list" id="municipality-priority-areas-list" aria-live="polite"></div>
+                <p class="municipality-section-empty municipality-priority-empty" id="municipality-priority-areas-empty" hidden>Nenhuma área prioritária definida para esta Prefeitura.<span>Quando as prioridades forem cadastradas, elas aparecerão aqui para apoiar o planejamento e a captação de recursos.</span></p>
+                <p class="municipality-section-error" id="municipality-priority-areas-error" role="alert" hidden>Não foi possível carregar as áreas prioritárias deste contexto. Tente novamente.</p>
+                <section class="municipality-priority-inactive" id="municipality-priority-areas-inactive-section" aria-labelledby="municipality-priority-areas-inactive-title" hidden>
+                  <header>
+                    <h4 id="municipality-priority-areas-inactive-title">Áreas inativas</h4>
+                    <span class="municipality-section-count" id="municipality-priority-areas-inactive-count">0</span>
+                  </header>
+                  <div class="municipality-priority-list is-inactive" id="municipality-priority-areas-inactive-list"></div>
+                </section>
               </section>
             </section>
           </div>

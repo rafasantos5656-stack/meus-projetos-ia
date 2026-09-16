@@ -107,10 +107,30 @@
   const contactFormError = document.querySelector("#municipality-contact-form-error");
   const contactFeedback = document.querySelector("#municipality-contact-feedback");
   const contactFormFields = [contactFormName, contactFormJobTitle, contactFormDepartment, contactFormStatus, contactFormEmail, contactFormPhone, contactFormPrimary];
+  const priorityAreasList = document.querySelector("#municipality-priority-areas-list");
+  const priorityAreasActiveCount = document.querySelector("#municipality-priority-areas-active-count");
+  const priorityAreasHighCount = document.querySelector("#municipality-priority-areas-high-count");
+  const priorityAreasEmpty = document.querySelector("#municipality-priority-areas-empty");
+  const priorityAreasError = document.querySelector("#municipality-priority-areas-error");
+  const priorityAreasInactiveSection = document.querySelector("#municipality-priority-areas-inactive-section");
+  const priorityAreasInactiveList = document.querySelector("#municipality-priority-areas-inactive-list");
+  const priorityAreasInactiveCount = document.querySelector("#municipality-priority-areas-inactive-count");
+  const priorityAreaNewButton = document.querySelector("#municipality-priority-area-new-button");
+  const priorityAreaForm = document.querySelector("#municipality-priority-area-form");
+  const priorityAreaFormTitle = document.querySelector("#municipality-priority-area-form-title");
+  const priorityAreaFormPolicyArea = document.querySelector("#municipality-priority-area-form-policy-area");
+  const priorityAreaFormLevel = document.querySelector("#municipality-priority-area-form-level");
+  const priorityAreaFormStatus = document.querySelector("#municipality-priority-area-form-status");
+  const priorityAreaFormNotes = document.querySelector("#municipality-priority-area-form-notes");
+  const priorityAreaCancelButton = document.querySelector("#municipality-priority-area-cancel-button");
+  const priorityAreaSaveButton = document.querySelector("#municipality-priority-area-save-button");
+  const priorityAreaFormError = document.querySelector("#municipality-priority-area-form-error");
+  const priorityAreaFeedback = document.querySelector("#municipality-priority-area-feedback");
+  const priorityAreaFormFields = [priorityAreaFormPolicyArea, priorityAreaFormLevel, priorityAreaFormStatus, priorityAreaFormNotes];
   const tabButtons = Array.from(document.querySelectorAll("[data-municipality-tab]"));
   const panels = Array.from(document.querySelectorAll("[data-municipality-panel]"));
 
-  if (!municipalityPage || !selector || !content || !profileEditButton || !profileForm || !profileCancelButton || !profileSaveButton || !profileFormError || !profileFeedback || profileFormFields.some((field) => !field) || !addressEditButton || !addressForm || !addressCancelButton || !addressSaveButton || !addressFormError || !addressFeedback || addressFormFields.some((field) => !field) || !departmentNewButton || !departmentForm || !departmentFormTitle || !departmentCancelButton || !departmentSaveButton || !departmentFormError || !departmentFeedback || departmentFormFields.some((field) => !field) || !contactNewButton || !contactForm || !contactFormTitle || !contactCancelButton || !contactSaveButton || !contactFormError || !contactFeedback || contactFormFields.some((field) => !field) || tabButtons.length === 0 || panels.length === 0) return;
+  if (!municipalityPage || !selector || !content || !profileEditButton || !profileForm || !profileCancelButton || !profileSaveButton || !profileFormError || !profileFeedback || profileFormFields.some((field) => !field) || !addressEditButton || !addressForm || !addressCancelButton || !addressSaveButton || !addressFormError || !addressFeedback || addressFormFields.some((field) => !field) || !departmentNewButton || !departmentForm || !departmentFormTitle || !departmentCancelButton || !departmentSaveButton || !departmentFormError || !departmentFeedback || departmentFormFields.some((field) => !field) || !contactNewButton || !contactForm || !contactFormTitle || !contactCancelButton || !contactSaveButton || !contactFormError || !contactFeedback || contactFormFields.some((field) => !field) || !priorityAreasList || !priorityAreasActiveCount || !priorityAreasHighCount || !priorityAreasEmpty || !priorityAreasError || !priorityAreasInactiveSection || !priorityAreasInactiveList || !priorityAreasInactiveCount || !priorityAreaNewButton || !priorityAreaForm || !priorityAreaFormTitle || !priorityAreaCancelButton || !priorityAreaSaveButton || !priorityAreaFormError || !priorityAreaFeedback || priorityAreaFormFields.some((field) => !field) || tabButtons.length === 0 || panels.length === 0) return;
 
   const roleLabels = Object.freeze({
     municipality_admin: "Administração municipal",
@@ -130,9 +150,17 @@
   });
   const departmentTypeValues = new Set(Object.keys(departmentTypeLabels));
   const departmentStatusValues = new Set(["active", "inactive"]);
+  const priorityLevelLabels = Object.freeze({ high: "Alta", medium: "Média", low: "Baixa" });
+  const priorityLevelOrder = Object.freeze({ high: 0, medium: 1, low: 2 });
 
   const state = {
     currentUserId: "",
+    anchorRoles: [],
+    anchorRolesLoaded: false,
+    anchorRolesFailed: false,
+    anchorRolesUserId: "",
+    anchorRolesLoadPromise: null,
+    anchorRolesRequestVersion: 0,
     municipalities: [],
     selectedMunicipalityId: "",
     activeTab: "overview",
@@ -151,6 +179,18 @@
     roles: [],
     contacts: [],
     contactsFailed: false,
+    policyAreas: [],
+    policyAreasLoaded: false,
+    policyAreasFailed: false,
+    policyAreasLoadPromise: null,
+    priorityAreas: [],
+    priorityAreasFailed: false,
+    priorityAreasCanManage: false,
+    isPriorityAreaSaving: false,
+    priorityAreaContextVersion: 0,
+    priorityAreaWriteSequence: 0,
+    activePriorityAreaWrite: null,
+    editingPriorityAreaId: "",
     structureCanManage: false,
     isDepartmentSaving: false,
     editingDepartmentId: "",
@@ -245,6 +285,132 @@
     return Array.isArray(payload) ? payload : [];
   }
 
+  async function getMyAnchorRolesRequest(context, hasRetriedAfterRefresh = false) {
+    const { url, anonKey } = getEnvironmentSettings();
+    let response;
+
+    try {
+      response = await fetch(`${url}/rest/v1/rpc/get_my_anchor_roles`, {
+        method: "POST",
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${context.accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: "{}",
+      });
+    } catch {
+      throw createRequestError("Não foi possível conectar ao Supabase.");
+    }
+
+    if (
+      response.status === 401
+      && !hasRetriedAfterRefresh
+      && typeof window.refreshSupabaseAuthSession === "function"
+    ) {
+      const refreshedContext = await window.refreshSupabaseAuthSession(context.accessToken);
+      if (refreshedContext?.accessToken && refreshedContext.userId) {
+        return getMyAnchorRolesRequest(refreshedContext, true);
+      }
+    }
+
+    const responseText = await response.text();
+    let payload = null;
+    try {
+      payload = responseText ? JSON.parse(responseText) : null;
+    } catch {
+      payload = null;
+    }
+
+    if (!response.ok) {
+      throw createRequestError(
+        payload?.message || payload?.error || "Não foi possível consultar os papéis globais.",
+        response.status,
+      );
+    }
+
+    return Array.isArray(payload) ? payload : [];
+  }
+
+  function resetAnchorRoles() {
+    state.anchorRolesRequestVersion += 1;
+    state.anchorRoles = [];
+    state.anchorRolesLoaded = false;
+    state.anchorRolesFailed = false;
+    state.anchorRolesUserId = "";
+    state.anchorRolesLoadPromise = null;
+  }
+
+  async function loadAnchorRoles(context) {
+    const userId = String(context?.userId ?? "");
+    if (!userId) {
+      resetAnchorRoles();
+      return [];
+    }
+
+    if (state.anchorRolesUserId && state.anchorRolesUserId !== userId) resetAnchorRoles();
+    if (state.anchorRolesUserId !== userId) state.anchorRolesUserId = userId;
+    if (state.anchorRolesLoaded) return state.anchorRoles;
+    if (state.anchorRolesLoadPromise) return state.anchorRolesLoadPromise;
+
+    const requestVersion = state.anchorRolesRequestVersion;
+    let requestFailed = false;
+    const promise = getMyAnchorRolesRequest(context)
+      .then((records) => records
+        .map((record) => String(record?.role_code ?? "").trim())
+        .filter(Boolean))
+      .catch(() => {
+        requestFailed = true;
+        return [];
+      })
+      .then((roles) => {
+        const isCurrentUser = state.anchorRolesRequestVersion === requestVersion
+          && state.anchorRolesUserId === userId
+          && state.currentUserId === userId;
+        if (isCurrentUser) {
+          state.anchorRoles = roles;
+          state.anchorRolesLoaded = true;
+          state.anchorRolesFailed = requestFailed;
+        }
+        return isCurrentUser ? roles : [];
+      })
+      .finally(() => {
+        if (state.anchorRolesRequestVersion === requestVersion && state.anchorRolesUserId === userId) {
+          state.anchorRolesLoadPromise = null;
+        }
+      });
+
+    state.anchorRolesLoadPromise = promise;
+    return promise;
+  }
+
+  async function loadPolicyAreasCatalog(context) {
+    const cacheUserId = String(context?.userId ?? "");
+    if (state.policyAreasLoaded && !state.policyAreasFailed) return state.policyAreas;
+    if (!state.policyAreasLoadPromise) {
+      state.policyAreasLoadPromise = municipalityRequest("policy_areas?select=id,code,name,status&order=name.asc", context)
+        .then((policyAreas) => {
+          if (state.currentUserId === cacheUserId) {
+            state.policyAreas = policyAreas;
+            state.policyAreasLoaded = true;
+            state.policyAreasFailed = false;
+          }
+          return policyAreas;
+        })
+        .catch((error) => {
+          if (state.currentUserId === cacheUserId) {
+            state.policyAreas = [];
+            state.policyAreasLoaded = false;
+            state.policyAreasFailed = true;
+          }
+          throw error;
+        })
+        .finally(() => {
+          state.policyAreasLoadPromise = null;
+        });
+    }
+    return state.policyAreasLoadPromise;
+  }
   async function municipalityWriteRequest(path, method, body, context, hasRetriedAfterRefresh = false) {
     const { url, anonKey } = getEnvironmentSettings();
     let response;
@@ -657,6 +823,10 @@
   }
 
   function getStructureWritePermission(members, roles, currentUserId) {
+    const isAnchorSuperadmin = state.anchorRolesLoaded
+      && !state.anchorRolesFailed
+      && state.anchorRolesUserId === currentUserId
+      && state.anchorRoles.includes("anchor_superadmin");
     const activeCurrentMembershipIds = new Set(
       members
         .filter((member) => member.user_id === currentUserId && String(member.status ?? "").toLowerCase() === "active")
@@ -667,10 +837,7 @@
       && role.role_code === "municipality_admin"
     ));
 
-    // A policy de leitura de memberships só mostra outros vínculos ao
-    // anchor_superadmin. Isto serve apenas de pista visual; o RLS decide a escrita.
-    const hasSuperadminReadScope = members.some((member) => member.user_id && member.user_id !== currentUserId);
-    return isMunicipalityAdmin || hasSuperadminReadScope;
+    return isAnchorSuperadmin || isMunicipalityAdmin;
   }
 
   function setDepartmentFormError(message = "") {
@@ -1504,15 +1671,402 @@
       contactsList.append(group);
     });
   }
+  function setPriorityAreaFormError(message = "") {
+    priorityAreaFormError.hidden = !message;
+    priorityAreaFormError.textContent = message;
+  }
+
+  function setPriorityAreaFeedback(message = "", kind = "success") {
+    priorityAreaFeedback.hidden = !message;
+    priorityAreaFeedback.textContent = message;
+    if (message) priorityAreaFeedback.dataset.kind = kind;
+    else delete priorityAreaFeedback.dataset.kind;
+  }
+
+  function invalidatePriorityAreaWriteState() {
+    state.priorityAreaContextVersion += 1;
+    state.activePriorityAreaWrite = null;
+    state.isPriorityAreaSaving = false;
+    state.priorityAreas = [];
+    state.priorityAreasFailed = false;
+    state.priorityAreasCanManage = false;
+    priorityAreasList.replaceChildren();
+    priorityAreasInactiveList.replaceChildren();
+    priorityAreasActiveCount.textContent = "0";
+    priorityAreasHighCount.textContent = "0";
+    priorityAreasInactiveCount.textContent = "0";
+    priorityAreasEmpty.hidden = true;
+    priorityAreasError.hidden = true;
+    priorityAreasInactiveSection.hidden = true;
+    closePriorityAreaEditor();
+    setPriorityAreaFeedback();
+    setPriorityAreaSaving(false);
+    updatePriorityAreaWriteControls();
+  }
+
+  function beginPriorityAreaWrite(municipalityId) {
+    const operation = {
+      id: ++state.priorityAreaWriteSequence,
+      municipalityId,
+      contextVersion: state.priorityAreaContextVersion,
+    };
+    state.activePriorityAreaWrite = operation;
+    setPriorityAreaSaving(true);
+    return operation;
+  }
+
+  function isCurrentPriorityAreaWrite(operation) {
+    return Boolean(
+      operation
+      && state.activePriorityAreaWrite?.id === operation.id
+      && state.priorityAreaContextVersion === operation.contextVersion
+      && state.selectedMunicipalityId === operation.municipalityId,
+    );
+  }
+
+  function endPriorityAreaWrite(operation) {
+    if (!isCurrentPriorityAreaWrite(operation)) return false;
+    state.activePriorityAreaWrite = null;
+    setPriorityAreaSaving(false);
+    return true;
+  }
+
+  function getAvailablePolicyAreas() {
+    const linkedPolicyAreaIds = new Set(state.priorityAreas.map((priorityArea) => String(priorityArea.policy_area_id ?? "")));
+    return state.policyAreas
+      .filter((policyArea) => String(policyArea.status ?? "").toLowerCase() === "active")
+      .filter((policyArea) => !linkedPolicyAreaIds.has(String(policyArea.id ?? "")));
+  }
+
+  function updatePriorityAreaWriteControls() {
+    const canManage = state.priorityAreasCanManage && !state.priorityAreasFailed && !state.policyAreasFailed;
+    priorityAreaNewButton.hidden = !canManage;
+    priorityAreaNewButton.disabled = !canManage || state.isPriorityAreaSaving;
+    if (!canManage && !state.isPriorityAreaSaving) closePriorityAreaEditor();
+  }
+
+  function setPriorityAreaSaving(isSaving) {
+    state.isPriorityAreaSaving = isSaving;
+    const canManage = state.priorityAreasCanManage && !state.priorityAreasFailed && !state.policyAreasFailed;
+    priorityAreaNewButton.disabled = isSaving || !canManage;
+    priorityAreaCancelButton.disabled = isSaving;
+    priorityAreaSaveButton.disabled = isSaving;
+    priorityAreaSaveButton.textContent = isSaving ? "Salvando…" : "Salvar área";
+    selector.disabled = isSaving || state.isProfileSaving || state.isAddressSaving || state.isDepartmentSaving || state.isContactSaving;
+    priorityAreaForm.setAttribute("aria-busy", String(isSaving));
+    priorityAreaFormFields.forEach((field) => {
+      field.disabled = isSaving || (field === priorityAreaFormPolicyArea && Boolean(state.editingPriorityAreaId));
+    });
+    priorityAreasList.querySelectorAll("button").forEach((button) => { button.disabled = isSaving; });
+    priorityAreasInactiveList.querySelectorAll("button").forEach((button) => { button.disabled = isSaving; });
+  }
+
+  function populatePriorityAreaOptions(priorityArea = null) {
+    priorityAreaFormPolicyArea.replaceChildren();
+    const isEditing = Boolean(priorityArea);
+    const selectedPolicyAreaId = String(priorityArea?.policy_area_id ?? "");
+    const policyAreasById = new Map(state.policyAreas.map((policyArea) => [String(policyArea.id ?? ""), policyArea]));
+    const visiblePolicyAreas = isEditing
+      ? [policyAreasById.get(selectedPolicyAreaId)].filter(Boolean)
+      : getAvailablePolicyAreas();
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = isEditing ? "Área vinculada" : "Selecione uma área";
+    priorityAreaFormPolicyArea.append(placeholder);
+
+    visiblePolicyAreas.forEach((policyArea) => {
+      const option = document.createElement("option");
+      option.value = String(policyArea.id ?? "");
+      option.textContent = policyArea.name || "Área não identificada";
+      option.selected = String(policyArea.id ?? "") === selectedPolicyAreaId;
+      priorityAreaFormPolicyArea.append(option);
+    });
+
+    if (isEditing && !policyAreasById.has(selectedPolicyAreaId)) {
+      const option = document.createElement("option");
+      option.value = selectedPolicyAreaId;
+      option.textContent = "Área não identificada";
+      option.selected = true;
+      priorityAreaFormPolicyArea.append(option);
+    }
+  }
+
+  function setPriorityAreaFormValues(priorityArea = null) {
+    const isEditing = Boolean(priorityArea);
+    state.editingPriorityAreaId = isEditing ? String(priorityArea.id ?? "") : "";
+    priorityAreaFormTitle.textContent = isEditing ? "Editar área prioritária" : "Adicionar área prioritária";
+    priorityAreaSaveButton.textContent = "Salvar área";
+    populatePriorityAreaOptions(priorityArea);
+    priorityAreaFormPolicyArea.disabled = isEditing;
+    priorityAreaFormLevel.value = Object.hasOwn(priorityLevelLabels, String(priorityArea?.priority_level ?? "").toLowerCase())
+      ? String(priorityArea.priority_level).toLowerCase()
+      : "medium";
+    priorityAreaFormStatus.value = departmentStatusValues.has(String(priorityArea?.status ?? "").toLowerCase())
+      ? String(priorityArea.status).toLowerCase()
+      : "active";
+    priorityAreaFormNotes.value = priorityArea?.notes ?? "";
+  }
+
+  function closePriorityAreaEditor({ returnFocus = false, focusTarget = null } = {}) {
+    priorityAreaForm.hidden = true;
+    priorityAreaNewButton.setAttribute("aria-expanded", "false");
+    state.editingPriorityAreaId = "";
+    priorityAreaForm.reset();
+    setPriorityAreaFormError();
+    if (returnFocus) (focusTarget || priorityAreaNewButton).focus();
+  }
+
+  function openPriorityAreaEditor(priorityArea = null, focusTarget = null) {
+    if (!state.priorityAreasCanManage || state.priorityAreasFailed || state.policyAreasFailed || state.isPriorityAreaSaving || state.isProfileSaving || state.isAddressSaving || state.isDepartmentSaving || state.isContactSaving || !state.selectedMunicipalityId) return;
+    if (!priorityArea && getAvailablePolicyAreas().length === 0) {
+      setPriorityAreaFeedback("Todas as áreas ativas já estão vinculadas a esta Prefeitura.", "info");
+      return;
+    }
+    setPriorityAreaFeedback();
+    setPriorityAreaFormError();
+    setPriorityAreaFormValues(priorityArea);
+    priorityAreaForm.hidden = false;
+    priorityAreaNewButton.setAttribute("aria-expanded", "true");
+    window.requestAnimationFrame(() => {
+      (priorityArea ? priorityAreaFormLevel : priorityAreaFormPolicyArea).focus();
+    });
+  }
+
+  function validatePriorityAreaPayload() {
+    const priorityLevel = String(priorityAreaFormLevel.value ?? "").toLowerCase();
+    const status = String(priorityAreaFormStatus.value ?? "").toLowerCase();
+    const notes = getOptionalFieldValue(priorityAreaFormNotes);
+    const isEditing = Boolean(state.editingPriorityAreaId);
+
+    if (!Object.hasOwn(priorityLevelLabels, priorityLevel)) throw createRequestError("Selecione um nível de prioridade válido.");
+    if (!departmentStatusValues.has(status)) throw createRequestError("Selecione um status válido.");
+    if (notes && notes.length > 2000) throw createRequestError("As observações devem ter no máximo 2.000 caracteres.");
+
+    if (isEditing) {
+      const priorityAreaExists = state.priorityAreas.some((priorityArea) => String(priorityArea.id ?? "") === state.editingPriorityAreaId);
+      if (!priorityAreaExists) throw createRequestError("A área prioritária não está mais disponível neste contexto.");
+      return { priority_level: priorityLevel, notes, status };
+    }
+
+    const policyAreaId = String(priorityAreaFormPolicyArea.value ?? "");
+    const policyArea = state.policyAreas.find((item) => String(item.id ?? "") === policyAreaId);
+    if (!policyArea || String(policyArea.status ?? "").toLowerCase() !== "active") {
+      throw createRequestError("Selecione uma área ativa válida.");
+    }
+    if (state.priorityAreas.some((priorityArea) => String(priorityArea.policy_area_id ?? "") === policyAreaId)) {
+      throw createRequestError("Esta área prioritária já está cadastrada para esta Prefeitura.");
+    }
+
+    return {
+      municipality_id: state.selectedMunicipalityId,
+      policy_area_id: policyAreaId,
+      priority_level: priorityLevel,
+      notes,
+      status,
+    };
+  }
+
+  function isPriorityAreaConflict(error) {
+    return Number(error?.status) === 409 || String(error?.code ?? "") === "23505";
+  }
+
+  function getPriorityAreaWriteError(error) {
+    if (String(error?.code ?? "") === "context_changed") return "O contexto municipal foi alterado. Inicie a ação novamente.";
+    if (isProfilePermissionError(error)) return "Você não possui permissão para alterar as áreas prioritárias desta Prefeitura.";
+    if (isPriorityAreaConflict(error)) return "Esta área prioritária já está cadastrada para esta Prefeitura.";
+    return "Não foi possível salvar a área prioritária. Tente novamente.";
+  }
+
+  async function reloadMunicipalityPriorityAreas(context) {
+    const municipalityId = state.selectedMunicipalityId;
+    if (!municipalityId) return;
+    const records = await municipalityRequest(
+      `municipality_priority_areas?select=id,municipality_id,policy_area_id,priority_level,notes,status,created_at,updated_at&municipality_id=eq.${encodeURIComponent(municipalityId)}`,
+      context,
+    );
+    if (municipalityId !== state.selectedMunicipalityId) return;
+    state.priorityAreas = records;
+    state.priorityAreasFailed = false;
+    renderPriorityAreas(records, state.policyAreas, false);
+  }
+
+  async function submitPriorityArea(event) {
+    event.preventDefault();
+    if (!state.priorityAreasCanManage || state.priorityAreasFailed || state.policyAreasFailed || state.isPriorityAreaSaving || state.isProfileSaving || state.isAddressSaving || state.isDepartmentSaving || state.isContactSaving || !state.selectedMunicipalityId) return;
+
+    let payload;
+    try {
+      payload = validatePriorityAreaPayload();
+    } catch (error) {
+      setPriorityAreaFormError(error.message || "Revise os dados informados.");
+      return;
+    }
+
+    const targetMunicipalityId = state.selectedMunicipalityId;
+    const editingPriorityAreaId = state.editingPriorityAreaId;
+    const isEditing = Boolean(editingPriorityAreaId);
+    const operation = beginPriorityAreaWrite(targetMunicipalityId);
+    setPriorityAreaFormError();
+
+    try {
+      const context = await getAuthenticatedContext();
+      if (!isCurrentPriorityAreaWrite(operation)) return;
+      const result = isEditing
+        ? await municipalityWriteRequest(
+          `municipality_priority_areas?id=eq.${encodeURIComponent(editingPriorityAreaId)}&municipality_id=eq.${encodeURIComponent(targetMunicipalityId)}`,
+          "PATCH",
+          payload,
+          context,
+        )
+        : await municipalityWriteRequest(
+          "municipality_priority_areas",
+          "POST",
+          payload,
+          context,
+        );
+
+      if (!isCurrentPriorityAreaWrite(operation)) return;
+      if (result.length === 0) throw createRequestError("permission denied", 403, "42501");
+      await reloadMunicipalityPriorityAreas(context);
+      if (!isCurrentPriorityAreaWrite(operation)) return;
+      closePriorityAreaEditor();
+      setPriorityAreaFeedback(isEditing ? "Área prioritária atualizada com sucesso." : "Área prioritária cadastrada com sucesso.", "success");
+    } catch (error) {
+      if (!isCurrentPriorityAreaWrite(operation)) return;
+      if (isPriorityAreaConflict(error)) {
+        try {
+          await reloadMunicipalityPriorityAreas(await getAuthenticatedContext());
+          if (!isCurrentPriorityAreaWrite(operation)) return;
+        } catch { /* O feedback amigável abaixo preserva os dados já carregados. */ }
+      }
+      setPriorityAreaFormError(getPriorityAreaWriteError(error));
+    } finally {
+      endPriorityAreaWrite(operation);
+    }
+  }
+  async function updatePriorityAreaStatus(priorityArea, focusTarget = null) {
+    if (!state.priorityAreasCanManage || state.priorityAreasFailed || state.isPriorityAreaSaving || !state.selectedMunicipalityId || !priorityArea?.id) return;
+    const targetMunicipalityId = state.selectedMunicipalityId;
+    const nextStatus = String(priorityArea.status ?? "active").toLowerCase() === "inactive" ? "active" : "inactive";
+    const operation = beginPriorityAreaWrite(targetMunicipalityId);
+    setPriorityAreaFeedback();
+
+    try {
+      const context = await getAuthenticatedContext();
+      if (!isCurrentPriorityAreaWrite(operation)) return;
+      const result = await municipalityWriteRequest(
+        `municipality_priority_areas?id=eq.${encodeURIComponent(priorityArea.id)}&municipality_id=eq.${encodeURIComponent(targetMunicipalityId)}`,
+        "PATCH",
+        { status: nextStatus },
+        context,
+      );
+      if (!isCurrentPriorityAreaWrite(operation)) return;
+      if (result.length === 0) throw createRequestError("permission denied", 403, "42501");
+      await reloadMunicipalityPriorityAreas(context);
+      if (!isCurrentPriorityAreaWrite(operation)) return;
+      setPriorityAreaFeedback(nextStatus === "inactive" ? "Área prioritária inativada com sucesso." : "Área prioritária reativada com sucesso.", "success");
+      if (focusTarget && document.contains(focusTarget)) focusTarget.focus();
+    } catch (error) {
+      if (!isCurrentPriorityAreaWrite(operation)) return;
+      setPriorityAreaFeedback(getPriorityAreaWriteError(error), "error");
+    } finally {
+      endPriorityAreaWrite(operation);
+    }
+  }
+  function getPriorityLevelLabel(priorityLevel) {
+    return priorityLevelLabels[String(priorityLevel ?? "").toLowerCase()] ?? "Não definida";
+  }
+
+  function getPriorityStatusLabel(status) {
+    return String(status ?? "").toLowerCase() === "inactive" ? "Inativa" : "Ativa";
+  }
+
+  function comparePriorityAreas(first, second, policyAreasById) {
+    const firstStatus = String(first.status ?? "active").toLowerCase() === "inactive" ? 1 : 0;
+    const secondStatus = String(second.status ?? "active").toLowerCase() === "inactive" ? 1 : 0;
+    if (firstStatus !== secondStatus) return firstStatus - secondStatus;
+
+    const firstPriority = priorityLevelOrder[String(first.priority_level ?? "").toLowerCase()] ?? 3;
+    const secondPriority = priorityLevelOrder[String(second.priority_level ?? "").toLowerCase()] ?? 3;
+    if (firstPriority !== secondPriority) return firstPriority - secondPriority;
+
+    const firstName = policyAreasById.get(String(first.policy_area_id ?? ""))?.name ?? "Área não identificada";
+    const secondName = policyAreasById.get(String(second.policy_area_id ?? ""))?.name ?? "Área não identificada";
+    return firstName.localeCompare(secondName, "pt-BR", { sensitivity: "base" });
+  }
+
+  function createPriorityAreaCard(priorityArea, policyAreasById, inactive = false) {
+    const policyArea = policyAreasById.get(String(priorityArea.policy_area_id ?? ""));
+    const item = createElement("article", "municipality-priority-card");
+    if (inactive) item.classList.add("is-inactive");
+    if (!policyArea) item.classList.add("is-unresolved");
+
+    const copy = createElement("div", "municipality-priority-copy");
+    copy.append(createElement("strong", "", policyArea?.name || "Área não identificada"));
+    if (typeof priorityArea.notes === "string" && priorityArea.notes.trim()) {
+      copy.append(createElement("p", "", priorityArea.notes.trim()));
+    }
+
+    const tags = createElement("div", "municipality-priority-tags");
+    const level = String(priorityArea.priority_level ?? "").toLowerCase();
+    tags.append(createElement("span", `municipality-priority-badge is-${level || "unknown"}`, getPriorityLevelLabel(level)));
+    const status = String(priorityArea.status ?? "active").toLowerCase();
+    tags.append(createElement("span", `municipality-mini-status is-${status}`, getPriorityStatusLabel(status)));
+    item.append(copy, tags);
+    if (state.priorityAreasCanManage) {
+      const actions = createElement("div", "municipality-priority-actions");
+      const editButton = createElement("button", "municipality-priority-action", "Editar");
+      editButton.type = "button";
+      editButton.addEventListener("click", () => openPriorityAreaEditor(priorityArea, editButton));
+      const isInactive = String(priorityArea.status ?? "active").toLowerCase() === "inactive";
+      const statusButton = createElement("button", "municipality-priority-action is-status", isInactive ? "Reativar" : "Inativar");
+      statusButton.type = "button";
+      statusButton.addEventListener("click", () => { void updatePriorityAreaStatus(priorityArea, statusButton); });
+      actions.append(editButton, statusButton);
+      item.append(actions);
+    }
+    return item;
+  }
+
+  function renderPriorityAreas(priorityAreas, policyAreas, failed) {
+    priorityAreasList.replaceChildren();
+    priorityAreasInactiveList.replaceChildren();
+    state.priorityAreas = failed ? [] : priorityAreas;
+    state.priorityAreasFailed = failed;
+    updatePriorityAreaWriteControls();
+
+    const policyAreasById = new Map(policyAreas.map((policyArea) => [String(policyArea.id ?? ""), policyArea]));
+    const orderedPriorityAreas = priorityAreas.slice().sort((first, second) => comparePriorityAreas(first, second, policyAreasById));
+    const activePriorityAreas = orderedPriorityAreas.filter((priorityArea) => String(priorityArea.status ?? "active").toLowerCase() !== "inactive");
+    const inactivePriorityAreas = orderedPriorityAreas.filter((priorityArea) => String(priorityArea.status ?? "active").toLowerCase() === "inactive");
+
+    priorityAreasActiveCount.textContent = String(failed ? 0 : activePriorityAreas.length);
+    priorityAreasHighCount.textContent = String(failed ? 0 : activePriorityAreas.filter((priorityArea) => String(priorityArea.priority_level ?? "").toLowerCase() === "high").length);
+    priorityAreasEmpty.hidden = failed || priorityAreas.length > 0;
+    priorityAreasError.hidden = !failed;
+    priorityAreasInactiveSection.hidden = failed || inactivePriorityAreas.length === 0;
+    priorityAreasInactiveCount.textContent = String(failed ? 0 : inactivePriorityAreas.length);
+    if (failed) return;
+
+    activePriorityAreas.forEach((priorityArea) => {
+      priorityAreasList.append(createPriorityAreaCard(priorityArea, policyAreasById));
+    });
+    inactivePriorityAreas.forEach((priorityArea) => {
+      priorityAreasInactiveList.append(createPriorityAreaCard(priorityArea, policyAreasById, true));
+    });
+  }
   async function fetchSelectedContext(municipalityId, context) {
     const escapedMunicipalityId = encodeURIComponent(municipalityId);
-    const [departmentsResult, membersResult, profileResult, addressResult, populationResult, contactsResult] = await Promise.allSettled([
+    const [departmentsResult, membersResult, profileResult, addressResult, populationResult, contactsResult, policyAreasResult, priorityAreasResult] = await Promise.allSettled([
       municipalityRequest(`municipality_departments?select=id,municipality_id,name,abbreviation,status,unit_type,parent_department_id&municipality_id=eq.${escapedMunicipalityId}&order=name.asc`, context),
       municipalityRequest(`municipality_members?select=id,municipality_id,user_id,status&municipality_id=eq.${escapedMunicipalityId}&order=created_at.asc`, context),
       municipalityRequest(`municipality_institutional_profiles?select=municipality_id,mayor_name,official_website,institutional_phone,institutional_email&municipality_id=eq.${escapedMunicipalityId}&limit=1`, context),
       municipalityRequest(`municipality_addresses?select=municipality_id,postal_code,street,number,complement,district,city,state&municipality_id=eq.${escapedMunicipalityId}&limit=1`, context),
       municipalityRequest(`municipality_population_records?select=municipality_id,reference_year,population,source_name,source_url,source_checked_at&municipality_id=eq.${escapedMunicipalityId}&order=reference_year.desc,source_checked_at.desc.nullslast&limit=1`, context),
       municipalityRequest(`municipality_department_contacts?select=id,municipality_id,department_id,membership_id,full_name,job_title,email,phone,is_primary,status&municipality_id=eq.${escapedMunicipalityId}&order=department_id.asc,is_primary.desc,full_name.asc`, context),
+      loadPolicyAreasCatalog(context),
+      municipalityRequest(`municipality_priority_areas?select=id,municipality_id,policy_area_id,priority_level,notes,status,created_at,updated_at&municipality_id=eq.${escapedMunicipalityId}`, context),
     ]);
 
     const departments = departmentsResult.status === "fulfilled" ? departmentsResult.value : [];
@@ -1548,6 +2102,10 @@
       populationFailed: populationResult.status !== "fulfilled",
       contacts: contactsResult.status === "fulfilled" ? contactsResult.value : [],
       contactsFailed: contactsResult.status !== "fulfilled",
+      policyAreas: policyAreasResult.status === "fulfilled" ? policyAreasResult.value : [],
+      policyAreasFailed: policyAreasResult.status !== "fulfilled",
+      priorityAreas: priorityAreasResult.status === "fulfilled" ? priorityAreasResult.value : [],
+      priorityAreasFailed: priorityAreasResult.status !== "fulfilled",
     };
   }
 
@@ -1568,9 +2126,15 @@
       closeContactEditor();
       setContactFeedback();
     }
+    invalidatePriorityAreaWriteState();
     const municipality = state.municipalities.find((item) => item.id === state.selectedMunicipalityId);
     if (!municipality) return;
 
+    state.priorityAreas = [];
+    state.priorityAreasFailed = false;
+    state.priorityAreasCanManage = false;
+    priorityAreasList.replaceChildren();
+    priorityAreasInactiveList.replaceChildren();
     setViewState("loading");
     try {
       const details = await fetchSelectedContext(municipality.id, context);
@@ -1582,6 +2146,11 @@
       state.roles = details.roles;
       state.contacts = details.contacts;
       state.contactsFailed = details.contactsFailed;
+      state.policyAreas = details.policyAreas;
+      state.policyAreasFailed = details.policyAreasFailed;
+      state.priorityAreas = details.priorityAreas;
+      state.priorityAreasFailed = details.priorityAreasFailed || details.policyAreasFailed;
+      state.priorityAreasCanManage = !state.priorityAreasFailed && getStructureWritePermission(details.members, details.roles, context.userId);
       state.structureCanManage = !details.departmentsFailed && getStructureWritePermission(details.members, details.roles, context.userId);
       state.contactsCanManage = state.structureCanManage && !details.contactsFailed;
 
@@ -1592,6 +2161,7 @@
       renderPopulation(details.population, details.populationFailed);
       renderAddress(details.address, details.addressFailed);
       renderContacts(details.contacts, details.departments, details.contactsFailed);
+      renderPriorityAreas(details.priorityAreas, details.policyAreas, state.priorityAreasFailed);
       setViewState("content");
     } catch {
       if (isCurrentRequest(requestId)) {
@@ -1607,7 +2177,10 @@
     setViewState("loading");
     try {
       const context = await getAuthenticatedContext();
+      if (state.currentUserId && state.currentUserId !== context.userId) resetAnchorRoles();
       state.currentUserId = context.userId;
+      await loadAnchorRoles(context);
+      if (!isCurrentRequest(requestId)) return;
 
       if (reloadMunicipalities || state.municipalities.length === 0) {
         const municipalities = await municipalityRequest("municipalities?select=id,name,state,ibge_code,primary_cnpj,timezone,status&order=name.asc", context);
@@ -1638,6 +2211,7 @@
 
   function resetMunicipalityPage() {
     state.currentUserId = "";
+    resetAnchorRoles();
     state.municipalities = [];
     state.selectedMunicipalityId = "";
     state.profile = null;
@@ -1652,6 +2226,17 @@
     state.roles = [];
     state.contacts = [];
     state.contactsFailed = false;
+    state.policyAreas = [];
+    state.policyAreasLoaded = false;
+    state.policyAreasFailed = false;
+    state.policyAreasLoadPromise = null;
+    state.priorityAreas = [];
+    state.priorityAreasFailed = false;
+    state.priorityAreasCanManage = false;
+    state.isPriorityAreaSaving = false;
+    state.priorityAreaContextVersion += 1;
+    state.activePriorityAreaWrite = null;
+    state.editingPriorityAreaId = "";
     state.structureCanManage = false;
     state.isDepartmentSaving = false;
     state.editingDepartmentId = "";
@@ -1666,8 +2251,16 @@
     overviewDepartmentsList.replaceChildren();
     membersList.replaceChildren();
     contactsList.replaceChildren();
+    priorityAreasList.replaceChildren();
+    priorityAreasInactiveList.replaceChildren();
     departmentsCount.textContent = "0";
     contactsCount.textContent = "0";
+    priorityAreasActiveCount.textContent = "0";
+    priorityAreasHighCount.textContent = "0";
+    priorityAreasInactiveCount.textContent = "0";
+    priorityAreasEmpty.hidden = true;
+    priorityAreasError.hidden = true;
+    priorityAreasInactiveSection.hidden = true;
     closeProfileEditor();
     closeAddressEditor();
     closeDepartmentEditor();
@@ -1676,6 +2269,8 @@
     setAddressFeedback();
     setDepartmentFeedback();
     setContactFeedback();
+    closePriorityAreaEditor();
+    setPriorityAreaFeedback();
     setActiveTab("overview");
     setViewState("empty");
   }
@@ -1686,6 +2281,9 @@
   contactNewButton.addEventListener("click", () => openContactEditor());
   contactCancelButton.addEventListener("click", () => closeContactEditor({ returnFocus: true }));
   contactForm.addEventListener("submit", (event) => { void submitMunicipalityContact(event); });
+  priorityAreaNewButton.addEventListener("click", () => openPriorityAreaEditor());
+  priorityAreaCancelButton.addEventListener("click", () => closePriorityAreaEditor({ returnFocus: true }));
+  priorityAreaForm.addEventListener("submit", (event) => { void submitPriorityArea(event); });
   addressEditButton.addEventListener("click", openAddressEditor);
   addressCancelButton.addEventListener("click", () => closeAddressEditor({ returnFocus: true }));
   addressForm.addEventListener("submit", (event) => { void submitMunicipalityAddress(event); });
@@ -1697,6 +2295,7 @@
     if (!state.municipalities.some((municipality) => municipality.id === selected)) return;
 
     state.selectedMunicipalityId = selected;
+    invalidatePriorityAreaWriteState();
     const requestId = ++state.requestId;
     void (async () => {
       try {
@@ -1728,7 +2327,9 @@
   });
 
   window.addEventListener("supabase-auth-ready", (event) => {
-    state.currentUserId = String(event.detail?.userId ?? "");
+    const userId = String(event.detail?.userId ?? "");
+    resetAnchorRoles();
+    state.currentUserId = userId;
     if (isMunicipalityRoute()) void loadMunicipalityPage({ reloadMunicipalities: true });
   });
 

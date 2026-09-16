@@ -730,3 +730,139 @@
   #dashboard-shell:not([hidden]) .municipality-contact-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   #dashboard-shell:not([hidden]) .municipality-contact-action { width: 100%; }
 }
+/* Perfil e capacidade — leitura das áreas prioritárias. */
+#dashboard-shell:not([hidden]) .municipality-profile-capacity-section { display: grid; gap: 17px; }
+#dashboard-shell:not([hidden]) .municipality-section-description {
+  max-width: 710px;
+  margin: -5px 0 0;
+  color: #9dafc2;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+#dashboard-shell:not([hidden]) .municipality-priority-indicators {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+#dashboard-shell:not([hidden]) .municipality-priority-indicator {
+  min-width: 0;
+  padding: 14px 15px;
+  border: 1px solid rgba(148, 177, 207, .18);
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(17, 46, 75, .62), rgba(5, 19, 37, .58));
+}
+
+#dashboard-shell:not([hidden]) .municipality-priority-indicator.is-high { border-color: rgba(242, 196, 90, .3); background: linear-gradient(145deg, rgba(83, 62, 23, .26), rgba(7, 24, 43, .68)); }
+#dashboard-shell:not([hidden]) .municipality-priority-indicator span,
+#dashboard-shell:not([hidden]) .municipality-priority-indicator small { display: block; color: #91a6ba; font-size: 9px; line-height: 1.4; }
+#dashboard-shell:not([hidden]) .municipality-priority-indicator span { font-weight: 780; letter-spacing: .07em; text-transform: uppercase; }
+#dashboard-shell:not([hidden]) .municipality-priority-indicator strong { display: block; margin: 5px 0 2px; color: #f0f5fa; font-size: 25px; font-weight: 780; letter-spacing: -.05em; }
+#dashboard-shell:not([hidden]) .municipality-priority-indicator.is-high strong { color: #f0d184; }
+
+#dashboard-shell:not([hidden]) .municipality-priority-list { display: grid; gap: 8px; }
+#dashboard-shell:not([hidden]) .municipality-priority-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 12px 13px;
+  border: 1px solid rgba(148, 177, 207, .16);
+  border-radius: 11px;
+  background: rgba(5, 19, 37, .39);
+}
+
+#dashboard-shell:not([hidden]) .municipality-priority-card.is-unresolved { border-style: dashed; }
+#dashboard-shell:not([hidden]) .municipality-priority-card.is-inactive { opacity: .72; background: rgba(5, 19, 37, .22); }
+#dashboard-shell:not([hidden]) .municipality-priority-copy { min-width: 0; display: grid; gap: 4px; }
+#dashboard-shell:not([hidden]) .municipality-priority-copy strong { overflow-wrap: anywhere; color: #edf4fa; font-size: 12px; }
+#dashboard-shell:not([hidden]) .municipality-priority-copy p { margin: 0; overflow-wrap: anywhere; color: #91a6ba; font-size: 10px; line-height: 1.45; }
+#dashboard-shell:not([hidden]) .municipality-priority-tags { display: flex; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
+#dashboard-shell:not([hidden]) .municipality-priority-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 23px;
+  padding: 0 8px;
+  border: 1px solid rgba(151, 178, 205, .2);
+  border-radius: 99px;
+  color: #b7c7d7;
+  background: rgba(6, 21, 40, .48);
+  font-size: 9px;
+  font-weight: 760;
+  letter-spacing: .035em;
+  white-space: nowrap;
+}
+
+#dashboard-shell:not([hidden]) .municipality-priority-badge.is-high { color: #f1d082; border-color: rgba(242, 196, 90, .36); background: rgba(242, 196, 90, .1); }
+#dashboard-shell:not([hidden]) .municipality-priority-badge.is-medium { color: #a9c6e4; border-color: rgba(135, 178, 221, .32); background: rgba(92, 148, 202, .1); }
+#dashboard-shell:not([hidden]) .municipality-priority-badge.is-low { color: #a9d9bd; border-color: rgba(111, 208, 153, .31); background: rgba(111, 208, 153, .09); }
+#dashboard-shell:not([hidden]) .municipality-priority-empty { display: grid; gap: 5px; }
+#dashboard-shell:not([hidden]) .municipality-priority-empty span { color: #91a6ba; font-weight: 500; }
+#dashboard-shell:not([hidden]) .municipality-priority-inactive { display: grid; gap: 9px; padding-top: 5px; }
+#dashboard-shell:not([hidden]) .municipality-priority-inactive > header { display: flex; align-items: center; gap: 10px; }
+#dashboard-shell:not([hidden]) .municipality-priority-inactive h4 { margin: 0; color: #b8c7d5; font-size: 11px; font-weight: 740; }
+#dashboard-shell:not([hidden]) .municipality-priority-inactive .municipality-section-count { margin-left: auto; }
+
+@media (max-width: 560px) {
+  #dashboard-shell:not([hidden]) .municipality-priority-indicators { grid-template-columns: 1fr; }
+  #dashboard-shell:not([hidden]) .municipality-priority-card { align-items: flex-start; flex-direction: column; gap: 10px; }
+  #dashboard-shell:not([hidden]) .municipality-priority-tags { justify-content: flex-start; }
+}
+/* Escrita controlada de áreas prioritárias. */
+#dashboard-shell:not([hidden]) .municipality-priority-new-button { margin-left: auto; }
+#dashboard-shell:not([hidden]) .municipality-priority-form { margin-top: -2px; }
+#dashboard-shell:not([hidden]) .municipality-priority-notes-field { grid-column: span 2; }
+#dashboard-shell:not([hidden]) .municipality-priority-form textarea {
+  width: 100%;
+  min-height: 92px;
+  resize: vertical;
+  padding: 10px 11px;
+  color: #edf4fa;
+  border: 1px solid rgba(148, 177, 207, .26);
+  border-radius: 8px;
+  outline: none;
+  background: rgba(4, 17, 33, .55);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+}
+#dashboard-shell:not([hidden]) .municipality-priority-form textarea:hover:not(:disabled) { border-color: rgba(242, 196, 90, .38); }
+#dashboard-shell:not([hidden]) .municipality-priority-form textarea:focus-visible { outline: 2px solid #ead180; outline-offset: 2px; }
+#dashboard-shell:not([hidden]) .municipality-priority-form textarea:disabled { cursor: wait; opacity: .62; }
+#dashboard-shell:not([hidden]) .municipality-priority-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+#dashboard-shell:not([hidden]) .municipality-priority-action {
+  min-height: 29px;
+  padding: 0 9px;
+  color: #d4e1ec;
+  border: 1px solid rgba(148, 177, 207, .25);
+  border-radius: 7px;
+  background: rgba(5, 19, 37, .36);
+  cursor: pointer;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 750;
+  transition: color .18s ease, border-color .18s ease, background .18s ease;
+}
+#dashboard-shell:not([hidden]) .municipality-priority-action:hover:not(:disabled) { color: #071a2f; border-color: #f2c45a; background: #f2c45a; }
+#dashboard-shell:not([hidden]) .municipality-priority-action.is-status { color: #f1d082; }
+#dashboard-shell:not([hidden]) .municipality-priority-action.is-status:hover:not(:disabled) { color: #071a2f; }
+#dashboard-shell:not([hidden]) .municipality-priority-action:disabled { cursor: wait; opacity: .6; }
+#dashboard-shell:not([hidden]) .municipality-priority-action:focus-visible { outline: 2px solid #ead180; outline-offset: 2px; }
+
+@media (max-width: 700px) {
+  #dashboard-shell:not([hidden]) .municipality-priority-actions { flex: 1 1 100%; justify-content: flex-start; }
+}
+
+@media (max-width: 560px) {
+  #dashboard-shell:not([hidden]) .municipality-priority-new-button { width: 100%; }
+  #dashboard-shell:not([hidden]) .municipality-priority-notes-field { grid-column: auto; }
+  #dashboard-shell:not([hidden]) .municipality-priority-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #dashboard-shell:not([hidden]) .municipality-priority-action { width: 100%; }
+}
