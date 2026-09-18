@@ -730,6 +730,91 @@
   #dashboard-shell:not([hidden]) .municipality-contact-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   #dashboard-shell:not([hidden]) .municipality-contact-action { width: 100%; }
 }
+/* Capacidade institucional — leitura. */
+#dashboard-shell:not([hidden]) .municipality-capacity-section { gap: 18px; }
+#dashboard-shell:not([hidden]) .municipality-capacity-loading { margin: 0; color: #9dafc2; font-size: 11px; line-height: 1.5; }
+#dashboard-shell:not([hidden]) .municipality-capacity-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+#dashboard-shell:not([hidden]) .municipality-capacity-summary-card {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 14px 15px;
+  border: 1px solid rgba(148, 177, 207, .18);
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(17, 46, 75, .62), rgba(5, 19, 37, .58));
+}
+#dashboard-shell:not([hidden]) .municipality-capacity-summary-card.is-level { border-color: rgba(242, 196, 90, .28); background: linear-gradient(145deg, rgba(83, 62, 23, .22), rgba(7, 24, 43, .68)); }
+#dashboard-shell:not([hidden]) .municipality-capacity-summary-card span,
+#dashboard-shell:not([hidden]) .municipality-capacity-summary-card small { display: block; color: #91a6ba; font-size: 9px; line-height: 1.4; }
+#dashboard-shell:not([hidden]) .municipality-capacity-summary-card span { font-weight: 780; letter-spacing: .07em; text-transform: uppercase; }
+#dashboard-shell:not([hidden]) .municipality-capacity-summary-card strong { color: #f0f5fa; font-size: 14px; line-height: 1.35; overflow-wrap: anywhere; }
+#dashboard-shell:not([hidden]) .municipality-capacity-summary-card.is-level strong { color: #f0d184; }
+#dashboard-shell:not([hidden]) .municipality-capacity-notes { display: grid; gap: 8px; }
+#dashboard-shell:not([hidden]) .municipality-capacity-notes article { padding: 11px 12px; border-left: 2px solid rgba(242, 196, 90, .54); border-radius: 0 8px 8px 0; background: rgba(5, 19, 37, .3); }
+#dashboard-shell:not([hidden]) .municipality-capacity-notes h4 { margin: 0 0 4px; color: #d7e2ec; font-size: 10px; font-weight: 760; }
+#dashboard-shell:not([hidden]) .municipality-capacity-notes p { margin: 0; color: #9dafc2; font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+#dashboard-shell:not([hidden]) .municipality-capability-dimensions { display: grid; gap: 10px; padding-top: 3px; }
+#dashboard-shell:not([hidden]) .municipality-capability-dimensions > header { display: flex; align-items: end; gap: 10px; }
+#dashboard-shell:not([hidden]) .municipality-capability-dimensions h4 { margin: 0; color: #dbe7f0; font-size: 13px; }
+#dashboard-shell:not([hidden]) .municipality-capability-list { display: grid; gap: 8px; }
+#dashboard-shell:not([hidden]) .municipality-capability-card { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 12px 13px; border: 1px solid rgba(148, 177, 207, .16); border-radius: 11px; background: rgba(5, 19, 37, .39); }
+#dashboard-shell:not([hidden]) .municipality-capability-copy { display: grid; min-width: 0; gap: 4px; }
+#dashboard-shell:not([hidden]) .municipality-capability-copy strong { color: #edf4fa; font-size: 12px; overflow-wrap: anywhere; }
+#dashboard-shell:not([hidden]) .municipality-capability-copy p { margin: 0; color: #91a6ba; font-size: 10px; line-height: 1.45; overflow-wrap: anywhere; }
+#dashboard-shell:not([hidden]) .municipality-capability-badge { display: inline-flex; flex: 0 0 auto; align-items: center; min-height: 23px; padding: 0 8px; border: 1px solid rgba(151, 178, 205, .2); border-radius: 99px; color: #b7c7d7; background: rgba(6, 21, 40, .48); font-size: 9px; font-weight: 760; letter-spacing: .035em; white-space: nowrap; }
+#dashboard-shell:not([hidden]) .municipality-capability-badge.is-unavailable { color: #efa5a5; border-color: rgba(225, 111, 111, .32); background: rgba(211, 82, 82, .09); }
+#dashboard-shell:not([hidden]) .municipality-capability-badge.is-limited { color: #f1d082; border-color: rgba(242, 196, 90, .36); background: rgba(242, 196, 90, .1); }
+#dashboard-shell:not([hidden]) .municipality-capability-badge.is-adequate { color: #a9d9bd; border-color: rgba(111, 208, 153, .31); background: rgba(111, 208, 153, .09); }
+#dashboard-shell:not([hidden]) .municipality-capacity-empty { margin-top: 0; }
+#dashboard-shell:not([hidden]) .municipality-capacity-profile-form,
+#dashboard-shell:not([hidden]) .municipality-capability-assessment-form { margin-top: -2px; }
+#dashboard-shell:not([hidden]) .municipality-capacity-notes-field { grid-column: span 2; }
+#dashboard-shell:not([hidden]) .municipality-capacity-profile-form textarea,
+#dashboard-shell:not([hidden]) .municipality-capability-assessment-form textarea {
+  width: 100%;
+  min-height: 92px;
+  resize: vertical;
+  padding: 10px 11px;
+  color: #edf4fa;
+  border: 1px solid rgba(148, 177, 207, .26);
+  border-radius: 8px;
+  outline: none;
+  background: rgba(4, 17, 33, .55);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+}
+#dashboard-shell:not([hidden]) .municipality-capacity-profile-form textarea:hover:not(:disabled),
+#dashboard-shell:not([hidden]) .municipality-capability-assessment-form textarea:hover:not(:disabled) { border-color: rgba(242, 196, 90, .38); }
+#dashboard-shell:not([hidden]) .municipality-capacity-profile-form textarea:focus-visible,
+#dashboard-shell:not([hidden]) .municipality-capability-assessment-form textarea:focus-visible { outline: 2px solid #ead180; outline-offset: 2px; }
+#dashboard-shell:not([hidden]) .municipality-capacity-profile-form textarea:disabled,
+#dashboard-shell:not([hidden]) .municipality-capability-assessment-form textarea:disabled { cursor: wait; opacity: .62; }
+#dashboard-shell:not([hidden]) .municipality-capability-assessment-dimension { margin: 4px 0 0; color: #aebfd0; font-size: 11px; line-height: 1.45; }
+#dashboard-shell:not([hidden]) .municipality-capability-actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+#dashboard-shell:not([hidden]) .municipality-capability-action {
+  min-height: 29px;
+  padding: 0 9px;
+  color: #d4e1ec;
+  border: 1px solid rgba(148, 177, 207, .25);
+  border-radius: 7px;
+  background: rgba(5, 19, 37, .36);
+  cursor: pointer;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 750;
+  transition: color .18s ease, border-color .18s ease, background .18s ease;
+}
+#dashboard-shell:not([hidden]) .municipality-capability-action:hover:not(:disabled) { color: #071a2f; border-color: #f2c45a; background: #f2c45a; }
+#dashboard-shell:not([hidden]) .municipality-capability-action:disabled { cursor: wait; opacity: .6; }
+#dashboard-shell:not([hidden]) .municipality-capability-action:focus-visible { outline: 2px solid #ead180; outline-offset: 2px; }
+
+@media (max-width: 560px) {
+  #dashboard-shell:not([hidden]) .municipality-capacity-summary { grid-template-columns: 1fr; }
+  #dashboard-shell:not([hidden]) .municipality-capability-card { align-items: flex-start; flex-direction: column; gap: 8px; }
+  #dashboard-shell:not([hidden]) .municipality-capacity-notes-field { grid-column: auto; }
+  #dashboard-shell:not([hidden]) .municipality-capability-actions { width: 100%; justify-content: flex-start; }
+}
 /* Perfil e capacidade — leitura das áreas prioritárias. */
 #dashboard-shell:not([hidden]) .municipality-profile-capacity-section { display: grid; gap: 17px; }
 #dashboard-shell:not([hidden]) .municipality-section-description {

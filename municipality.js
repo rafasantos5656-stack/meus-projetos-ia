@@ -127,10 +127,45 @@
   const priorityAreaFormError = document.querySelector("#municipality-priority-area-form-error");
   const priorityAreaFeedback = document.querySelector("#municipality-priority-area-feedback");
   const priorityAreaFormFields = [priorityAreaFormPolicyArea, priorityAreaFormLevel, priorityAreaFormStatus, priorityAreaFormNotes];
+  const capacityLoading = document.querySelector("#municipality-capacity-loading");
+  const capacityProfileSummary = document.querySelector("#municipality-capacity-summary");
+  const capacityCounterpartAccepts = document.querySelector("#municipality-capacity-counterpart-accepts");
+  const capacityCounterpartLevel = document.querySelector("#municipality-capacity-counterpart-level");
+  const capacityNotes = document.querySelector("#municipality-capacity-notes");
+  const capacityCounterpartNotesSection = document.querySelector("#municipality-capacity-counterpart-notes-section");
+  const capacityCounterpartNotes = document.querySelector("#municipality-capacity-counterpart-notes");
+  const capacityOverallNotesSection = document.querySelector("#municipality-capacity-overall-notes-section");
+  const capacityOverallNotes = document.querySelector("#municipality-capacity-overall-notes");
+  const capacityProfileEmpty = document.querySelector("#municipality-capacity-profile-empty");
+  const capacityProfileError = document.querySelector("#municipality-capacity-profile-error");
+  const capabilityList = document.querySelector("#municipality-capability-list");
+  const capabilityEmpty = document.querySelector("#municipality-capability-empty");
+  const capabilityError = document.querySelector("#municipality-capability-error");
+  const capacityProfileEditButton = document.querySelector("#municipality-capacity-profile-edit-button");
+  const capacityProfileForm = document.querySelector("#municipality-capacity-profile-form");
+  const capacityProfileFormAccepts = document.querySelector("#municipality-capacity-profile-form-accepts");
+  const capacityProfileFormLevel = document.querySelector("#municipality-capacity-profile-form-level");
+  const capacityProfileFormCounterpartNotes = document.querySelector("#municipality-capacity-profile-form-counterpart-notes");
+  const capacityProfileFormOverallNotes = document.querySelector("#municipality-capacity-profile-form-overall-notes");
+  const capacityProfileCancelButton = document.querySelector("#municipality-capacity-profile-cancel-button");
+  const capacityProfileSaveButton = document.querySelector("#municipality-capacity-profile-save-button");
+  const capacityProfileFormError = document.querySelector("#municipality-capacity-profile-form-error");
+  const capacityProfileFeedback = document.querySelector("#municipality-capacity-profile-feedback");
+  const capacityProfileFormFields = [capacityProfileFormAccepts, capacityProfileFormLevel, capacityProfileFormCounterpartNotes, capacityProfileFormOverallNotes];
+  const capabilityAssessmentForm = document.querySelector("#municipality-capability-assessment-form");
+  const capabilityAssessmentFormTitle = document.querySelector("#municipality-capability-assessment-form-title");
+  const capabilityAssessmentFormDimension = document.querySelector("#municipality-capability-assessment-form-dimension");
+  const capabilityAssessmentFormLevel = document.querySelector("#municipality-capability-assessment-form-level");
+  const capabilityAssessmentFormNotes = document.querySelector("#municipality-capability-assessment-form-notes");
+  const capabilityAssessmentCancelButton = document.querySelector("#municipality-capability-assessment-cancel-button");
+  const capabilityAssessmentSaveButton = document.querySelector("#municipality-capability-assessment-save-button");
+  const capabilityAssessmentFormError = document.querySelector("#municipality-capability-assessment-form-error");
+  const capabilityAssessmentFeedback = document.querySelector("#municipality-capability-assessment-feedback");
+  const capabilityAssessmentFormFields = [capabilityAssessmentFormLevel, capabilityAssessmentFormNotes];
   const tabButtons = Array.from(document.querySelectorAll("[data-municipality-tab]"));
   const panels = Array.from(document.querySelectorAll("[data-municipality-panel]"));
 
-  if (!municipalityPage || !selector || !content || !profileEditButton || !profileForm || !profileCancelButton || !profileSaveButton || !profileFormError || !profileFeedback || profileFormFields.some((field) => !field) || !addressEditButton || !addressForm || !addressCancelButton || !addressSaveButton || !addressFormError || !addressFeedback || addressFormFields.some((field) => !field) || !departmentNewButton || !departmentForm || !departmentFormTitle || !departmentCancelButton || !departmentSaveButton || !departmentFormError || !departmentFeedback || departmentFormFields.some((field) => !field) || !contactNewButton || !contactForm || !contactFormTitle || !contactCancelButton || !contactSaveButton || !contactFormError || !contactFeedback || contactFormFields.some((field) => !field) || !priorityAreasList || !priorityAreasActiveCount || !priorityAreasHighCount || !priorityAreasEmpty || !priorityAreasError || !priorityAreasInactiveSection || !priorityAreasInactiveList || !priorityAreasInactiveCount || !priorityAreaNewButton || !priorityAreaForm || !priorityAreaFormTitle || !priorityAreaCancelButton || !priorityAreaSaveButton || !priorityAreaFormError || !priorityAreaFeedback || priorityAreaFormFields.some((field) => !field) || tabButtons.length === 0 || panels.length === 0) return;
+  if (!municipalityPage || !selector || !content || !profileEditButton || !profileForm || !profileCancelButton || !profileSaveButton || !profileFormError || !profileFeedback || profileFormFields.some((field) => !field) || !addressEditButton || !addressForm || !addressCancelButton || !addressSaveButton || !addressFormError || !addressFeedback || addressFormFields.some((field) => !field) || !departmentNewButton || !departmentForm || !departmentFormTitle || !departmentCancelButton || !departmentSaveButton || !departmentFormError || !departmentFeedback || departmentFormFields.some((field) => !field) || !contactNewButton || !contactForm || !contactFormTitle || !contactCancelButton || !contactSaveButton || !contactFormError || !contactFeedback || contactFormFields.some((field) => !field) || !priorityAreasList || !priorityAreasActiveCount || !priorityAreasHighCount || !priorityAreasEmpty || !priorityAreasError || !priorityAreasInactiveSection || !priorityAreasInactiveList || !priorityAreasInactiveCount || !priorityAreaNewButton || !priorityAreaForm || !priorityAreaFormTitle || !priorityAreaCancelButton || !priorityAreaSaveButton || !priorityAreaFormError || !priorityAreaFeedback || priorityAreaFormFields.some((field) => !field) || !capacityLoading || !capacityProfileSummary || !capacityCounterpartAccepts || !capacityCounterpartLevel || !capacityNotes || !capacityCounterpartNotesSection || !capacityCounterpartNotes || !capacityOverallNotesSection || !capacityOverallNotes || !capacityProfileEmpty || !capacityProfileError || !capabilityList || !capabilityEmpty || !capabilityError || !capacityProfileEditButton || !capacityProfileForm || !capacityProfileCancelButton || !capacityProfileSaveButton || !capacityProfileFormError || !capacityProfileFeedback || capacityProfileFormFields.some((field) => !field) || !capabilityAssessmentForm || !capabilityAssessmentFormTitle || !capabilityAssessmentFormDimension || !capabilityAssessmentCancelButton || !capabilityAssessmentSaveButton || !capabilityAssessmentFormError || !capabilityAssessmentFeedback || capabilityAssessmentFormFields.some((field) => !field) || tabButtons.length === 0 || panels.length === 0) return;
 
   const roleLabels = Object.freeze({
     municipality_admin: "Administração municipal",
@@ -152,6 +187,9 @@
   const departmentStatusValues = new Set(["active", "inactive"]);
   const priorityLevelLabels = Object.freeze({ high: "Alta", medium: "Média", low: "Baixa" });
   const priorityLevelOrder = Object.freeze({ high: 0, medium: 1, low: 2 });
+  const counterpartAvailabilityLabels = Object.freeze({ true: "Aceita oferecer contrapartida", false: "Não aceita oferecer contrapartida", unknown: "Não informado" });
+  const counterpartCapacityLabels = Object.freeze({ not_informed: "Não informada", limited: "Limitada", possible: "Possível", adequate: "Adequada" });
+  const capabilityLevelLabels = Object.freeze({ not_informed: "Não informado", unavailable: "Indisponível", limited: "Limitada", adequate: "Adequada" });
 
   const state = {
     currentUserId: "",
@@ -179,6 +217,23 @@
     roles: [],
     contacts: [],
     contactsFailed: false,
+    capacityProfile: null,
+    capacityProfileFailed: false,
+    capabilityDimensions: [],
+    capabilityDimensionsLoaded: false,
+    capabilityDimensionsFailed: false,
+    capabilityDimensionsLoadPromise: null,
+    capabilityAssessments: [],
+    capabilityAssessmentsFailed: false,
+    capacityCanManage: false,
+    isCapacityProfileSaving: false,
+    isCapabilityAssessmentSaving: false,
+    capacityContextVersion: 0,
+    capacityWriteSequence: 0,
+    activeCapacityWrite: null,
+    editingCapabilityAssessmentId: "",
+    editingCapabilityDimensionId: "",
+    capabilityAssessmentFocusTarget: null,
     policyAreas: [],
     policyAreasLoaded: false,
     policyAreasFailed: false,
@@ -410,6 +465,33 @@
         });
     }
     return state.policyAreasLoadPromise;
+  }
+  async function loadCapabilityDimensionsCatalog(context) {
+    const cacheUserId = String(context?.userId ?? "");
+    if (state.capabilityDimensionsLoaded && !state.capabilityDimensionsFailed) return state.capabilityDimensions;
+    if (!state.capabilityDimensionsLoadPromise) {
+      state.capabilityDimensionsLoadPromise = municipalityRequest("capability_dimensions?select=id,code,name,description,status&order=name.asc", context)
+        .then((dimensions) => {
+          if (state.currentUserId === cacheUserId) {
+            state.capabilityDimensions = dimensions;
+            state.capabilityDimensionsLoaded = true;
+            state.capabilityDimensionsFailed = false;
+          }
+          return dimensions;
+        })
+        .catch((error) => {
+          if (state.currentUserId === cacheUserId) {
+            state.capabilityDimensions = [];
+            state.capabilityDimensionsLoaded = false;
+            state.capabilityDimensionsFailed = true;
+          }
+          throw error;
+        })
+        .finally(() => {
+          state.capabilityDimensionsLoadPromise = null;
+        });
+    }
+    return state.capabilityDimensionsLoadPromise;
   }
   async function municipalityWriteRequest(path, method, body, context, hasRetriedAfterRefresh = false) {
     const { url, anonKey } = getEnvironmentSettings();
@@ -784,7 +866,7 @@
     profileCancelButton.disabled = isSaving;
     profileSaveButton.disabled = isSaving;
     profileSaveButton.textContent = isSaving ? "Salvando…" : "Salvar dados";
-    selector.disabled = isSaving || state.isAddressSaving || state.isDepartmentSaving;
+    updateMunicipalitySelectorDisabled();
     profileForm.setAttribute("aria-busy", String(isSaving));
     profileFormFields.forEach((field) => { field.disabled = isSaving; });
   }
@@ -859,7 +941,7 @@
     departmentCancelButton.disabled = isSaving;
     departmentSaveButton.disabled = isSaving;
     departmentSaveButton.textContent = isSaving ? "Salvando…" : "Salvar unidade";
-    selector.disabled = isSaving || state.isProfileSaving || state.isAddressSaving;
+    updateMunicipalitySelectorDisabled();
     departmentForm.setAttribute("aria-busy", String(isSaving));
     departmentFormFields.forEach((field) => { field.disabled = isSaving; });
     departmentsList.querySelectorAll("button").forEach((button) => { button.disabled = isSaving; });
@@ -1241,7 +1323,7 @@
     addressCancelButton.disabled = isSaving;
     addressSaveButton.disabled = isSaving;
     addressSaveButton.textContent = isSaving ? "Salvando…" : "Salvar endereço";
-    selector.disabled = isSaving || state.isProfileSaving || state.isDepartmentSaving;
+    updateMunicipalitySelectorDisabled();
     addressForm.setAttribute("aria-busy", String(isSaving));
     addressFormFields.forEach((field) => { field.disabled = isSaving; });
   }
@@ -1400,7 +1482,7 @@
     contactCancelButton.disabled = isSaving;
     contactSaveButton.disabled = isSaving;
     contactSaveButton.textContent = isSaving ? "Salvando…" : "Salvar responsável";
-    selector.disabled = isSaving || state.isProfileSaving || state.isAddressSaving || state.isDepartmentSaving;
+    updateMunicipalitySelectorDisabled();
     contactForm.setAttribute("aria-busy", String(isSaving));
     contactFormFields.forEach((field) => { field.disabled = isSaving; });
     contactsList.querySelectorAll("button").forEach((button) => { button.disabled = isSaving; });
@@ -1671,6 +1753,495 @@
       contactsList.append(group);
     });
   }
+  function getCapacityText(value) {
+    return typeof value === "string" ? value.trim() : "";
+  }
+
+  function clearCapacityReadState({ loading = false } = {}) {
+    state.capacityProfile = null;
+    state.capacityProfileFailed = false;
+    state.capabilityAssessments = [];
+    state.capabilityAssessmentsFailed = false;
+    capacityLoading.hidden = !loading;
+    capacityProfileSummary.hidden = true;
+    capacityNotes.hidden = true;
+    capacityCounterpartNotesSection.hidden = true;
+    capacityOverallNotesSection.hidden = true;
+    capacityCounterpartNotes.textContent = "";
+    capacityOverallNotes.textContent = "";
+    capacityProfileEmpty.hidden = true;
+    capacityProfileError.hidden = true;
+    capabilityList.replaceChildren();
+    capabilityEmpty.hidden = true;
+    capabilityError.hidden = true;
+  }
+
+  function renderCapacityProfile(profile, failed) {
+    state.capacityProfile = failed ? null : profile;
+    state.capacityProfileFailed = failed;
+    capacityProfileError.hidden = !failed;
+    capacityProfileEmpty.hidden = failed || Boolean(profile);
+    capacityProfileSummary.hidden = failed || !profile;
+    capacityNotes.hidden = true;
+    capacityCounterpartNotesSection.hidden = true;
+    capacityOverallNotesSection.hidden = true;
+    capacityCounterpartNotes.textContent = "";
+    capacityOverallNotes.textContent = "";
+    if (failed || !profile) return;
+    const counterpartAvailability = typeof profile.accepts_counterpart === "boolean" ? counterpartAvailabilityLabels[String(profile.accepts_counterpart)] : counterpartAvailabilityLabels.unknown;
+    const counterpartLevel = String(profile.counterpart_capacity_level ?? "").toLowerCase();
+    const counterpartNotes = getCapacityText(profile.counterpart_notes);
+    const overallNotes = getCapacityText(profile.overall_notes);
+    capacityCounterpartAccepts.textContent = counterpartAvailability;
+    capacityCounterpartLevel.textContent = counterpartCapacityLabels[counterpartLevel] || counterpartCapacityLabels.not_informed;
+    capacityCounterpartNotesSection.hidden = !counterpartNotes;
+    capacityOverallNotesSection.hidden = !overallNotes;
+    capacityCounterpartNotes.textContent = counterpartNotes;
+    capacityOverallNotes.textContent = overallNotes;
+    capacityNotes.hidden = !counterpartNotes && !overallNotes;
+  }
+
+  function renderCapabilityAssessments(dimensions, assessments, failed) {
+    const activeDimensions = dimensions
+      .filter((dimension) => String(dimension?.status ?? "").toLowerCase() === "active")
+      .slice()
+      .sort((first, second) => String(first?.name ?? "").localeCompare(String(second?.name ?? ""), "pt-BR", { sensitivity: "base" }));
+    const assessmentsByDimensionId = new Map(assessments.map((assessment) => [String(assessment?.capability_dimension_id ?? ""), assessment]));
+    state.capabilityAssessments = failed ? [] : assessments;
+    state.capabilityAssessmentsFailed = failed;
+    capabilityList.replaceChildren();
+    capabilityError.hidden = !failed;
+    capabilityEmpty.hidden = failed || activeDimensions.length > 0;
+    if (failed) {
+      updateCapacityWriteControls();
+      return;
+    }
+
+    activeDimensions.forEach((dimension) => {
+      const assessment = assessmentsByDimensionId.get(String(dimension?.id ?? ""));
+      const capacityLevel = String(assessment?.capacity_level ?? "not_informed").toLowerCase();
+      const item = createElement("article", "municipality-capability-card");
+      const copy = createElement("div", "municipality-capability-copy");
+      copy.append(createElement("strong", "", dimension?.name || "Dimensão não identificada"));
+      const notes = getCapacityText(assessment?.notes);
+      if (notes) copy.append(createElement("p", "", notes));
+      const badge = createElement("span", `municipality-capability-badge is-${Object.hasOwn(capabilityLevelLabels, capacityLevel) ? capacityLevel : "not_informed"}`, capabilityLevelLabels[capacityLevel] || capabilityLevelLabels.not_informed);
+      item.append(copy, badge);
+
+      if (canManageCapabilityAssessments()) {
+        const actions = createElement("div", "municipality-capability-actions");
+        const action = createElement("button", "municipality-capability-action", assessment ? "Editar" : "Avaliar");
+        action.type = "button";
+        action.disabled = state.isCapacityProfileSaving || state.isCapabilityAssessmentSaving;
+        action.setAttribute("aria-label", `${assessment ? "Editar" : "Avaliar"} capacidade: ${dimension?.name || "dimensão"}`);
+        action.addEventListener("click", () => openCapabilityAssessmentEditor(dimension?.id, action));
+        actions.append(action);
+        item.append(actions);
+      }
+
+      capabilityList.append(item);
+    });
+    updateCapacityWriteControls();
+  }
+
+  function updateMunicipalitySelectorDisabled() {
+    selector.disabled = Boolean(
+      state.isProfileSaving
+      || state.isAddressSaving
+      || state.isDepartmentSaving
+      || state.isContactSaving
+      || state.isPriorityAreaSaving
+      || state.isCapacityProfileSaving
+      || state.isCapabilityAssessmentSaving,
+    );
+  }
+
+  function hasCapacityWriteAuthorization() {
+    return Boolean(state.capacityCanManage);
+  }
+
+  function canManageCapacityProfile() {
+    return hasCapacityWriteAuthorization() && !state.capacityProfileFailed;
+  }
+
+  function canManageCapabilityAssessments() {
+    return hasCapacityWriteAuthorization()
+      && !state.capabilityDimensionsFailed
+      && !state.capabilityAssessmentsFailed;
+  }
+
+  function setCapacityProfileFormError(message = "") {
+    capacityProfileFormError.hidden = !message;
+    capacityProfileFormError.textContent = message;
+  }
+
+  function setCapacityProfileFeedback(message = "", kind = "success") {
+    capacityProfileFeedback.hidden = !message;
+    capacityProfileFeedback.textContent = message;
+    if (message) capacityProfileFeedback.dataset.kind = kind;
+    else delete capacityProfileFeedback.dataset.kind;
+  }
+
+  function setCapabilityAssessmentFormError(message = "") {
+    capabilityAssessmentFormError.hidden = !message;
+    capabilityAssessmentFormError.textContent = message;
+  }
+
+  function setCapabilityAssessmentFeedback(message = "", kind = "success") {
+    capabilityAssessmentFeedback.hidden = !message;
+    capabilityAssessmentFeedback.textContent = message;
+    if (message) capabilityAssessmentFeedback.dataset.kind = kind;
+    else delete capabilityAssessmentFeedback.dataset.kind;
+  }
+
+  function updateCapacityWriteControls() {
+    const canManageProfile = canManageCapacityProfile();
+    const canManageAssessments = canManageCapabilityAssessments();
+    capacityProfileEditButton.hidden = !canManageProfile;
+    capacityProfileEditButton.disabled = !canManageProfile || state.isCapacityProfileSaving || state.isCapabilityAssessmentSaving;
+    capabilityList.querySelectorAll("button").forEach((button) => {
+      button.disabled = !canManageAssessments || state.isCapacityProfileSaving || state.isCapabilityAssessmentSaving;
+    });
+    if (!canManageProfile && !state.isCapacityProfileSaving) closeCapacityProfileEditor();
+    if (!canManageAssessments && !state.isCapabilityAssessmentSaving) closeCapabilityAssessmentEditor();
+  }
+
+  function setCapacityProfileSaving(isSaving) {
+    state.isCapacityProfileSaving = isSaving;
+    const canManageProfile = canManageCapacityProfile();
+    const canManageAssessments = canManageCapabilityAssessments();
+    capacityProfileEditButton.disabled = isSaving || !canManageProfile || state.isCapabilityAssessmentSaving;
+    capacityProfileCancelButton.disabled = isSaving;
+    capacityProfileSaveButton.disabled = isSaving;
+    capacityProfileSaveButton.textContent = isSaving ? "Salvando…" : "Salvar capacidade";
+    capacityProfileForm.setAttribute("aria-busy", String(isSaving));
+    capacityProfileFormFields.forEach((field) => { field.disabled = isSaving; });
+    capabilityList.querySelectorAll("button").forEach((button) => {
+      button.disabled = isSaving || !canManageAssessments || state.isCapabilityAssessmentSaving;
+    });
+    updateMunicipalitySelectorDisabled();
+  }
+
+  function setCapabilityAssessmentSaving(isSaving) {
+    state.isCapabilityAssessmentSaving = isSaving;
+    const canManageProfile = canManageCapacityProfile();
+    const canManageAssessments = canManageCapabilityAssessments();
+    capacityProfileEditButton.disabled = isSaving || !canManageProfile || state.isCapacityProfileSaving;
+    capabilityAssessmentCancelButton.disabled = isSaving;
+    capabilityAssessmentSaveButton.disabled = isSaving;
+    capabilityAssessmentSaveButton.textContent = isSaving ? "Salvando…" : "Salvar avaliação";
+    capabilityAssessmentForm.setAttribute("aria-busy", String(isSaving));
+    capabilityAssessmentFormFields.forEach((field) => { field.disabled = isSaving; });
+    capabilityList.querySelectorAll("button").forEach((button) => {
+      button.disabled = isSaving || !canManageAssessments || state.isCapacityProfileSaving;
+    });
+    updateMunicipalitySelectorDisabled();
+  }
+
+  function beginCapacityWrite(municipalityId, kind) {
+    const operation = {
+      id: ++state.capacityWriteSequence,
+      municipalityId,
+      kind,
+      contextVersion: state.capacityContextVersion,
+    };
+    state.activeCapacityWrite = operation;
+    if (kind === "profile") setCapacityProfileSaving(true);
+    else setCapabilityAssessmentSaving(true);
+    return operation;
+  }
+
+  function isCurrentCapacityWrite(operation) {
+    return Boolean(
+      operation
+      && state.activeCapacityWrite?.id === operation.id
+      && state.capacityContextVersion === operation.contextVersion
+      && state.selectedMunicipalityId === operation.municipalityId,
+    );
+  }
+
+  function endCapacityWrite(operation) {
+    if (!isCurrentCapacityWrite(operation)) return false;
+    state.activeCapacityWrite = null;
+    if (operation.kind === "profile") setCapacityProfileSaving(false);
+    else setCapabilityAssessmentSaving(false);
+    return true;
+  }
+
+  function setCapacityProfileFormValues(profile) {
+    capacityProfileFormAccepts.value = typeof profile?.accepts_counterpart === "boolean" ? String(profile.accepts_counterpart) : "";
+    const level = String(profile?.counterpart_capacity_level ?? "").toLowerCase();
+    capacityProfileFormLevel.value = Object.hasOwn(counterpartCapacityLabels, level) ? level : "not_informed";
+    capacityProfileFormCounterpartNotes.value = profile?.counterpart_notes ?? "";
+    capacityProfileFormOverallNotes.value = profile?.overall_notes ?? "";
+  }
+
+  function closeCapacityProfileEditor({ returnFocus = false } = {}) {
+    capacityProfileForm.hidden = true;
+    capacityProfileEditButton.setAttribute("aria-expanded", "false");
+    capacityProfileForm.reset();
+    setCapacityProfileFormError();
+    if (returnFocus && !capacityProfileEditButton.hidden) capacityProfileEditButton.focus();
+  }
+
+  function openCapacityProfileEditor() {
+    if (!canManageCapacityProfile() || state.isCapacityProfileSaving || state.isCapabilityAssessmentSaving || !state.selectedMunicipalityId) return;
+    setCapacityProfileFeedback();
+    setCapacityProfileFormError();
+    setCapacityProfileFormValues(state.capacityProfile);
+    capacityProfileForm.hidden = false;
+    capacityProfileEditButton.setAttribute("aria-expanded", "true");
+    window.requestAnimationFrame(() => capacityProfileFormAccepts.focus());
+  }
+
+  function getActiveCapabilityDimension(dimensionId) {
+    return state.capabilityDimensions.find((dimension) => (
+      String(dimension?.id ?? "") === String(dimensionId ?? "")
+      && String(dimension?.status ?? "").toLowerCase() === "active"
+    )) || null;
+  }
+
+  function closeCapabilityAssessmentEditor({ returnFocus = false } = {}) {
+    const focusTarget = state.capabilityAssessmentFocusTarget;
+    capabilityAssessmentForm.hidden = true;
+    state.editingCapabilityAssessmentId = "";
+    state.editingCapabilityDimensionId = "";
+    state.capabilityAssessmentFocusTarget = null;
+    capabilityAssessmentForm.reset();
+    capabilityAssessmentFormTitle.textContent = "Avaliar capacidade";
+    capabilityAssessmentFormDimension.textContent = "";
+    setCapabilityAssessmentFormError();
+    if (returnFocus && focusTarget && document.contains(focusTarget)) focusTarget.focus();
+  }
+
+  function openCapabilityAssessmentEditor(dimensionId, focusTarget = null) {
+    if (!canManageCapabilityAssessments() || state.isCapacityProfileSaving || state.isCapabilityAssessmentSaving || !state.selectedMunicipalityId) return;
+    const dimension = getActiveCapabilityDimension(dimensionId);
+    if (!dimension) return;
+    const assessment = state.capabilityAssessments.find((item) => String(item?.capability_dimension_id ?? "") === String(dimension.id)) || null;
+    state.editingCapabilityAssessmentId = assessment ? String(assessment.id ?? "") : "";
+    state.editingCapabilityDimensionId = String(dimension.id ?? "");
+    state.capabilityAssessmentFocusTarget = focusTarget;
+    capabilityAssessmentFormTitle.textContent = assessment ? "Editar avaliação" : "Avaliar capacidade";
+    capabilityAssessmentFormDimension.textContent = dimension.name || "Dimensão não identificada";
+    const level = String(assessment?.capacity_level ?? "").toLowerCase();
+    capabilityAssessmentFormLevel.value = Object.hasOwn(capabilityLevelLabels, level) ? level : "not_informed";
+    capabilityAssessmentFormNotes.value = assessment?.notes ?? "";
+    setCapabilityAssessmentFeedback();
+    setCapabilityAssessmentFormError();
+    capabilityAssessmentForm.hidden = false;
+    window.requestAnimationFrame(() => capabilityAssessmentFormLevel.focus());
+  }
+
+  function invalidateCapacityWriteState() {
+    state.capacityContextVersion += 1;
+    state.activeCapacityWrite = null;
+    state.capacityCanManage = false;
+    state.isCapacityProfileSaving = false;
+    state.isCapabilityAssessmentSaving = false;
+    state.editingCapabilityAssessmentId = "";
+    state.editingCapabilityDimensionId = "";
+    state.capabilityAssessmentFocusTarget = null;
+    closeCapacityProfileEditor();
+    closeCapabilityAssessmentEditor();
+    setCapacityProfileFeedback();
+    setCapabilityAssessmentFeedback();
+    setCapacityProfileSaving(false);
+    setCapabilityAssessmentSaving(false);
+    updateCapacityWriteControls();
+  }
+  function validateCapacityProfilePayload() {
+    const acceptsValue = String(capacityProfileFormAccepts.value ?? "");
+    const acceptsCounterpart = acceptsValue === "" ? null : acceptsValue === "true" ? true : acceptsValue === "false" ? false : undefined;
+    const counterpartLevel = String(capacityProfileFormLevel.value ?? "").toLowerCase();
+    const counterpartNotes = getOptionalFieldValue(capacityProfileFormCounterpartNotes);
+    const overallNotes = getOptionalFieldValue(capacityProfileFormOverallNotes);
+
+    if (acceptsCounterpart === undefined) throw createRequestError("Selecione uma opção válida para a contrapartida.");
+    if (!Object.hasOwn(counterpartCapacityLabels, counterpartLevel)) throw createRequestError("Selecione uma capacidade de contrapartida válida.");
+    if (counterpartNotes && counterpartNotes.length > 2000) throw createRequestError("As observações sobre contrapartida devem ter no máximo 2.000 caracteres.");
+    if (overallNotes && overallNotes.length > 4000) throw createRequestError("As observações gerais devem ter no máximo 4.000 caracteres.");
+
+    return {
+      accepts_counterpart: acceptsCounterpart,
+      counterpart_capacity_level: counterpartLevel,
+      counterpart_notes: counterpartNotes,
+      overall_notes: overallNotes,
+    };
+  }
+
+  function validateCapabilityAssessmentPayload() {
+    const level = String(capabilityAssessmentFormLevel.value ?? "").toLowerCase();
+    const notes = getOptionalFieldValue(capabilityAssessmentFormNotes);
+    const dimensionId = state.editingCapabilityDimensionId;
+    const isEditing = Boolean(state.editingCapabilityAssessmentId);
+
+    if (!Object.hasOwn(capabilityLevelLabels, level)) throw createRequestError("Selecione um nível de capacidade válido.");
+    if (notes && notes.length > 2000) throw createRequestError("As observações devem ter no máximo 2.000 caracteres.");
+
+    const dimension = getActiveCapabilityDimension(dimensionId);
+    if (!dimension) throw createRequestError("A dimensão de capacidade não está mais disponível neste contexto.");
+
+    if (isEditing) {
+      const assessment = state.capabilityAssessments.find((item) => String(item?.id ?? "") === state.editingCapabilityAssessmentId);
+      if (!assessment || String(assessment.municipality_id ?? "") !== state.selectedMunicipalityId || String(assessment.capability_dimension_id ?? "") !== String(dimension.id ?? "")) {
+        throw createRequestError("A avaliação não está mais disponível neste contexto.");
+      }
+      return { capacity_level: level, notes };
+    }
+
+    if (state.capabilityAssessments.some((item) => String(item?.capability_dimension_id ?? "") === String(dimension.id ?? ""))) {
+      throw createRequestError("Esta dimensão já possui uma avaliação neste município.");
+    }
+
+    return {
+      municipality_id: state.selectedMunicipalityId,
+      capability_dimension_id: String(dimension.id ?? ""),
+      capacity_level: level,
+      notes,
+    };
+  }
+
+  function isCapacityConflict(error) {
+    return Number(error?.status) === 409 || String(error?.code ?? "") === "23505";
+  }
+
+  function getCapacityWriteError(error, entity = "capacity") {
+    if (String(error?.code ?? "") === "context_changed") return "O contexto municipal foi alterado. Inicie a ação novamente.";
+    if (isProfilePermissionError(error)) return "Você não possui permissão para editar a capacidade institucional desta Prefeitura.";
+    if (isCapacityConflict(error)) {
+      return entity === "profile"
+        ? "O perfil de capacidade foi criado em outra sessão. Os dados foram recarregados; revise antes de tentar novamente."
+        : "Esta dimensão já foi avaliada em outra sessão. Os dados foram recarregados; revise antes de tentar novamente.";
+    }
+    return entity === "profile"
+      ? "Não foi possível salvar a capacidade geral. Tente novamente."
+      : "Não foi possível salvar a avaliação técnica. Tente novamente.";
+  }
+
+  async function reloadMunicipalityCapacity(context, targetMunicipalityId, operation = null) {
+    const escapedMunicipalityId = encodeURIComponent(targetMunicipalityId);
+    const [profiles, assessments] = await Promise.all([
+      municipalityRequest(
+        `municipality_capacity_profiles?select=municipality_id,accepts_counterpart,counterpart_capacity_level,counterpart_notes,overall_notes&municipality_id=eq.${escapedMunicipalityId}&limit=1`,
+        context,
+      ),
+      municipalityRequest(
+        `municipality_capability_assessments?select=id,municipality_id,capability_dimension_id,capacity_level,notes,created_at,updated_at&municipality_id=eq.${escapedMunicipalityId}`,
+        context,
+      ),
+    ]);
+    if (targetMunicipalityId !== state.selectedMunicipalityId || (operation && !isCurrentCapacityWrite(operation))) return false;
+    state.capacityProfile = profiles[0] ?? null;
+    state.capacityProfileFailed = false;
+    state.capabilityAssessments = assessments;
+    state.capabilityAssessmentsFailed = false;
+    renderCapacityProfile(state.capacityProfile, false);
+    renderCapabilityAssessments(state.capabilityDimensions, assessments, false);
+    updateCapacityWriteControls();
+    return true;
+  }
+
+  async function submitCapacityProfile(event) {
+    event.preventDefault();
+    if (!canManageCapacityProfile() || state.isCapacityProfileSaving || state.isCapabilityAssessmentSaving || !state.selectedMunicipalityId) return;
+
+    let payload;
+    try {
+      payload = validateCapacityProfilePayload();
+    } catch (error) {
+      setCapacityProfileFormError(error.message || "Revise os dados informados.");
+      return;
+    }
+
+    const targetMunicipalityId = state.selectedMunicipalityId;
+    const isEditing = Boolean(state.capacityProfile);
+    const operation = beginCapacityWrite(targetMunicipalityId, "profile");
+    let context = null;
+    setCapacityProfileFormError();
+
+    try {
+      context = await getAuthenticatedContext();
+      if (!isCurrentCapacityWrite(operation)) return;
+      const result = isEditing
+        ? await municipalityWriteRequest(
+          `municipality_capacity_profiles?municipality_id=eq.${encodeURIComponent(targetMunicipalityId)}`,
+          "PATCH",
+          payload,
+          context,
+        )
+        : await municipalityWriteRequest("municipality_capacity_profiles", "POST", { municipality_id: targetMunicipalityId, ...payload }, context);
+      if (!isCurrentCapacityWrite(operation)) return;
+      if (result.length === 0) throw createRequestError("permission denied", 403, "42501");
+      await reloadMunicipalityCapacity(context, targetMunicipalityId, operation);
+      if (!isCurrentCapacityWrite(operation)) return;
+      closeCapacityProfileEditor();
+      setCapacityProfileFeedback(isEditing ? "Capacidade geral atualizada com sucesso." : "Capacidade geral cadastrada com sucesso.", "success");
+    } catch (error) {
+      if (!isCurrentCapacityWrite(operation)) return;
+      if (isCapacityConflict(error)) {
+        try {
+          const currentContext = context || await getAuthenticatedContext();
+          await reloadMunicipalityCapacity(currentContext, targetMunicipalityId, operation);
+        } catch { /* Mantém o feedback seguro mesmo quando a recarga não estiver disponível. */ }
+      }
+      if (!isCurrentCapacityWrite(operation)) return;
+      setCapacityProfileFormError(getCapacityWriteError(error, "profile"));
+    } finally {
+      endCapacityWrite(operation);
+    }
+  }
+
+  async function submitCapabilityAssessment(event) {
+    event.preventDefault();
+    if (!canManageCapabilityAssessments() || state.isCapacityProfileSaving || state.isCapabilityAssessmentSaving || !state.selectedMunicipalityId) return;
+
+    let payload;
+    try {
+      payload = validateCapabilityAssessmentPayload();
+    } catch (error) {
+      setCapabilityAssessmentFormError(error.message || "Revise os dados informados.");
+      return;
+    }
+
+    const targetMunicipalityId = state.selectedMunicipalityId;
+    const assessmentId = state.editingCapabilityAssessmentId;
+    const isEditing = Boolean(assessmentId);
+    const operation = beginCapacityWrite(targetMunicipalityId, "assessment");
+    let context = null;
+    setCapabilityAssessmentFormError();
+
+    try {
+      context = await getAuthenticatedContext();
+      if (!isCurrentCapacityWrite(operation)) return;
+      const result = isEditing
+        ? await municipalityWriteRequest(
+          `municipality_capability_assessments?id=eq.${encodeURIComponent(assessmentId)}&municipality_id=eq.${encodeURIComponent(targetMunicipalityId)}`,
+          "PATCH",
+          payload,
+          context,
+        )
+        : await municipalityWriteRequest("municipality_capability_assessments", "POST", payload, context);
+      if (!isCurrentCapacityWrite(operation)) return;
+      if (result.length === 0) throw createRequestError("permission denied", 403, "42501");
+      await reloadMunicipalityCapacity(context, targetMunicipalityId, operation);
+      if (!isCurrentCapacityWrite(operation)) return;
+      closeCapabilityAssessmentEditor();
+      setCapabilityAssessmentFeedback(isEditing ? "Avaliação técnica atualizada com sucesso." : "Avaliação técnica cadastrada com sucesso.", "success");
+    } catch (error) {
+      if (!isCurrentCapacityWrite(operation)) return;
+      if (isCapacityConflict(error)) {
+        try {
+          const currentContext = context || await getAuthenticatedContext();
+          await reloadMunicipalityCapacity(currentContext, targetMunicipalityId, operation);
+        } catch { /* Mantém o feedback seguro mesmo quando a recarga não estiver disponível. */ }
+      }
+      if (!isCurrentCapacityWrite(operation)) return;
+      setCapabilityAssessmentFormError(getCapacityWriteError(error, "assessment"));
+    } finally {
+      endCapacityWrite(operation);
+    }
+  }
   function setPriorityAreaFormError(message = "") {
     priorityAreaFormError.hidden = !message;
     priorityAreaFormError.textContent = message;
@@ -1752,7 +2323,7 @@
     priorityAreaCancelButton.disabled = isSaving;
     priorityAreaSaveButton.disabled = isSaving;
     priorityAreaSaveButton.textContent = isSaving ? "Salvando…" : "Salvar área";
-    selector.disabled = isSaving || state.isProfileSaving || state.isAddressSaving || state.isDepartmentSaving || state.isContactSaving;
+    updateMunicipalitySelectorDisabled();
     priorityAreaForm.setAttribute("aria-busy", String(isSaving));
     priorityAreaFormFields.forEach((field) => {
       field.disabled = isSaving || (field === priorityAreaFormPolicyArea && Boolean(state.editingPriorityAreaId));
@@ -2058,13 +2629,16 @@
   }
   async function fetchSelectedContext(municipalityId, context) {
     const escapedMunicipalityId = encodeURIComponent(municipalityId);
-    const [departmentsResult, membersResult, profileResult, addressResult, populationResult, contactsResult, policyAreasResult, priorityAreasResult] = await Promise.allSettled([
+    const [departmentsResult, membersResult, profileResult, addressResult, populationResult, contactsResult, capacityProfileResult, capabilityDimensionsResult, capabilityAssessmentsResult, policyAreasResult, priorityAreasResult] = await Promise.allSettled([
       municipalityRequest(`municipality_departments?select=id,municipality_id,name,abbreviation,status,unit_type,parent_department_id&municipality_id=eq.${escapedMunicipalityId}&order=name.asc`, context),
       municipalityRequest(`municipality_members?select=id,municipality_id,user_id,status&municipality_id=eq.${escapedMunicipalityId}&order=created_at.asc`, context),
       municipalityRequest(`municipality_institutional_profiles?select=municipality_id,mayor_name,official_website,institutional_phone,institutional_email&municipality_id=eq.${escapedMunicipalityId}&limit=1`, context),
       municipalityRequest(`municipality_addresses?select=municipality_id,postal_code,street,number,complement,district,city,state&municipality_id=eq.${escapedMunicipalityId}&limit=1`, context),
       municipalityRequest(`municipality_population_records?select=municipality_id,reference_year,population,source_name,source_url,source_checked_at&municipality_id=eq.${escapedMunicipalityId}&order=reference_year.desc,source_checked_at.desc.nullslast&limit=1`, context),
       municipalityRequest(`municipality_department_contacts?select=id,municipality_id,department_id,membership_id,full_name,job_title,email,phone,is_primary,status&municipality_id=eq.${escapedMunicipalityId}&order=department_id.asc,is_primary.desc,full_name.asc`, context),
+      municipalityRequest(`municipality_capacity_profiles?select=municipality_id,accepts_counterpart,counterpart_capacity_level,counterpart_notes,overall_notes&municipality_id=eq.${escapedMunicipalityId}&limit=1`, context),
+      loadCapabilityDimensionsCatalog(context),
+      municipalityRequest(`municipality_capability_assessments?select=id,municipality_id,capability_dimension_id,capacity_level,notes,created_at,updated_at&municipality_id=eq.${escapedMunicipalityId}`, context),
       loadPolicyAreasCatalog(context),
       municipalityRequest(`municipality_priority_areas?select=id,municipality_id,policy_area_id,priority_level,notes,status,created_at,updated_at&municipality_id=eq.${escapedMunicipalityId}`, context),
     ]);
@@ -2102,6 +2676,12 @@
       populationFailed: populationResult.status !== "fulfilled",
       contacts: contactsResult.status === "fulfilled" ? contactsResult.value : [],
       contactsFailed: contactsResult.status !== "fulfilled",
+      capacityProfile: capacityProfileResult.status === "fulfilled" ? capacityProfileResult.value[0] ?? null : null,
+      capacityProfileFailed: capacityProfileResult.status !== "fulfilled",
+      capabilityDimensions: capabilityDimensionsResult.status === "fulfilled" ? capabilityDimensionsResult.value : [],
+      capabilityDimensionsFailed: capabilityDimensionsResult.status !== "fulfilled",
+      capabilityAssessments: capabilityAssessmentsResult.status === "fulfilled" ? capabilityAssessmentsResult.value : [],
+      capabilityAssessmentsFailed: capabilityAssessmentsResult.status !== "fulfilled",
       policyAreas: policyAreasResult.status === "fulfilled" ? policyAreasResult.value : [],
       policyAreasFailed: policyAreasResult.status !== "fulfilled",
       priorityAreas: priorityAreasResult.status === "fulfilled" ? priorityAreasResult.value : [],
@@ -2127,6 +2707,8 @@
       setContactFeedback();
     }
     invalidatePriorityAreaWriteState();
+    invalidateCapacityWriteState();
+    clearCapacityReadState({ loading: true });
     const municipality = state.municipalities.find((item) => item.id === state.selectedMunicipalityId);
     if (!municipality) return;
 
@@ -2146,6 +2728,13 @@
       state.roles = details.roles;
       state.contacts = details.contacts;
       state.contactsFailed = details.contactsFailed;
+      state.capacityProfile = details.capacityProfile;
+      state.capacityProfileFailed = details.capacityProfileFailed;
+      state.capabilityDimensions = details.capabilityDimensions;
+      state.capabilityDimensionsFailed = details.capabilityDimensionsFailed;
+      state.capabilityAssessments = details.capabilityAssessments;
+      state.capabilityAssessmentsFailed = details.capabilityAssessmentsFailed;
+      state.capacityCanManage = getStructureWritePermission(details.members, details.roles, context.userId);
       state.policyAreas = details.policyAreas;
       state.policyAreasFailed = details.policyAreasFailed;
       state.priorityAreas = details.priorityAreas;
@@ -2161,6 +2750,14 @@
       renderPopulation(details.population, details.populationFailed);
       renderAddress(details.address, details.addressFailed);
       renderContacts(details.contacts, details.departments, details.contactsFailed);
+      capacityLoading.hidden = true;
+      renderCapacityProfile(details.capacityProfile, details.capacityProfileFailed);
+      renderCapabilityAssessments(
+        details.capabilityDimensions,
+        details.capabilityAssessments,
+        details.capabilityDimensionsFailed || details.capabilityAssessmentsFailed,
+      );
+      updateCapacityWriteControls();
       renderPriorityAreas(details.priorityAreas, details.policyAreas, state.priorityAreasFailed);
       setViewState("content");
     } catch {
@@ -2226,6 +2823,21 @@
     state.roles = [];
     state.contacts = [];
     state.contactsFailed = false;
+    state.capacityProfile = null;
+    state.capacityProfileFailed = false;
+    state.capabilityDimensions = [];
+    state.capabilityDimensionsLoaded = false;
+    state.capabilityDimensionsFailed = false;
+    state.capabilityDimensionsLoadPromise = null;
+    state.capabilityAssessments = [];
+    state.capabilityAssessmentsFailed = false;
+    state.capacityCanManage = false;
+    state.isCapacityProfileSaving = false;
+    state.isCapabilityAssessmentSaving = false;
+    state.activeCapacityWrite = null;
+    state.editingCapabilityAssessmentId = "";
+    state.editingCapabilityDimensionId = "";
+    state.capabilityAssessmentFocusTarget = null;
     state.policyAreas = [];
     state.policyAreasLoaded = false;
     state.policyAreasFailed = false;
@@ -2271,6 +2883,8 @@
     setContactFeedback();
     closePriorityAreaEditor();
     setPriorityAreaFeedback();
+    invalidateCapacityWriteState();
+    clearCapacityReadState();
     setActiveTab("overview");
     setViewState("empty");
   }
@@ -2284,6 +2898,11 @@
   priorityAreaNewButton.addEventListener("click", () => openPriorityAreaEditor());
   priorityAreaCancelButton.addEventListener("click", () => closePriorityAreaEditor({ returnFocus: true }));
   priorityAreaForm.addEventListener("submit", (event) => { void submitPriorityArea(event); });
+  capacityProfileEditButton.addEventListener("click", openCapacityProfileEditor);
+  capacityProfileCancelButton.addEventListener("click", () => closeCapacityProfileEditor({ returnFocus: true }));
+  capacityProfileForm.addEventListener("submit", (event) => { void submitCapacityProfile(event); });
+  capabilityAssessmentCancelButton.addEventListener("click", () => closeCapabilityAssessmentEditor({ returnFocus: true }));
+  capabilityAssessmentForm.addEventListener("submit", (event) => { void submitCapabilityAssessment(event); });
   addressEditButton.addEventListener("click", openAddressEditor);
   addressCancelButton.addEventListener("click", () => closeAddressEditor({ returnFocus: true }));
   addressForm.addEventListener("submit", (event) => { void submitMunicipalityAddress(event); });
@@ -2296,6 +2915,7 @@
 
     state.selectedMunicipalityId = selected;
     invalidatePriorityAreaWriteState();
+    invalidateCapacityWriteState();
     const requestId = ++state.requestId;
     void (async () => {
       try {

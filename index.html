@@ -1047,6 +1047,77 @@
               </section>
             </section>
             <section class="municipality-panel" id="municipality-panel-profile-capacity" data-municipality-panel="profile-capacity" role="tabpanel" aria-labelledby="municipality-tab-profile-capacity" hidden>
+              <section class="municipality-data-section municipality-profile-capacity-section municipality-capacity-section" aria-labelledby="municipality-capacity-title">
+                <header class="municipality-section-heading">
+                  <span class="municipality-section-icon" aria-hidden="true">◌</span>
+                  <div>
+                    <p class="eyebrow">Perfil e capacidade</p>
+                    <h3 id="municipality-capacity-title">Capacidade institucional</h3>
+                  </div>
+                  <button class="municipality-edit-button municipality-capacity-profile-edit-button" id="municipality-capacity-profile-edit-button" type="button" aria-controls="municipality-capacity-profile-form" aria-expanded="false" hidden>Editar capacidade geral</button>
+                </header>
+                <p class="municipality-section-description">Visualize a estrutura administrativa e técnica disponível para captar, executar e prestar contas de recursos públicos.</p>
+                <p class="municipality-form-feedback" id="municipality-capacity-profile-feedback" role="status" aria-live="polite" hidden></p>
+                <form class="municipality-profile-form municipality-capacity-profile-form" id="municipality-capacity-profile-form" novalidate hidden>
+                  <div class="municipality-form-title-row"><div><p class="eyebrow">Contrapartida e condições</p><h4>Editar capacidade geral</h4></div></div>
+                  <div class="municipality-profile-form-grid">
+                    <label for="municipality-capacity-profile-form-accepts"><span>Aceita oferecer contrapartida</span><select id="municipality-capacity-profile-form-accepts" name="accepts_counterpart"><option value="">Não informado</option><option value="true">Sim</option><option value="false">Não</option></select></label>
+                    <label for="municipality-capacity-profile-form-level"><span>Capacidade de contrapartida</span><select id="municipality-capacity-profile-form-level" name="counterpart_capacity_level"><option value="not_informed">Não informada</option><option value="limited">Limitada</option><option value="possible">Possível</option><option value="adequate">Adequada</option></select></label>
+                    <label class="municipality-capacity-notes-field" for="municipality-capacity-profile-form-counterpart-notes"><span>Observações sobre contrapartida</span><textarea id="municipality-capacity-profile-form-counterpart-notes" name="counterpart_notes" maxlength="2000" rows="4"></textarea></label>
+                    <label class="municipality-capacity-notes-field" for="municipality-capacity-profile-form-overall-notes"><span>Observações gerais</span><textarea id="municipality-capacity-profile-form-overall-notes" name="overall_notes" maxlength="4000" rows="5"></textarea></label>
+                  </div>
+                  <p class="municipality-form-hint">Os campos são opcionais. O município do contexto atual não pode ser alterado.</p>
+                  <p class="municipality-form-error" id="municipality-capacity-profile-form-error" role="alert" hidden></p>
+                  <div class="municipality-form-actions"><button class="municipality-cancel-button" id="municipality-capacity-profile-cancel-button" type="button">Cancelar</button><button class="municipality-save-button" id="municipality-capacity-profile-save-button" type="submit">Salvar capacidade</button></div>
+                </form>
+                <p class="municipality-capacity-loading" id="municipality-capacity-loading" role="status" aria-live="polite" hidden>Carregando capacidade institucional…</p>
+                <div class="municipality-capacity-summary" id="municipality-capacity-summary" hidden>
+                  <article class="municipality-capacity-summary-card">
+                    <span>Contrapartida</span>
+                    <strong id="municipality-capacity-counterpart-accepts">Não informado</strong>
+                    <small>Disponibilidade declarada pelo município</small>
+                  </article>
+                  <article class="municipality-capacity-summary-card is-level">
+                    <span>Capacidade de contrapartida</span>
+                    <strong id="municipality-capacity-counterpart-level">Não informada</strong>
+                    <small>Nível informado no perfil municipal</small>
+                  </article>
+                </div>
+                <div class="municipality-capacity-notes" id="municipality-capacity-notes" hidden>
+                  <article id="municipality-capacity-counterpart-notes-section" hidden>
+                    <h4>Observações sobre contrapartida</h4>
+                    <p id="municipality-capacity-counterpart-notes"></p>
+                  </article>
+                  <article id="municipality-capacity-overall-notes-section" hidden>
+                    <h4>Observações gerais</h4>
+                    <p id="municipality-capacity-overall-notes"></p>
+                  </article>
+                </div>
+                <p class="municipality-section-empty municipality-capacity-empty" id="municipality-capacity-profile-empty" hidden>Perfil de capacidade ainda não informado.</p>
+                <p class="municipality-section-error" id="municipality-capacity-profile-error" role="alert" hidden>Não foi possível carregar o perfil geral de capacidade deste contexto.</p>
+                <section class="municipality-capability-dimensions" aria-labelledby="municipality-capability-dimensions-title">
+                  <header>
+                    <div>
+                      <p class="eyebrow">Capacidades técnicas</p>
+                      <h4 id="municipality-capability-dimensions-title">Estrutura disponível por dimensão</h4>
+                    </div>
+                  </header>
+                  <p class="municipality-form-feedback" id="municipality-capability-assessment-feedback" role="status" aria-live="polite" hidden></p>
+                  <form class="municipality-profile-form municipality-capability-assessment-form" id="municipality-capability-assessment-form" novalidate hidden>
+                    <div class="municipality-form-title-row"><div><p class="eyebrow">Avaliação técnica</p><h4 id="municipality-capability-assessment-form-title">Avaliar capacidade</h4><p class="municipality-capability-assessment-dimension" id="municipality-capability-assessment-form-dimension"></p></div></div>
+                    <div class="municipality-profile-form-grid">
+                      <label for="municipality-capability-assessment-form-level"><span>Nível</span><select id="municipality-capability-assessment-form-level" name="capacity_level"><option value="not_informed">Não informado</option><option value="unavailable">Indisponível</option><option value="limited">Limitada</option><option value="adequate">Adequada</option></select></label>
+                      <label class="municipality-capacity-notes-field" for="municipality-capability-assessment-form-notes"><span>Observações</span><textarea id="municipality-capability-assessment-form-notes" name="notes" maxlength="2000" rows="4"></textarea></label>
+                    </div>
+                    <p class="municipality-form-hint">A dimensão e o município vinculados não podem ser alterados após o cadastro.</p>
+                    <p class="municipality-form-error" id="municipality-capability-assessment-form-error" role="alert" hidden></p>
+                    <div class="municipality-form-actions"><button class="municipality-cancel-button" id="municipality-capability-assessment-cancel-button" type="button">Cancelar</button><button class="municipality-save-button" id="municipality-capability-assessment-save-button" type="submit">Salvar avaliação</button></div>
+                  </form>
+                  <div class="municipality-capability-list" id="municipality-capability-list" aria-live="polite"></div>
+                  <p class="municipality-section-empty municipality-capacity-empty" id="municipality-capability-empty" hidden>Nenhuma dimensão de capacidade ativa está disponível no catálogo.</p>
+                  <p class="municipality-section-error" id="municipality-capability-error" role="alert" hidden>Não foi possível carregar as capacidades técnicas deste contexto.</p>
+                </section>
+              </section>
               <section class="municipality-data-section municipality-profile-capacity-section" aria-labelledby="municipality-priority-areas-title">
                 <header class="municipality-section-heading">
                   <span class="municipality-section-icon" aria-hidden="true">◎</span>
