@@ -127,6 +127,29 @@
   const priorityAreaFormError = document.querySelector("#municipality-priority-area-form-error");
   const priorityAreaFeedback = document.querySelector("#municipality-priority-area-feedback");
   const priorityAreaFormFields = [priorityAreaFormPolicyArea, priorityAreaFormLevel, priorityAreaFormStatus, priorityAreaFormNotes];
+  const demandsLoading = document.querySelector("#municipality-demands-loading");
+  const demandsList = document.querySelector("#municipality-demands-list");
+  const demandsTotalCount = document.querySelector("#municipality-demands-total-count");
+  const demandsHighCount = document.querySelector("#municipality-demands-high-count");
+  const demandsPreparationCount = document.querySelector("#municipality-demands-preparation-count");
+  const demandsActiveCount = document.querySelector("#municipality-demands-active-count");
+  const demandsEmpty = document.querySelector("#municipality-demands-empty");
+  const demandsError = document.querySelector("#municipality-demands-error");
+  const demandNewButton = document.querySelector("#municipality-demand-new-button");
+  const demandForm = document.querySelector("#municipality-demand-form");
+  const demandFormTitle = document.querySelector("#municipality-demand-form-title");
+  const demandFormTitleInput = document.querySelector("#municipality-demand-form-title-input");
+  const demandFormPolicyArea = document.querySelector("#municipality-demand-form-policy-area");
+  const demandFormDepartment = document.querySelector("#municipality-demand-form-department");
+  const demandFormDescription = document.querySelector("#municipality-demand-form-description");
+  const demandFormPriority = document.querySelector("#municipality-demand-form-priority");
+  const demandFormStatus = document.querySelector("#municipality-demand-form-status");
+  const demandFormNotes = document.querySelector("#municipality-demand-form-notes");
+  const demandCancelButton = document.querySelector("#municipality-demand-cancel-button");
+  const demandSaveButton = document.querySelector("#municipality-demand-save-button");
+  const demandFormError = document.querySelector("#municipality-demand-form-error");
+  const demandFeedback = document.querySelector("#municipality-demand-feedback");
+  const demandFormFields = [demandFormTitleInput, demandFormPolicyArea, demandFormDepartment, demandFormDescription, demandFormPriority, demandFormStatus, demandFormNotes];
   const capacityLoading = document.querySelector("#municipality-capacity-loading");
   const capacityProfileSummary = document.querySelector("#municipality-capacity-summary");
   const capacityCounterpartAccepts = document.querySelector("#municipality-capacity-counterpart-accepts");
@@ -165,7 +188,7 @@
   const tabButtons = Array.from(document.querySelectorAll("[data-municipality-tab]"));
   const panels = Array.from(document.querySelectorAll("[data-municipality-panel]"));
 
-  if (!municipalityPage || !selector || !content || !profileEditButton || !profileForm || !profileCancelButton || !profileSaveButton || !profileFormError || !profileFeedback || profileFormFields.some((field) => !field) || !addressEditButton || !addressForm || !addressCancelButton || !addressSaveButton || !addressFormError || !addressFeedback || addressFormFields.some((field) => !field) || !departmentNewButton || !departmentForm || !departmentFormTitle || !departmentCancelButton || !departmentSaveButton || !departmentFormError || !departmentFeedback || departmentFormFields.some((field) => !field) || !contactNewButton || !contactForm || !contactFormTitle || !contactCancelButton || !contactSaveButton || !contactFormError || !contactFeedback || contactFormFields.some((field) => !field) || !priorityAreasList || !priorityAreasActiveCount || !priorityAreasHighCount || !priorityAreasEmpty || !priorityAreasError || !priorityAreasInactiveSection || !priorityAreasInactiveList || !priorityAreasInactiveCount || !priorityAreaNewButton || !priorityAreaForm || !priorityAreaFormTitle || !priorityAreaCancelButton || !priorityAreaSaveButton || !priorityAreaFormError || !priorityAreaFeedback || priorityAreaFormFields.some((field) => !field) || !capacityLoading || !capacityProfileSummary || !capacityCounterpartAccepts || !capacityCounterpartLevel || !capacityNotes || !capacityCounterpartNotesSection || !capacityCounterpartNotes || !capacityOverallNotesSection || !capacityOverallNotes || !capacityProfileEmpty || !capacityProfileError || !capabilityList || !capabilityEmpty || !capabilityError || !capacityProfileEditButton || !capacityProfileForm || !capacityProfileCancelButton || !capacityProfileSaveButton || !capacityProfileFormError || !capacityProfileFeedback || capacityProfileFormFields.some((field) => !field) || !capabilityAssessmentForm || !capabilityAssessmentFormTitle || !capabilityAssessmentFormDimension || !capabilityAssessmentCancelButton || !capabilityAssessmentSaveButton || !capabilityAssessmentFormError || !capabilityAssessmentFeedback || capabilityAssessmentFormFields.some((field) => !field) || tabButtons.length === 0 || panels.length === 0) return;
+  if (!municipalityPage || !selector || !content || !profileEditButton || !profileForm || !profileCancelButton || !profileSaveButton || !profileFormError || !profileFeedback || profileFormFields.some((field) => !field) || !addressEditButton || !addressForm || !addressCancelButton || !addressSaveButton || !addressFormError || !addressFeedback || addressFormFields.some((field) => !field) || !departmentNewButton || !departmentForm || !departmentFormTitle || !departmentCancelButton || !departmentSaveButton || !departmentFormError || !departmentFeedback || departmentFormFields.some((field) => !field) || !contactNewButton || !contactForm || !contactFormTitle || !contactCancelButton || !contactSaveButton || !contactFormError || !contactFeedback || contactFormFields.some((field) => !field) || !priorityAreasList || !priorityAreasActiveCount || !priorityAreasHighCount || !priorityAreasEmpty || !priorityAreasError || !priorityAreasInactiveSection || !priorityAreasInactiveList || !priorityAreasInactiveCount || !priorityAreaNewButton || !priorityAreaForm || !priorityAreaFormTitle || !priorityAreaCancelButton || !priorityAreaSaveButton || !priorityAreaFormError || !priorityAreaFeedback || priorityAreaFormFields.some((field) => !field) || !demandsLoading || !demandsList || !demandsTotalCount || !demandsHighCount || !demandsPreparationCount || !demandsActiveCount || !demandsEmpty || !demandsError || !demandNewButton || !demandForm || !demandFormTitle || !demandCancelButton || !demandSaveButton || !demandFormError || !demandFeedback || demandFormFields.some((field) => !field) || !capacityLoading || !capacityProfileSummary || !capacityCounterpartAccepts || !capacityCounterpartLevel || !capacityNotes || !capacityCounterpartNotesSection || !capacityCounterpartNotes || !capacityOverallNotesSection || !capacityOverallNotes || !capacityProfileEmpty || !capacityProfileError || !capabilityList || !capabilityEmpty || !capabilityError || !capacityProfileEditButton || !capacityProfileForm || !capacityProfileCancelButton || !capacityProfileSaveButton || !capacityProfileFormError || !capacityProfileFeedback || capacityProfileFormFields.some((field) => !field) || !capabilityAssessmentForm || !capabilityAssessmentFormTitle || !capabilityAssessmentFormDimension || !capabilityAssessmentCancelButton || !capabilityAssessmentSaveButton || !capabilityAssessmentFormError || !capabilityAssessmentFeedback || capabilityAssessmentFormFields.some((field) => !field) || tabButtons.length === 0 || panels.length === 0) return;
 
   const roleLabels = Object.freeze({
     municipality_admin: "Administração municipal",
@@ -187,6 +210,7 @@
   const departmentStatusValues = new Set(["active", "inactive"]);
   const priorityLevelLabels = Object.freeze({ high: "Alta", medium: "Média", low: "Baixa" });
   const priorityLevelOrder = Object.freeze({ high: 0, medium: 1, low: 2 });
+  const demandStatusLabels = Object.freeze({ identified: "Identificada", planned: "Planejada", in_preparation: "Em preparação", active: "Ativa", paused: "Pausada", inactive: "Inativa" });
   const counterpartAvailabilityLabels = Object.freeze({ true: "Aceita oferecer contrapartida", false: "Não aceita oferecer contrapartida", unknown: "Não informado" });
   const counterpartCapacityLabels = Object.freeze({ not_informed: "Não informada", limited: "Limitada", possible: "Possível", adequate: "Adequada" });
   const capabilityLevelLabels = Object.freeze({ not_informed: "Não informado", unavailable: "Indisponível", limited: "Limitada", adequate: "Adequada" });
@@ -241,6 +265,15 @@
     priorityAreas: [],
     priorityAreasFailed: false,
     priorityAreasCanManage: false,
+    demands: [],
+    demandsFailed: false,
+    demandsCanManage: false,
+    isDemandSaving: false,
+    demandContextVersion: 0,
+    demandWriteSequence: 0,
+    activeDemandWrite: null,
+    editingDemandId: "",
+    demandFocusTarget: null,
     isPriorityAreaSaving: false,
     priorityAreaContextVersion: 0,
     priorityAreaWriteSequence: 0,
@@ -1851,6 +1884,7 @@
       || state.isDepartmentSaving
       || state.isContactSaving
       || state.isPriorityAreaSaving
+      || state.isDemandSaving
       || state.isCapacityProfileSaving
       || state.isCapabilityAssessmentSaving,
     );
@@ -2627,9 +2661,345 @@
       priorityAreasInactiveList.append(createPriorityAreaCard(priorityArea, policyAreasById, true));
     });
   }
+  function setDemandFormError(message = "") {
+    demandFormError.hidden = !message;
+    demandFormError.textContent = message;
+  }
+
+  function setDemandFeedback(message = "", kind = "success") {
+    demandFeedback.hidden = !message;
+    demandFeedback.textContent = message;
+    if (message) demandFeedback.dataset.kind = kind;
+    else delete demandFeedback.dataset.kind;
+  }
+
+  function updateMunicipalityDemandWriteControls() {
+    const canManage = state.demandsCanManage && !state.demandsFailed && !state.policyAreasFailed && !state.departmentsFailed;
+    demandNewButton.hidden = !canManage;
+    demandNewButton.disabled = !canManage || state.isDemandSaving;
+    if (!canManage && !state.isDemandSaving) closeMunicipalityDemandEditor();
+  }
+
+  function setMunicipalityDemandSaving(isSaving) {
+    state.isDemandSaving = isSaving;
+    const canManage = state.demandsCanManage && !state.demandsFailed && !state.policyAreasFailed && !state.departmentsFailed;
+    demandNewButton.disabled = isSaving || !canManage;
+    demandCancelButton.disabled = isSaving;
+    demandSaveButton.disabled = isSaving;
+    demandSaveButton.textContent = isSaving ? "Salvando…" : "Salvar demanda";
+    demandForm.setAttribute("aria-busy", String(isSaving));
+    demandFormFields.forEach((field) => { field.disabled = isSaving; });
+    demandsList.querySelectorAll("button").forEach((button) => { button.disabled = isSaving; });
+    updateMunicipalitySelectorDisabled();
+  }
+
+  function closeMunicipalityDemandEditor({ returnFocus = false, focusTarget = null } = {}) {
+    demandForm.hidden = true;
+    demandNewButton.setAttribute("aria-expanded", "false");
+    state.editingDemandId = "";
+    const target = focusTarget || state.demandFocusTarget || demandNewButton;
+    state.demandFocusTarget = null;
+    demandForm.reset();
+    setDemandFormError();
+    if (returnFocus && target && document.contains(target)) target.focus();
+  }
+
+  function invalidateMunicipalityDemandWriteState() {
+    state.demandContextVersion += 1;
+    state.activeDemandWrite = null;
+    state.isDemandSaving = false;
+    state.demands = [];
+    state.demandsFailed = false;
+    state.demandsCanManage = false;
+    demandsList.replaceChildren();
+    demandsTotalCount.textContent = "0";
+    demandsHighCount.textContent = "0";
+    demandsPreparationCount.textContent = "0";
+    demandsActiveCount.textContent = "0";
+    demandsEmpty.hidden = true;
+    demandsError.hidden = true;
+    closeMunicipalityDemandEditor();
+    setDemandFeedback();
+    setMunicipalityDemandSaving(false);
+    updateMunicipalityDemandWriteControls();
+  }
+
+  function beginMunicipalityDemandWrite(municipalityId) {
+    const operation = { id: ++state.demandWriteSequence, municipalityId, contextVersion: state.demandContextVersion };
+    state.activeDemandWrite = operation;
+    setMunicipalityDemandSaving(true);
+    return operation;
+  }
+
+  function isCurrentMunicipalityDemandWrite(operation) {
+    return Boolean(operation && state.activeDemandWrite?.id === operation.id && state.demandContextVersion === operation.contextVersion && state.selectedMunicipalityId === operation.municipalityId);
+  }
+
+  function endMunicipalityDemandWrite(operation) {
+    if (!isCurrentMunicipalityDemandWrite(operation)) return false;
+    state.activeDemandWrite = null;
+    setMunicipalityDemandSaving(false);
+    return true;
+  }
+
+  function appendDemandOption(select, value, label, selected = false) {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    option.selected = selected;
+    select.append(option);
+  }
+
+  function populateDemandPolicyAreaOptions(demand = null) {
+    const selectedId = String(demand?.policy_area_id ?? "");
+    const current = new Map(state.policyAreas.map((item) => [String(item?.id ?? ""), item])).get(selectedId);
+    demandFormPolicyArea.replaceChildren();
+    appendDemandOption(demandFormPolicyArea, "", "Selecione uma área", !selectedId);
+    if (demand && selectedId) {
+      const label = current
+        ? `${current.name || "Área não identificada"}${String(current.status ?? "").toLowerCase() === "inactive" ? " — inativa" : ""}`
+        : "Área vinculada indisponível";
+      appendDemandOption(demandFormPolicyArea, selectedId, label, true);
+    }
+    state.policyAreas
+      .filter((item) => String(item?.status ?? "").toLowerCase() === "active")
+      .forEach((item) => {
+        const id = String(item?.id ?? "");
+        if (id && id !== selectedId) appendDemandOption(demandFormPolicyArea, id, item.name || "Área não identificada");
+      });
+  }
+
+  function populateDemandDepartmentOptions(demand = null) {
+    const selectedId = String(demand?.department_id ?? "");
+    const current = new Map(state.departments.map((item) => [String(item?.id ?? ""), item])).get(selectedId);
+    demandFormDepartment.replaceChildren();
+    appendDemandOption(demandFormDepartment, "", "Não definida", !selectedId);
+    if (demand && selectedId) {
+      const label = current
+        ? `${current.name || "Unidade não identificada"}${String(current.status ?? "").toLowerCase() === "inactive" ? " — inativa" : ""}`
+        : "Unidade vinculada indisponível";
+      appendDemandOption(demandFormDepartment, selectedId, label, true);
+    }
+    state.departments
+      .filter((item) => String(item?.status ?? "").toLowerCase() === "active")
+      .forEach((item) => {
+        const id = String(item?.id ?? "");
+        if (id && id !== selectedId) appendDemandOption(demandFormDepartment, id, item.name || "Unidade não identificada");
+      });
+  }
+
+  function setMunicipalityDemandFormValues(demand = null, focusTarget = null) {
+    state.editingDemandId = demand ? String(demand?.id ?? "") : "";
+    state.demandFocusTarget = focusTarget;
+    demandFormTitle.textContent = demand ? "Editar demanda municipal" : "Nova demanda municipal";
+    demandSaveButton.textContent = "Salvar demanda";
+    demandFormTitleInput.value = demand?.title ?? "";
+    populateDemandPolicyAreaOptions(demand);
+    populateDemandDepartmentOptions(demand);
+    demandFormDescription.value = demand?.description ?? "";
+    const level = String(demand?.priority_level ?? "").toLowerCase();
+    demandFormPriority.value = Object.hasOwn(priorityLevelLabels, level) ? level : "medium";
+    const status = String(demand?.status ?? "").toLowerCase();
+    demandFormStatus.value = Object.hasOwn(demandStatusLabels, status) ? status : "identified";
+    demandFormNotes.value = demand?.notes ?? "";
+  }
+
+  function openMunicipalityDemandEditor(demand = null, focusTarget = null) {
+    if (!state.demandsCanManage || state.demandsFailed || state.policyAreasFailed || state.departmentsFailed || state.isDemandSaving || state.isProfileSaving || state.isAddressSaving || state.isDepartmentSaving || state.isContactSaving || state.isPriorityAreaSaving || state.isCapacityProfileSaving || state.isCapabilityAssessmentSaving || !state.selectedMunicipalityId) return;
+    setDemandFeedback();
+    setDemandFormError();
+    setMunicipalityDemandFormValues(demand, focusTarget);
+    demandForm.hidden = false;
+    demandNewButton.setAttribute("aria-expanded", "true");
+    window.requestAnimationFrame(() => demandFormTitleInput.focus());
+  }
+
+  function validateMunicipalityDemandPayload() {
+    const title = getOptionalFieldValue(demandFormTitleInput);
+    const description = getOptionalFieldValue(demandFormDescription);
+    const notes = getOptionalFieldValue(demandFormNotes);
+    const policyAreaId = String(demandFormPolicyArea.value ?? "");
+    const departmentId = String(demandFormDepartment.value ?? "") || null;
+    const priorityLevel = String(demandFormPriority.value ?? "").toLowerCase();
+    const status = String(demandFormStatus.value ?? "").toLowerCase();
+    const isEditing = Boolean(state.editingDemandId);
+    const demand = isEditing ? state.demands.find((item) => String(item?.id ?? "") === state.editingDemandId) : null;
+    if (!title) throw createRequestError("Informe o título da demanda.");
+    if (title.length > 240) throw createRequestError("O título deve ter no máximo 240 caracteres.");
+    if (!description) throw createRequestError("Informe a descrição da demanda.");
+    if (description.length > 5000) throw createRequestError("A descrição deve ter no máximo 5.000 caracteres.");
+    if (notes && notes.length > 4000) throw createRequestError("As observações devem ter no máximo 4.000 caracteres.");
+    if (!Object.hasOwn(priorityLevelLabels, priorityLevel)) throw createRequestError("Selecione um nível de prioridade válido.");
+    if (!Object.hasOwn(demandStatusLabels, status)) throw createRequestError("Selecione um status válido.");
+    if (!policyAreaId) throw createRequestError("Selecione uma área de política pública.");
+    if (isEditing && (!demand || String(demand?.municipality_id ?? "") !== state.selectedMunicipalityId)) throw createRequestError("A demanda não está mais disponível neste contexto.");
+    const policyArea = state.policyAreas.find((item) => String(item?.id ?? "") === policyAreaId);
+    const keepHistoricalPolicyArea = isEditing && policyAreaId === String(demand?.policy_area_id ?? "");
+    if (!policyArea && !keepHistoricalPolicyArea) throw createRequestError("Selecione uma área de política pública válida.");
+    if (policyArea && String(policyArea.status ?? "").toLowerCase() !== "active" && !keepHistoricalPolicyArea) throw createRequestError("Selecione uma área de política pública ativa.");
+    if (departmentId) {
+      const department = state.departments.find((item) => String(item?.id ?? "") === departmentId);
+      const keepHistoricalDepartment = isEditing && departmentId === String(demand?.department_id ?? "");
+      if (!department && !keepHistoricalDepartment) throw createRequestError("Selecione uma unidade responsável válida deste município.");
+      if (department && String(department.status ?? "").toLowerCase() !== "active" && !keepHistoricalDepartment) throw createRequestError("Selecione uma unidade responsável ativa deste município.");
+    }
+    const payload = { policy_area_id: policyAreaId, department_id: departmentId, title, description, status, priority_level: priorityLevel, notes };
+    return isEditing ? payload : { municipality_id: state.selectedMunicipalityId, ...payload };
+  }
+
+  function getMunicipalityDemandWriteError(error) {
+    if (String(error?.code ?? "") === "context_changed") return "O contexto municipal foi alterado. Inicie a ação novamente.";
+    if (isProfilePermissionError(error)) return "Você não possui permissão para alterar as demandas desta Prefeitura.";
+    if (String(error?.code ?? "") === "23503") return "A área ou unidade selecionada não está disponível neste município.";
+    if (String(error?.code ?? "") === "23514") return "Revise os campos informados antes de salvar a demanda.";
+    return "Não foi possível salvar a demanda municipal. Tente novamente.";
+  }
+
+  async function reloadMunicipalityDemands(context, municipalityId, operation = null) {
+    const records = await municipalityRequest(
+      `municipality_demands?select=id,municipality_id,policy_area_id,department_id,title,description,status,priority_level,notes,created_at,updated_at&municipality_id=eq.${encodeURIComponent(municipalityId)}`,
+      context,
+    );
+    if (municipalityId !== state.selectedMunicipalityId || (operation && !isCurrentMunicipalityDemandWrite(operation))) return false;
+    state.demands = records;
+    state.demandsFailed = false;
+    renderMunicipalityDemands(records, state.policyAreas, state.departments, false);
+    return true;
+  }
+
+  async function submitMunicipalityDemand(event) {
+    event.preventDefault();
+    if (!state.demandsCanManage || state.demandsFailed || state.policyAreasFailed || state.departmentsFailed || state.isDemandSaving || !state.selectedMunicipalityId) return;
+    let payload;
+    try { payload = validateMunicipalityDemandPayload(); } catch (error) { setDemandFormError(error.message || "Revise os dados informados."); return; }
+    const municipalityId = state.selectedMunicipalityId;
+    const demandId = state.editingDemandId;
+    const isEditing = Boolean(demandId);
+    const operation = beginMunicipalityDemandWrite(municipalityId);
+    let context = null;
+    setDemandFormError();
+    try {
+      context = await getAuthenticatedContext();
+      if (!isCurrentMunicipalityDemandWrite(operation)) return;
+      const result = isEditing
+        ? await municipalityWriteRequest(`municipality_demands?id=eq.${encodeURIComponent(demandId)}&municipality_id=eq.${encodeURIComponent(municipalityId)}`, "PATCH", payload, context)
+        : await municipalityWriteRequest("municipality_demands", "POST", payload, context);
+      if (!isCurrentMunicipalityDemandWrite(operation)) return;
+      if (result.length === 0) throw createRequestError("permission denied", 403, "42501");
+      await reloadMunicipalityDemands(context, municipalityId, operation);
+      if (!isCurrentMunicipalityDemandWrite(operation)) return;
+      closeMunicipalityDemandEditor({ returnFocus: true });
+      setDemandFeedback(isEditing ? "Demanda municipal atualizada com sucesso." : "Demanda municipal cadastrada com sucesso.", "success");
+    } catch (error) {
+      if (isCurrentMunicipalityDemandWrite(operation)) setDemandFormError(getMunicipalityDemandWriteError(error));
+    } finally { endMunicipalityDemandWrite(operation); }
+  }
+  function clearMunicipalityDemandsReadState({ loading = false } = {}) {
+    state.demands = [];
+    state.demandsFailed = false;
+    demandsLoading.hidden = !loading;
+    demandsList.replaceChildren();
+    demandsTotalCount.textContent = "0";
+    demandsHighCount.textContent = "0";
+    demandsPreparationCount.textContent = "0";
+    demandsActiveCount.textContent = "0";
+    demandsEmpty.hidden = true;
+    demandsError.hidden = true;
+  }
+
+  function getDemandStatusLabel(status) {
+    return demandStatusLabels[String(status ?? "").toLowerCase()] ?? "Não informado";
+  }
+
+  function getDemandText(value) {
+    return typeof value === "string" ? value.trim() : "";
+  }
+
+  function compareMunicipalityDemands(first, second) {
+    const firstInactive = String(first?.status ?? "").toLowerCase() === "inactive" ? 1 : 0;
+    const secondInactive = String(second?.status ?? "").toLowerCase() === "inactive" ? 1 : 0;
+    if (firstInactive !== secondInactive) return firstInactive - secondInactive;
+
+    const firstPriority = priorityLevelOrder[String(first?.priority_level ?? "").toLowerCase()] ?? 3;
+    const secondPriority = priorityLevelOrder[String(second?.priority_level ?? "").toLowerCase()] ?? 3;
+    if (firstPriority !== secondPriority) return firstPriority - secondPriority;
+
+    const firstUpdatedAt = Date.parse(first?.updated_at ?? "") || 0;
+    const secondUpdatedAt = Date.parse(second?.updated_at ?? "") || 0;
+    if (firstUpdatedAt !== secondUpdatedAt) return secondUpdatedAt - firstUpdatedAt;
+
+    return getDemandText(first?.title).localeCompare(getDemandText(second?.title), "pt-BR", { sensitivity: "base" });
+  }
+
+  function createMunicipalityDemandCard(demand, policyAreasById, departmentsById) {
+    const item = createElement("article", "municipality-demand-card");
+    const policyArea = policyAreasById.get(String(demand?.policy_area_id ?? ""));
+    const departmentId = String(demand?.department_id ?? "");
+    const department = departmentId ? departmentsById.get(departmentId) : null;
+    const priorityLevel = String(demand?.priority_level ?? "").toLowerCase();
+    const status = String(demand?.status ?? "").toLowerCase();
+    const safePriorityLevel = Object.hasOwn(priorityLevelLabels, priorityLevel) ? priorityLevel : "unknown";
+    const safeStatus = Object.hasOwn(demandStatusLabels, status) ? status : "unknown";
+    const description = getDemandText(demand?.description);
+    const notes = getDemandText(demand?.notes);
+
+    if (safeStatus === "inactive") item.classList.add("is-inactive");
+    if (!policyArea || (departmentId && !department)) item.classList.add("is-unresolved");
+
+    const copy = createElement("div", "municipality-demand-copy");
+    copy.append(createElement("strong", "", getDemandText(demand?.title) || "Demanda não identificada"));
+
+    const metadata = createElement("div", "municipality-demand-metadata");
+    metadata.append(createElement("span", "", `Área: ${policyArea?.name || "Área não identificada"}`));
+    metadata.append(createElement("span", "", departmentId
+      ? `Unidade: ${department?.name || "Unidade não disponível"}`
+      : "Unidade: Não informada"));
+    copy.append(metadata);
+
+    if (description) copy.append(createElement("p", "municipality-demand-description", description));
+    if (notes) copy.append(createElement("p", "municipality-demand-notes", `Observações: ${notes}`));
+
+    const tags = createElement("div", "municipality-demand-tags");
+    tags.append(createElement("span", `municipality-demand-badge is-${safePriorityLevel}`, getPriorityLevelLabel(safePriorityLevel)));
+    tags.append(createElement("span", `municipality-demand-status is-${safeStatus}`, getDemandStatusLabel(safeStatus)));
+    item.append(copy, tags);
+    if (state.demandsCanManage) {
+      const actions = createElement("div", "municipality-demand-actions");
+      const editButton = createElement("button", "municipality-demand-action", "Editar");
+      editButton.type = "button";
+      editButton.addEventListener("click", () => openMunicipalityDemandEditor(demand, editButton));
+      actions.append(editButton);
+      item.append(actions);
+    }
+    return item;
+  }
+
+  function renderMunicipalityDemands(demands, policyAreas, departments, failed) {
+    demandsList.replaceChildren();
+    demandsLoading.hidden = true;
+    state.demands = failed ? [] : demands;
+    state.demandsFailed = failed;
+    updateMunicipalityDemandWriteControls();
+    demandsError.hidden = !failed;
+    demandsEmpty.hidden = failed || demands.length > 0;
+
+    const total = failed ? 0 : demands.length;
+    demandsTotalCount.textContent = String(total);
+    demandsHighCount.textContent = String(failed ? 0 : demands.filter((demand) => String(demand?.priority_level ?? "").toLowerCase() === "high").length);
+    demandsPreparationCount.textContent = String(failed ? 0 : demands.filter((demand) => String(demand?.status ?? "").toLowerCase() === "in_preparation").length);
+    demandsActiveCount.textContent = String(failed ? 0 : demands.filter((demand) => String(demand?.status ?? "").toLowerCase() === "active").length);
+    if (failed) return;
+
+    const policyAreasById = new Map(policyAreas.map((policyArea) => [String(policyArea?.id ?? ""), policyArea]));
+    const departmentsById = new Map(departments.map((department) => [String(department?.id ?? ""), department]));
+    demands
+      .slice()
+      .sort(compareMunicipalityDemands)
+      .forEach((demand) => demandsList.append(createMunicipalityDemandCard(demand, policyAreasById, departmentsById)));
+  }
   async function fetchSelectedContext(municipalityId, context) {
     const escapedMunicipalityId = encodeURIComponent(municipalityId);
-    const [departmentsResult, membersResult, profileResult, addressResult, populationResult, contactsResult, capacityProfileResult, capabilityDimensionsResult, capabilityAssessmentsResult, policyAreasResult, priorityAreasResult] = await Promise.allSettled([
+    const [departmentsResult, membersResult, profileResult, addressResult, populationResult, contactsResult, capacityProfileResult, capabilityDimensionsResult, capabilityAssessmentsResult, policyAreasResult, priorityAreasResult, demandsResult] = await Promise.allSettled([
       municipalityRequest(`municipality_departments?select=id,municipality_id,name,abbreviation,status,unit_type,parent_department_id&municipality_id=eq.${escapedMunicipalityId}&order=name.asc`, context),
       municipalityRequest(`municipality_members?select=id,municipality_id,user_id,status&municipality_id=eq.${escapedMunicipalityId}&order=created_at.asc`, context),
       municipalityRequest(`municipality_institutional_profiles?select=municipality_id,mayor_name,official_website,institutional_phone,institutional_email&municipality_id=eq.${escapedMunicipalityId}&limit=1`, context),
@@ -2641,6 +3011,7 @@
       municipalityRequest(`municipality_capability_assessments?select=id,municipality_id,capability_dimension_id,capacity_level,notes,created_at,updated_at&municipality_id=eq.${escapedMunicipalityId}`, context),
       loadPolicyAreasCatalog(context),
       municipalityRequest(`municipality_priority_areas?select=id,municipality_id,policy_area_id,priority_level,notes,status,created_at,updated_at&municipality_id=eq.${escapedMunicipalityId}`, context),
+      municipalityRequest(`municipality_demands?select=id,municipality_id,policy_area_id,department_id,title,description,status,priority_level,notes,created_at,updated_at&municipality_id=eq.${escapedMunicipalityId}`, context),
     ]);
 
     const departments = departmentsResult.status === "fulfilled" ? departmentsResult.value : [];
@@ -2686,6 +3057,8 @@
       policyAreasFailed: policyAreasResult.status !== "fulfilled",
       priorityAreas: priorityAreasResult.status === "fulfilled" ? priorityAreasResult.value : [],
       priorityAreasFailed: priorityAreasResult.status !== "fulfilled",
+      demands: demandsResult.status === "fulfilled" ? demandsResult.value : [],
+      demandsFailed: demandsResult.status !== "fulfilled",
     };
   }
 
@@ -2707,8 +3080,10 @@
       setContactFeedback();
     }
     invalidatePriorityAreaWriteState();
+    invalidateMunicipalityDemandWriteState();
     invalidateCapacityWriteState();
     clearCapacityReadState({ loading: true });
+    clearMunicipalityDemandsReadState({ loading: true });
     const municipality = state.municipalities.find((item) => item.id === state.selectedMunicipalityId);
     if (!municipality) return;
 
@@ -2740,6 +3115,9 @@
       state.priorityAreas = details.priorityAreas;
       state.priorityAreasFailed = details.priorityAreasFailed || details.policyAreasFailed;
       state.priorityAreasCanManage = !state.priorityAreasFailed && getStructureWritePermission(details.members, details.roles, context.userId);
+      state.demands = details.demands;
+      state.demandsFailed = details.demandsFailed;
+      state.demandsCanManage = !details.demandsFailed && !details.policyAreasFailed && !details.departmentsFailed && getStructureWritePermission(details.members, details.roles, context.userId);
       state.structureCanManage = !details.departmentsFailed && getStructureWritePermission(details.members, details.roles, context.userId);
       state.contactsCanManage = state.structureCanManage && !details.contactsFailed;
 
@@ -2759,6 +3137,7 @@
       );
       updateCapacityWriteControls();
       renderPriorityAreas(details.priorityAreas, details.policyAreas, state.priorityAreasFailed);
+      renderMunicipalityDemands(details.demands, details.policyAreas, details.departments, details.demandsFailed);
       setViewState("content");
     } catch {
       if (isCurrentRequest(requestId)) {
@@ -2845,6 +3224,8 @@
     state.priorityAreas = [];
     state.priorityAreasFailed = false;
     state.priorityAreasCanManage = false;
+    state.demands = [];
+    state.demandsFailed = false;
     state.isPriorityAreaSaving = false;
     state.priorityAreaContextVersion += 1;
     state.activePriorityAreaWrite = null;
@@ -2884,7 +3265,9 @@
     closePriorityAreaEditor();
     setPriorityAreaFeedback();
     invalidateCapacityWriteState();
+    invalidateMunicipalityDemandWriteState();
     clearCapacityReadState();
+    clearMunicipalityDemandsReadState();
     setActiveTab("overview");
     setViewState("empty");
   }
@@ -2898,6 +3281,9 @@
   priorityAreaNewButton.addEventListener("click", () => openPriorityAreaEditor());
   priorityAreaCancelButton.addEventListener("click", () => closePriorityAreaEditor({ returnFocus: true }));
   priorityAreaForm.addEventListener("submit", (event) => { void submitPriorityArea(event); });
+  demandNewButton.addEventListener("click", () => openMunicipalityDemandEditor());
+  demandCancelButton.addEventListener("click", () => closeMunicipalityDemandEditor({ returnFocus: true }));
+  demandForm.addEventListener("submit", (event) => { void submitMunicipalityDemand(event); });
   capacityProfileEditButton.addEventListener("click", openCapacityProfileEditor);
   capacityProfileCancelButton.addEventListener("click", () => closeCapacityProfileEditor({ returnFocus: true }));
   capacityProfileForm.addEventListener("submit", (event) => { void submitCapacityProfile(event); });
@@ -2915,6 +3301,7 @@
 
     state.selectedMunicipalityId = selected;
     invalidatePriorityAreaWriteState();
+    invalidateMunicipalityDemandWriteState();
     invalidateCapacityWriteState();
     const requestId = ++state.requestId;
     void (async () => {

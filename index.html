@@ -1164,6 +1164,43 @@
                   <div class="municipality-priority-list is-inactive" id="municipality-priority-areas-inactive-list"></div>
                 </section>
               </section>
+              <section class="municipality-data-section municipality-profile-capacity-section municipality-demands-section" aria-labelledby="municipality-demands-title">
+                <header class="municipality-section-heading">
+                  <span class="municipality-section-icon" aria-hidden="true">▤</span>
+                  <div>
+                    <p class="eyebrow">Perfil e capacidade</p>
+                    <h3 id="municipality-demands-title">Demandas Municipais</h3>
+                  </div>
+                  <button class="municipality-edit-button municipality-demand-new-button" id="municipality-demand-new-button" type="button" aria-controls="municipality-demand-form" aria-expanded="false" hidden>+ Nova demanda</button>
+                </header>
+                <p class="municipality-section-description">Necessidades estratégicas da Prefeitura que poderão orientar a busca e a captação de recursos públicos.</p>
+                <p class="municipality-form-feedback" id="municipality-demand-feedback" role="status" aria-live="polite" hidden></p>
+                <form class="municipality-profile-form municipality-demand-form" id="municipality-demand-form" novalidate hidden>
+                  <div class="municipality-form-title-row"><div><p class="eyebrow">Planejamento e captação</p><h4 id="municipality-demand-form-title">Nova demanda municipal</h4></div></div>
+                  <div class="municipality-profile-form-grid">
+                    <label class="municipality-demand-title-field" for="municipality-demand-form-title-input"><span>Título *</span><input id="municipality-demand-form-title-input" name="title" type="text" maxlength="240" required autocomplete="off" /></label>
+                    <label for="municipality-demand-form-policy-area"><span>Área de política pública *</span><select id="municipality-demand-form-policy-area" name="policy_area_id" required><option value="">Selecione uma área</option></select></label>
+                    <label for="municipality-demand-form-department"><span>Unidade responsável</span><select id="municipality-demand-form-department" name="department_id"><option value="">Não definida</option></select></label>
+                    <label for="municipality-demand-form-priority"><span>Prioridade *</span><select id="municipality-demand-form-priority" name="priority_level" required><option value="low">Baixa</option><option value="medium" selected>Média</option><option value="high">Alta</option></select></label>
+                    <label for="municipality-demand-form-status"><span>Status *</span><select id="municipality-demand-form-status" name="status" required><option value="identified" selected>Identificada</option><option value="planned">Planejada</option><option value="in_preparation">Em preparação</option><option value="active">Ativa</option><option value="paused">Pausada</option><option value="inactive">Inativa</option></select></label>
+                    <label class="municipality-demand-description-field" for="municipality-demand-form-description"><span>Descrição *</span><textarea id="municipality-demand-form-description" name="description" maxlength="5000" rows="5" required></textarea></label>
+                    <label class="municipality-demand-notes-field" for="municipality-demand-form-notes"><span>Observações</span><textarea id="municipality-demand-form-notes" name="notes" maxlength="4000" rows="4"></textarea></label>
+                  </div>
+                  <p class="municipality-form-hint">A demanda será vinculada somente à Prefeitura selecionada. Município, identificador e datas não podem ser alterados pelo formulário.</p>
+                  <p class="municipality-form-error" id="municipality-demand-form-error" role="alert" hidden></p>
+                  <div class="municipality-form-actions"><button class="municipality-cancel-button" id="municipality-demand-cancel-button" type="button">Cancelar</button><button class="municipality-save-button" id="municipality-demand-save-button" type="submit">Salvar demanda</button></div>
+                </form>
+                <p class="municipality-demands-loading" id="municipality-demands-loading" role="status" aria-live="polite" hidden>Carregando demandas municipais…</p>
+                <div class="municipality-demand-indicators" aria-label="Indicadores das demandas municipais">
+                  <article class="municipality-demand-indicator"><span>Total de demandas</span><strong id="municipality-demands-total-count">0</strong><small>Necessidades registradas</small></article>
+                  <article class="municipality-demand-indicator is-high"><span>Prioridade alta</span><strong id="municipality-demands-high-count">0</strong><small>Com atenção estratégica</small></article>
+                  <article class="municipality-demand-indicator is-preparation"><span>Em preparação</span><strong id="municipality-demands-preparation-count">0</strong><small>Em estruturação técnica</small></article>
+                  <article class="municipality-demand-indicator is-active"><span>Ativas</span><strong id="municipality-demands-active-count">0</strong><small>Em acompanhamento</small></article>
+                </div>
+                <div class="municipality-demands-list" id="municipality-demands-list" aria-live="polite"></div>
+                <p class="municipality-section-empty municipality-demands-empty" id="municipality-demands-empty" hidden>Nenhuma demanda municipal cadastrada para esta Prefeitura.<span>Quando necessidades estratégicas forem registradas, elas aparecerão aqui para orientar o planejamento e a captação.</span></p>
+                <p class="municipality-section-error" id="municipality-demands-error" role="alert" hidden>Não foi possível carregar as demandas municipais deste contexto. Tente novamente.</p>
+              </section>
             </section>
           </div>
         </section>

@@ -951,3 +951,83 @@
   #dashboard-shell:not([hidden]) .municipality-priority-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   #dashboard-shell:not([hidden]) .municipality-priority-action { width: 100%; }
 }
+
+/* Perfil e capacidade — leitura das demandas municipais. */
+#dashboard-shell:not([hidden]) .municipality-demands-section { gap: 17px; }
+#dashboard-shell:not([hidden]) .municipality-demands-loading { margin: -3px 0 0; color: #9dafc2; font-size: 11px; line-height: 1.5; }
+#dashboard-shell:not([hidden]) .municipality-demand-indicators { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+#dashboard-shell:not([hidden]) .municipality-demand-indicator { min-width: 0; padding: 14px 15px; border: 1px solid rgba(148, 177, 207, .18); border-radius: 12px; background: linear-gradient(145deg, rgba(17, 46, 75, .62), rgba(5, 19, 37, .58)); }
+#dashboard-shell:not([hidden]) .municipality-demand-indicator.is-high { border-color: rgba(242, 196, 90, .3); background: linear-gradient(145deg, rgba(83, 62, 23, .26), rgba(7, 24, 43, .68)); }
+#dashboard-shell:not([hidden]) .municipality-demand-indicator.is-preparation { border-color: rgba(123, 173, 219, .3); background: linear-gradient(145deg, rgba(27, 68, 104, .29), rgba(5, 19, 37, .62)); }
+#dashboard-shell:not([hidden]) .municipality-demand-indicator.is-active { border-color: rgba(111, 208, 153, .26); background: linear-gradient(145deg, rgba(25, 80, 60, .24), rgba(5, 19, 37, .62)); }
+#dashboard-shell:not([hidden]) .municipality-demand-indicator span,
+#dashboard-shell:not([hidden]) .municipality-demand-indicator small { display: block; color: #91a6ba; font-size: 9px; line-height: 1.4; }
+#dashboard-shell:not([hidden]) .municipality-demand-indicator span { font-weight: 780; letter-spacing: .07em; text-transform: uppercase; }
+#dashboard-shell:not([hidden]) .municipality-demand-indicator strong { display: block; margin: 5px 0 2px; color: #f0f5fa; font-size: 25px; font-weight: 780; letter-spacing: -.05em; }
+#dashboard-shell:not([hidden]) .municipality-demand-indicator.is-high strong { color: #f0d184; }
+#dashboard-shell:not([hidden]) .municipality-demand-indicator.is-preparation strong { color: #a9c6e4; }
+#dashboard-shell:not([hidden]) .municipality-demand-indicator.is-active strong { color: #a9d9bd; }
+#dashboard-shell:not([hidden]) .municipality-demands-list { display: grid; gap: 8px; }
+#dashboard-shell:not([hidden]) .municipality-demand-card { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; padding: 13px; border: 1px solid rgba(148, 177, 207, .16); border-radius: 11px; background: rgba(5, 19, 37, .39); }
+#dashboard-shell:not([hidden]) .municipality-demand-card.is-inactive { opacity: .72; background: rgba(5, 19, 37, .22); }
+#dashboard-shell:not([hidden]) .municipality-demand-card.is-unresolved { border-style: dashed; }
+#dashboard-shell:not([hidden]) .municipality-demand-copy { display: grid; min-width: 0; gap: 5px; }
+#dashboard-shell:not([hidden]) .municipality-demand-copy strong { overflow-wrap: anywhere; color: #edf4fa; font-size: 12px; }
+#dashboard-shell:not([hidden]) .municipality-demand-metadata { display: flex; flex-wrap: wrap; gap: 4px 11px; color: #a7b8c9; font-size: 10px; line-height: 1.45; }
+#dashboard-shell:not([hidden]) .municipality-demand-description,
+#dashboard-shell:not([hidden]) .municipality-demand-notes { margin: 1px 0 0; overflow-wrap: anywhere; color: #91a6ba; font-size: 10px; line-height: 1.5; }
+#dashboard-shell:not([hidden]) .municipality-demand-notes { padding-left: 9px; border-left: 2px solid rgba(242, 196, 90, .45); color: #b8c7d5; }
+#dashboard-shell:not([hidden]) .municipality-demand-tags { display: flex; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
+#dashboard-shell:not([hidden]) .municipality-demand-badge,
+#dashboard-shell:not([hidden]) .municipality-demand-status { display: inline-flex; align-items: center; min-height: 23px; padding: 0 8px; border: 1px solid rgba(151, 178, 205, .2); border-radius: 99px; color: #b7c7d7; background: rgba(6, 21, 40, .48); font-size: 9px; font-weight: 760; letter-spacing: .035em; white-space: nowrap; }
+#dashboard-shell:not([hidden]) .municipality-demand-badge.is-high { color: #f1d082; border-color: rgba(242, 196, 90, .36); background: rgba(242, 196, 90, .1); }
+#dashboard-shell:not([hidden]) .municipality-demand-badge.is-medium { color: #a9c6e4; border-color: rgba(135, 178, 221, .32); background: rgba(92, 148, 202, .1); }
+#dashboard-shell:not([hidden]) .municipality-demand-badge.is-low { color: #a9d9bd; border-color: rgba(111, 208, 153, .31); background: rgba(111, 208, 153, .09); }
+#dashboard-shell:not([hidden]) .municipality-demand-status.is-identified { color: #b7c7d7; }
+#dashboard-shell:not([hidden]) .municipality-demand-status.is-planned,
+#dashboard-shell:not([hidden]) .municipality-demand-status.is-in_preparation { color: #a9c6e4; border-color: rgba(135, 178, 221, .32); background: rgba(92, 148, 202, .1); }
+#dashboard-shell:not([hidden]) .municipality-demand-status.is-active { color: #a9d9bd; border-color: rgba(111, 208, 153, .31); background: rgba(111, 208, 153, .09); }
+#dashboard-shell:not([hidden]) .municipality-demand-status.is-paused { color: #f1d082; border-color: rgba(242, 196, 90, .36); background: rgba(242, 196, 90, .1); }
+#dashboard-shell:not([hidden]) .municipality-demand-status.is-inactive { color: #aebdcb; opacity: .8; }
+#dashboard-shell:not([hidden]) .municipality-demands-empty { display: grid; gap: 5px; }
+#dashboard-shell:not([hidden]) .municipality-demands-empty span { color: #91a6ba; font-weight: 500; }
+
+/* Escrita controlada de demandas municipais. */
+#dashboard-shell:not([hidden]) .municipality-demand-new-button { margin-left: auto; }
+#dashboard-shell:not([hidden]) .municipality-demand-form { margin-top: -2px; }
+#dashboard-shell:not([hidden]) .municipality-demand-title-field,
+#dashboard-shell:not([hidden]) .municipality-demand-description-field,
+#dashboard-shell:not([hidden]) .municipality-demand-notes-field { grid-column: span 2; }
+#dashboard-shell:not([hidden]) .municipality-demand-form textarea {
+  width: 100%; min-height: 92px; resize: vertical; padding: 10px 11px; color: #edf4fa;
+  border: 1px solid rgba(148, 177, 207, .26); border-radius: 8px; outline: none;
+  background: rgba(4, 17, 33, .55); font: inherit; font-size: 12px; line-height: 1.5;
+}
+#dashboard-shell:not([hidden]) .municipality-demand-form textarea:hover:not(:disabled) { border-color: rgba(242, 196, 90, .38); }
+#dashboard-shell:not([hidden]) .municipality-demand-form textarea:focus-visible { outline: 2px solid #ead180; outline-offset: 2px; }
+#dashboard-shell:not([hidden]) .municipality-demand-form textarea:disabled { cursor: wait; opacity: .62; }
+#dashboard-shell:not([hidden]) .municipality-demand-actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+#dashboard-shell:not([hidden]) .municipality-demand-action {
+  min-height: 29px; padding: 0 9px; color: #d4e1ec; border: 1px solid rgba(148, 177, 207, .25);
+  border-radius: 7px; background: rgba(5, 19, 37, .36); cursor: pointer; font: inherit; font-size: 9px;
+  font-weight: 750; transition: color .18s ease, border-color .18s ease, background .18s ease;
+}
+#dashboard-shell:not([hidden]) .municipality-demand-action:hover:not(:disabled) { color: #071a2f; border-color: #f2c45a; background: #f2c45a; }
+#dashboard-shell:not([hidden]) .municipality-demand-action:disabled { cursor: wait; opacity: .6; }
+#dashboard-shell:not([hidden]) .municipality-demand-action:focus-visible { outline: 2px solid #ead180; outline-offset: 2px; }
+
+@media (max-width: 900px) {
+  #dashboard-shell:not([hidden]) .municipality-demand-indicators { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 560px) {
+  #dashboard-shell:not([hidden]) .municipality-demand-indicators { grid-template-columns: 1fr; }
+  #dashboard-shell:not([hidden]) .municipality-demand-card { flex-direction: column; gap: 10px; }
+  #dashboard-shell:not([hidden]) .municipality-demand-tags { justify-content: flex-start; }
+  #dashboard-shell:not([hidden]) .municipality-demand-new-button { width: 100%; }
+  #dashboard-shell:not([hidden]) .municipality-demand-title-field,
+  #dashboard-shell:not([hidden]) .municipality-demand-description-field,
+  #dashboard-shell:not([hidden]) .municipality-demand-notes-field { grid-column: auto; }
+  #dashboard-shell:not([hidden]) .municipality-demand-actions { width: 100%; justify-content: flex-start; }
+  #dashboard-shell:not([hidden]) .municipality-demand-action { width: 100%; }
+}
