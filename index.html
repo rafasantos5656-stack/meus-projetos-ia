@@ -12,11 +12,13 @@
     <link rel="stylesheet" href="./navigation.css" />
     <link rel="stylesheet" href="./dashboard-premium.css" />
     <link rel="stylesheet" href="./municipality.css" />
+    <link rel="stylesheet" href="./opportunities.css" />
     <script src="./config/environment-loader.js"></script>
     <script src="./script.js" defer></script>
     <script src="./auth.js" defer></script>
     <script src="./navigation.js" defer></script>
     <script src="./municipality.js" defer></script>
+    <script src="./opportunities.js" defer></script>
   </head>
   <body>
     <main class="auth-page" id="auth-screen" aria-labelledby="auth-title">
@@ -847,8 +849,48 @@
         <section class="platform-view module-placeholder" id="radar" data-platform-view="radar" tabindex="-1" aria-labelledby="radar-title" hidden>
           <div class="module-placeholder-card"><span class="module-placeholder-icon" aria-hidden="true">◎</span><p class="eyebrow">Inteligência</p><h2 id="radar-title">Radar Âncora</h2><p>Uma visão integrada para acompanhar sinais e orientar decisões sobre recursos públicos.</p><span class="module-placeholder-status">Módulo em desenvolvimento</span></div>
         </section>
-        <section class="platform-view module-placeholder" id="oportunidades" data-platform-view="oportunidades" tabindex="-1" aria-labelledby="oportunidades-title" hidden>
-          <div class="module-placeholder-card"><span class="module-placeholder-icon" aria-hidden="true">◇</span><p class="eyebrow">Inteligência</p><h2 id="oportunidades-title">Oportunidades</h2><p>Um espaço para organizar oportunidades de programas, chamadas e recursos públicos.</p><span class="module-placeholder-status">Módulo em desenvolvimento</span></div>
+        <section class="platform-view opportunities-page" id="oportunidades" data-platform-view="oportunidades" tabindex="-1" aria-labelledby="oportunidades-title" hidden>
+          <header class="opportunities-page-header">
+            <div>
+              <p class="eyebrow">Inteligência pública</p>
+              <h2 id="oportunidades-title">Oportunidades Públicas</h2>
+              <p>Acompanhe programas, recursos e oportunidades públicas disponíveis para os municípios.</p>
+            </div>
+            <p class="opportunities-page-note">Catálogo público em leitura. A análise municipal será disponibilizada em uma próxima etapa.</p>
+          </header>
+
+          <section class="opportunities-summary" aria-labelledby="opportunities-summary-title">
+            <div class="opportunities-section-heading"><div><p class="eyebrow">Panorama do catálogo</p><h3 id="opportunities-summary-title">Visão executiva</h3></div><span id="opportunities-summary-scope" aria-live="polite">Contagens atualizadas conforme os filtros</span></div>
+            <div class="opportunities-summary-grid">
+              <article class="opportunities-summary-card is-open"><span>Oportunidades abertas</span><strong id="opportunities-open-count">—</strong><small id="opportunities-open-meta">Carregando resumo</small></article>
+              <article class="opportunities-summary-card is-deadline"><span>Encerrando em até 7 dias</span><strong id="opportunities-closing-count">—</strong><small id="opportunities-closing-meta">Carregando resumo</small></article>
+              <article class="opportunities-summary-card is-value"><span>Com valor informado</span><strong id="opportunities-amount-count">—</strong><small id="opportunities-amount-meta">Carregando resumo</small></article>
+              <article class="opportunities-summary-card is-recent"><span>Atualizadas nos últimos 30 dias</span><strong id="opportunities-recent-count">—</strong><small id="opportunities-recent-meta">Fonte ou última verificação</small></article>
+            </div>
+          </section>
+
+          <section class="opportunities-explorer" aria-labelledby="opportunities-filters-title">
+            <div class="opportunities-section-heading"><div><p class="eyebrow">Consulta pública</p><h3 id="opportunities-filters-title">Encontre oportunidades</h3></div><button class="opportunities-clear-filters" id="opportunities-clear-filters" type="button">Limpar filtros</button></div>
+            <form class="opportunities-filters" id="opportunities-filters" novalidate>
+              <label class="opportunities-search-field" for="opportunities-search"><span>Pesquisar</span><input id="opportunities-search" type="search" maxlength="120" autocomplete="off" placeholder="Título, programa, órgão ou descrição" /></label>
+              <label for="opportunities-sphere"><span>Esfera</span><select id="opportunities-sphere"><option value="">Todas</option><option value="federal">Federal</option><option value="state">Estadual</option><option value="municipal">Municipal</option><option value="other">Outras</option></select></label>
+              <label for="opportunities-area"><span>Área</span><select id="opportunities-area"><option value="">Todas as áreas</option></select></label>
+              <label for="opportunities-status"><span>Status global</span><select id="opportunities-status"><option value="">Todos</option><option value="upcoming">Em breve</option><option value="open">Aberta</option><option value="closed">Encerrada</option><option value="suspended">Suspensa</option><option value="cancelled">Cancelada</option><option value="archived">Arquivada</option></select></label>
+              <label for="opportunities-deadline"><span>Prazo</span><select id="opportunities-deadline"><option value="">Todos</option><option value="no_deadline">Sem prazo informado</option><option value="closed">Encerradas por prazo</option><option value="today">Vence hoje</option><option value="within_3">Até 3 dias</option><option value="within_7">Até 7 dias</option><option value="within_15">Até 15 dias</option><option value="more_than_15">Mais de 15 dias</option></select></label>
+              <label for="opportunities-uf"><span>UF / abrangência</span><select id="opportunities-uf"><option value="">Todas</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option></select></label>
+            </form>
+            <p class="opportunities-coverage-note" id="opportunities-coverage-note" aria-live="polite" hidden>Com uma UF selecionada, apenas oportunidades nacionais ou com a UF indicada explicitamente são exibidas. Regras territoriais específicas exigem análise própria.</p>
+          </section>
+
+          <section class="opportunities-results" id="opportunities-results-region" tabindex="-1" aria-labelledby="opportunities-results-title">
+            <div class="opportunities-section-heading"><div><p class="eyebrow">Catálogo global</p><h3 id="opportunities-results-title">Oportunidades disponíveis</h3></div><span id="opportunities-results-summary" aria-live="polite"></span></div>
+            <div class="opportunities-loading" id="opportunities-loading" aria-live="polite" hidden><span aria-hidden="true"></span>Carregando oportunidades públicas...</div>
+            <p class="opportunities-error" id="opportunities-error" role="alert" hidden>Não foi possível carregar as oportunidades.</p>
+            <button class="opportunities-retry" id="opportunities-retry" type="button" hidden>Tentar novamente</button>
+            <p class="opportunities-empty" id="opportunities-empty" hidden></p>
+            <div class="opportunities-list" id="opportunities-list" aria-live="polite" aria-busy="false"></div>
+            <nav class="opportunities-pagination" id="opportunities-pagination" aria-label="Paginação de oportunidades" hidden><button id="opportunities-previous-page" type="button">Anterior</button><span id="opportunities-page-indicator" aria-live="polite">Página 1</span><button id="opportunities-next-page" type="button">Próxima</button></nav>
+          </section>
         </section>
         <section class="platform-view module-placeholder" id="captacoes" data-platform-view="captacoes" tabindex="-1" aria-labelledby="captacoes-title" hidden>
           <div class="module-placeholder-card"><span class="module-placeholder-icon" aria-hidden="true">▤</span><p class="eyebrow">Gestão</p><h2 id="captacoes-title">Captações</h2><p>Planejamento e acompanhamento das estratégias de captação de recursos.</p><span class="module-placeholder-status">Módulo em desenvolvimento</span></div>
