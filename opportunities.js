@@ -12,6 +12,8 @@
     uf: document.querySelector("#opportunities-uf"),
     clear: document.querySelector("#opportunities-clear-filters"),
     coverageNote: document.querySelector("#opportunities-coverage-note"),
+    municipalityContext: document.querySelector("#opportunities-municipality-context"),
+    municipalityContextName: document.querySelector("#opportunities-municipality-context-name"),
     summaryScope: document.querySelector("#opportunities-summary-scope"),
     openCount: document.querySelector("#opportunities-open-count"),
     openMeta: document.querySelector("#opportunities-open-meta"),
@@ -51,8 +53,36 @@
     focusResults: false,
     filters: { search: "", sphere: "", area: "", status: "", deadline: "", uf: "" },
     policyAreas: [],
-    searchTimer: 0
+    searchTimer: 0,
+    activeMunicipalityId: ""
   };
+
+  function renderActiveMunicipalityContext() {
+    const municipality = typeof window.getActiveMunicipalityContext === "function"
+      ? window.getActiveMunicipalityContext()
+      : null;
+
+    if (!municipality || !municipality.id) {
+      state.activeMunicipalityId = "";
+      elements.municipalityContextName.textContent = "—";
+      elements.municipalityContext.hidden = true;
+      return null;
+    }
+
+    state.activeMunicipalityId = String(municipality.id);
+
+    const municipalityName = String(municipality.name || "").trim();
+    const municipalityState = String(municipality.state || "").trim().toUpperCase();
+
+    elements.municipalityContextName.textContent =
+      municipalityName && municipalityState
+        ? municipalityName + " — " + municipalityState
+        : municipalityName || municipalityState || "Prefeitura selecionada";
+
+    elements.municipalityContext.hidden = false;
+
+    return municipality;
+  }
 
   function isOpportunitiesRoute() {
     return window.location.hash === "#oportunidades" || window.location.hash === "#/oportunidades";
@@ -127,6 +157,172 @@
       );
     }
     return { rows: Array.isArray(payload) ? payload : [], response: response };
+  }
+
+  async function opportunityWriteRequest(path, context, options) {
+    const settings = getEnvironmentSettings();
+    const requestOptions = options || {};
+    const method = requestOptions.method || "POST";
+    const headers = {
+      apikey: settings.anonKey,
+      Authorization: "Bearer " + context.accessToken,
+      "Content-Type": "application/json"
+    };
+
+    if (requestOptions.prefer) {
+      headers.Prefer = requestOptions.prefer;
+    }
+
+    let response;
+    try {
+      response = await fetch(settings.url + "/rest/v1/" + path, {
+        method: method,
+        headers: headers,
+        body: JSON.stringify(requestOptions.body || {})
+      });
+    } catch (error) {
+      throw createRequestError("Não foi possível conectar ao Supabase.");
+    }
+
+    if (
+      response.status === 401 &&
+      !requestOptions.retried &&
+      typeof window.refreshSupabaseAuthSession === "function"
+    ) {
+      const refreshed = await window.refreshSupabaseAuthSession(context.accessToken);
+      if (refreshed && refreshed.accessToken && refreshed.userId) {
+        return opportunityWriteRequest(
+          path,
+          refreshed,
+          Object.assign({}, requestOptions, { retried: true })
+        );
+      }
+    }
+
+    const text = await response.text();
+    let payload = null;
+    try {
+      payload = text ? JSON.parse(text) : null;
+    } catch (error) {
+      payload = null;
+    }
+
+    if (!response.ok) {
+      throw createRequestError(
+        payload && (payload.message || payload.error)
+          ? (payload.message || payload.error)
+          : "Não foi possível atualizar a oportunidade para esta Prefeitura.",
+        response.status
+      );
+    }
+
+    return {
+      rows: Array.isArray(payload) ? payload : [],
+      response: response
+    };
+  }
+
+  async function loadMunicipalityOpportunityRelations(context, municipalityId, opportunityIds) {
+    if (!municipalityId || !Array.isArray(opportunityIds) || opportunityIds.length === 0) {
+      return new Map();
+    }
+
+    const uniqueOpportunityIds = Array.from(new Set(opportunityIds.filter(Boolean)));
+    if (uniqueOpportunityIds.length === 0) return new Map();
+
+    const params = new URLSearchParams();
+    params.set("select", "id,municipality_id,opportunity_id,status,notes,created_at,updated_at");
+    params.set("municipality_id", "eq." + municipalityId);
+    params.set("opportunity_id", "in.(" + uniqueOpportunityIds.join(",") + ")");
+
+    const result = await opportunityRequest(
+      "municipality_opportunities?" + params.toString(),
+      context
+    );
+
+    return new Map(result.rows.map(function (relation) {
+      return [relation.opportunity_id, relation];
+    }));
+  }
+
+  async function saveMunicipalityOpportunityRelation(
+    context,
+    municipalityId,
+    opportunityId,
+    status,
+    notes,
+    existingRelation
+  ) {
+    const validMunicipalityStatuses = new Set([
+      "analyzing",
+      "interested",
+      "review_later",
+      "not_applicable"
+    ]);
+
+    if (!municipalityId || !opportunityId) {
+      throw createRequestError("Prefeitura ou oportunidade não identificada.");
+    }
+
+    if (!validMunicipalityStatuses.has(status)) {
+      throw createRequestError("Status municipal inválido.");
+    }
+
+    const normalizedNotes = String(notes || "").trim();
+    if (normalizedNotes.length > 4000) {
+      throw createRequestError("As observações devem ter no máximo 4000 caracteres.");
+    }
+
+    const notesValue = normalizedNotes || null;
+
+    if (existingRelation && existingRelation.id) {
+      const params = new URLSearchParams();
+      params.set("id", "eq." + existingRelation.id);
+      params.set("select", "id,municipality_id,opportunity_id,status,notes,created_at,updated_at");
+
+      const result = await opportunityWriteRequest(
+        "municipality_opportunities?" + params.toString(),
+        context,
+        {
+          method: "PATCH",
+          prefer: "return=representation",
+          body: {
+            status: status,
+            notes: notesValue
+          }
+        }
+      );
+
+      if (result.rows.length !== 1) {
+        throw createRequestError("Não foi possível confirmar a atualização da oportunidade.");
+      }
+
+      return result.rows[0];
+    }
+
+    const params = new URLSearchParams();
+    params.set("select", "id,municipality_id,opportunity_id,status,notes,created_at,updated_at");
+
+    const result = await opportunityWriteRequest(
+      "municipality_opportunities?" + params.toString(),
+      context,
+      {
+        method: "POST",
+        prefer: "return=representation",
+        body: {
+          municipality_id: municipalityId,
+          opportunity_id: opportunityId,
+          status: status,
+          notes: notesValue
+        }
+      }
+    );
+
+    if (result.rows.length !== 1) {
+      throw createRequestError("Não foi possível confirmar o registro da oportunidade.");
+    }
+
+    return result.rows[0];
   }
 
   function normalizeSearch(value) {
@@ -451,6 +647,17 @@
     return labels[status] || "Não informado";
   }
 
+  function formatMunicipalityOpportunityStatus(status) {
+    const labels = {
+      analyzing: "Em análise",
+      interested: "Interessada",
+      review_later: "Revisar depois",
+      not_applicable: "Não se aplica"
+    };
+
+    return labels[status] || "Ainda não analisada";
+  }
+
   function formatAmount(amount, kind) {
     if (amount === null || amount === undefined || amount === "") return "Não informado";
     const number = Number(amount);
@@ -511,6 +718,134 @@
     }
   }
 
+  function createMunicipalityOpportunityControls(opportunity, municipalityRelation) {
+    const controls = createElement("div", "opportunity-municipality-controls");
+
+    const fields = createElement("div", "opportunity-municipality-fields");
+
+    const statusField = createElement("label", "opportunity-municipality-field");
+    statusField.appendChild(createElement(
+      "span",
+      "opportunity-municipality-field-label",
+      "Status"
+    ));
+
+    const statusSelect = document.createElement("select");
+    statusSelect.className = "opportunity-municipality-select";
+    statusSelect.setAttribute("aria-label", "Status da oportunidade para a Prefeitura");
+
+    [
+      ["", "Selecione uma situação"],
+      ["analyzing", "Em análise"],
+      ["interested", "Interessada"],
+      ["review_later", "Revisar depois"],
+      ["not_applicable", "Não se aplica"]
+    ].forEach(function (item) {
+      const option = document.createElement("option");
+      option.value = item[0];
+      option.textContent = item[1];
+      statusSelect.appendChild(option);
+    });
+
+    statusSelect.value = municipalityRelation?.status || "";
+    statusField.appendChild(statusSelect);
+
+    const notesField = createElement(
+      "label",
+      "opportunity-municipality-field opportunity-municipality-notes-field"
+    );
+    notesField.appendChild(createElement(
+      "span",
+      "opportunity-municipality-field-label",
+      "Observações"
+    ));
+
+    const notesInput = document.createElement("textarea");
+    notesInput.className = "opportunity-municipality-notes";
+    notesInput.rows = 2;
+    notesInput.maxLength = 4000;
+    notesInput.placeholder = "Registre observações internas sobre esta oportunidade.";
+    notesInput.value = municipalityRelation?.notes || "";
+    notesField.appendChild(notesInput);
+
+    fields.appendChild(statusField);
+    fields.appendChild(notesField);
+    controls.appendChild(fields);
+
+    const actions = createElement("div", "opportunity-municipality-actions");
+    const feedback = createElement("span", "opportunity-municipality-feedback", "");
+    feedback.setAttribute("aria-live", "polite");
+
+    const saveButton = createElement(
+      "button",
+      "opportunity-municipality-save",
+      municipalityRelation ? "Salvar alterações" : "Registrar análise"
+    );
+    saveButton.type = "button";
+
+    saveButton.addEventListener("click", async function () {
+      const municipality = typeof window.getActiveMunicipalityContext === "function"
+        ? window.getActiveMunicipalityContext()
+        : null;
+
+      if (!municipality?.id || String(municipality.id) !== state.activeMunicipalityId) {
+        feedback.textContent = "O contexto da Prefeitura mudou. Atualize a página e tente novamente.";
+        return;
+      }
+
+      if (!statusSelect.value) {
+        feedback.textContent = "Selecione uma situação antes de salvar.";
+        statusSelect.focus();
+        return;
+      }
+
+      saveButton.disabled = true;
+      statusSelect.disabled = true;
+      notesInput.disabled = true;
+      feedback.textContent = "Salvando...";
+
+      try {
+        const context = await getAuthenticatedContext();
+        const savedRelation = await saveMunicipalityOpportunityRelation(
+          context,
+          municipality.id,
+          opportunity.id,
+          statusSelect.value,
+          notesInput.value,
+          municipalityRelation
+        );
+
+        opportunity.municipalityOpportunity = savedRelation;
+        feedback.textContent = "Análise salva com sucesso.";
+        saveButton.textContent = "Salvar alterações";
+
+        window.setTimeout(function () {
+          if (isOpportunitiesRoute()) {
+            refreshCatalog({ resetPage: false });
+          }
+        }, 350);
+      } catch (error) {
+        if (error?.status === 401) {
+          feedback.textContent = "Sua sessão precisa ser atualizada.";
+        } else if (error?.status === 403) {
+          feedback.textContent = "Seu perfil pode consultar, mas não alterar esta análise.";
+        } else {
+          feedback.textContent = error?.message || "Não foi possível salvar a análise.";
+        }
+      } finally {
+        saveButton.disabled = false;
+        statusSelect.disabled = false;
+        notesInput.disabled = false;
+      }
+    });
+
+    actions.appendChild(feedback);
+    actions.appendChild(saveButton);
+    controls.appendChild(actions);
+
+    return controls;
+  }
+
   function createOpportunityCard(opportunity) {
     const source = opportunity.source && typeof opportunity.source === "object" ? opportunity.source : null;
     const areas = activePolicyAreas(opportunity.opportunity_policy_areas);
@@ -553,6 +888,33 @@
     appendMeta(metadata, "Prazo", opportunity.closes_on ? formatCivilDate(opportunity.closes_on) : "Não informado");
     appendMeta(metadata, "Abrangência", formatCoverage(opportunity));
     card.appendChild(metadata);
+
+    const municipalityRelation = opportunity.municipalityOpportunity || null;
+    const municipalityManagement = createElement("div", "opportunity-municipality-management");
+    const municipalityManagementHeader = createElement("div", "opportunity-municipality-management-header");
+
+    municipalityManagementHeader.appendChild(createElement(
+      "span",
+      "opportunity-municipality-management-label",
+      "Gestão da Prefeitura"
+    ));
+
+    municipalityManagementHeader.appendChild(createElement(
+      "span",
+      "opportunity-municipality-status" +
+        (municipalityRelation && municipalityRelation.status
+          ? " opportunity-municipality-status-" + municipalityRelation.status
+          : " opportunity-municipality-status-unreviewed"),
+      formatMunicipalityOpportunityStatus(
+        municipalityRelation ? municipalityRelation.status : null
+      )
+    ));
+
+    municipalityManagement.appendChild(municipalityManagementHeader);
+    municipalityManagement.appendChild(
+      createMunicipalityOpportunityControls(opportunity, municipalityRelation)
+    );
+    card.appendChild(municipalityManagement);
 
     const footer = createElement("div", "opportunity-card-footer");
     const updatedAt = opportunity.source_updated_at || opportunity.last_checked_at;
@@ -621,8 +983,37 @@
         { count: true }
       );
       if (!isCurrentRequest(version)) return;
+
+      const municipality = typeof window.getActiveMunicipalityContext === "function"
+        ? window.getActiveMunicipalityContext()
+        : null;
+
+      state.activeMunicipalityId = municipality && municipality.id
+        ? String(municipality.id)
+        : "";
+
+      let rows = result.rows;
+
+      if (municipality && municipality.id && rows.length > 0) {
+        const relations = await loadMunicipalityOpportunityRelations(
+          context,
+          municipality.id,
+          rows.map(function (opportunity) {
+            return opportunity.id;
+          })
+        );
+
+        if (!isCurrentRequest(version)) return;
+
+        rows = rows.map(function (opportunity) {
+          return Object.assign({}, opportunity, {
+            municipalityOpportunity: relations.get(opportunity.id) || null
+          });
+        });
+      }
+
       const total = countFromResponse(result.response);
-      renderResults(result.rows, total === null ? result.rows.length : total, version);
+      renderResults(rows, total === null ? rows.length : total, version);
     } catch (error) {
       if (!isCurrentRequest(version)) return;
       elements.list.innerHTML = "";
@@ -689,6 +1080,8 @@
       state.requestVersion += 1;
       return;
     }
+
+    renderActiveMunicipalityContext();
     refreshCatalog({ resetPage: true });
   }
 
@@ -720,9 +1113,24 @@
 
   window.addEventListener("hashchange", handleRouteChange);
   window.addEventListener("supabase-auth-ready", handleRouteChange);
+  window.addEventListener("municipality-context-changed", function (event) {
+    const municipalityId = String(event.detail?.id || "");
+    const previousMunicipalityId = state.activeMunicipalityId;
+
+    renderActiveMunicipalityContext();
+
+    if (municipalityId === previousMunicipalityId) return;
+
+    if (isOpportunitiesRoute()) {
+      refreshCatalog({ resetPage: true });
+    }
+  });
   window.addEventListener("supabase-auth-signed-out", function () {
     state.requestVersion += 1;
+    state.activeMunicipalityId = "";
     window.clearTimeout(state.searchTimer);
+    elements.municipalityContextName.textContent = "—";
+    elements.municipalityContext.hidden = true;
     elements.list.innerHTML = "";
     elements.resultsSummary.textContent = "Faça login para consultar o catálogo.";
     setEmpty(false);

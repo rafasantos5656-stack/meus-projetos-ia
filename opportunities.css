@@ -50,14 +50,44 @@
   line-height: 1.6;
 }
 
-#oportunidades .opportunities-page-note {
-  max-width: 320px;
+#oportunidades .opportunities-municipality-context {
+  width: min(100%, 340px);
   margin: 0;
-  padding: 11px 13px;
-  border: 1px solid rgba(216, 184, 109, .2);
-  border-radius: 10px;
-  color: #c7d5e3;
+  padding: 12px 14px;
+  border: 1px solid rgba(216, 184, 109, .24);
+  border-radius: 11px;
   background: rgba(216, 184, 109, .07);
+}
+
+#oportunidades .opportunities-municipality-context[hidden] {
+  display: none;
+}
+
+#oportunidades .opportunities-municipality-context-label,
+#oportunidades .opportunities-municipality-context strong,
+#oportunidades .opportunities-municipality-context small {
+  display: block;
+}
+
+#oportunidades .opportunities-municipality-context-label {
+  color: #d8bd70;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+
+#oportunidades .opportunities-municipality-context strong {
+  margin-top: 5px;
+  color: #f5f8fb;
+  font-size: 14px;
+  font-weight: 760;
+  line-height: 1.35;
+}
+
+#oportunidades .opportunities-municipality-context small {
+  margin-top: 5px;
+  color: #9db0c4;
   font-size: 10px;
   line-height: 1.5;
 }
@@ -450,6 +480,71 @@
   line-height: 1.4;
 }
 
+#oportunidades .opportunity-municipality-management {
+  margin-top: 13px;
+  padding: 11px 12px;
+  border: 1px solid rgba(139, 163, 191, .14);
+  border-radius: 10px;
+  background: rgba(4, 18, 36, .34);
+}
+
+#oportunidades .opportunity-municipality-management-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+#oportunidades .opportunity-municipality-management-label {
+  color: #8ea3b8;
+  font-size: 9px;
+  font-weight: 760;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+#oportunidades .opportunity-municipality-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 9px;
+  border: 1px solid rgba(139, 163, 191, .22);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 740;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+#oportunidades .opportunity-municipality-status-unreviewed {
+  color: #c6d3df;
+  background: rgba(116, 139, 161, .11);
+}
+
+#oportunidades .opportunity-municipality-status-analyzing {
+  border-color: rgba(100, 169, 220, .28);
+  color: #b9dcf5;
+  background: rgba(61, 125, 177, .13);
+}
+
+#oportunidades .opportunity-municipality-status-interested {
+  border-color: rgba(216, 184, 109, .35);
+  color: #f5d79c;
+  background: rgba(202, 143, 51, .13);
+}
+
+#oportunidades .opportunity-municipality-status-review_later {
+  border-color: rgba(190, 155, 224, .28);
+  color: #dec6f5;
+  background: rgba(125, 82, 165, .13);
+}
+
+#oportunidades .opportunity-municipality-status-not_applicable {
+  border-color: rgba(143, 164, 185, .22);
+  color: #9eb0c1;
+  background: rgba(82, 101, 120, .11);
+}
+
 #oportunidades .opportunity-card-footer {
   display: flex;
   align-items: center;
@@ -533,8 +628,8 @@
     flex-direction: column;
   }
 
-  #oportunidades .opportunities-page-note {
-    max-width: 680px;
+  #oportunidades .opportunities-municipality-context {
+    width: min(100%, 680px);
   }
 
   #oportunidades .opportunities-summary-grid {
@@ -594,5 +689,127 @@
 
   #oportunidades .opportunities-pagination span {
     min-width: 0;
+  }
+}
+
+
+/* ETAPA 20.3.16 - CONTROLES MUNICIPAIS */
+
+.opportunity-municipality-controls {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.opportunity-municipality-fields {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.7fr) minmax(260px, 1.3fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.opportunity-municipality-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.opportunity-municipality-field-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.opportunity-municipality-select,
+.opportunity-municipality-notes {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.opportunity-municipality-select {
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+.opportunity-municipality-notes {
+  min-height: 76px;
+  padding: 10px 12px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.opportunity-municipality-select:focus,
+.opportunity-municipality-notes:focus {
+  outline: none;
+  border-color: #64748b;
+  box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.12);
+}
+
+.opportunity-municipality-select:disabled,
+.opportunity-municipality-notes:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.opportunity-municipality-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.opportunity-municipality-feedback {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: #64748b;
+}
+
+.opportunity-municipality-save {
+  min-height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.opportunity-municipality-save:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.opportunity-municipality-save:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+@media (max-width: 720px) {
+  .opportunity-municipality-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .opportunity-municipality-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .opportunity-municipality-save {
+    width: 100%;
   }
 }

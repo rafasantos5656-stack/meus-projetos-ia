@@ -192,6 +192,46 @@ function renderEnvironmentBadge(environmentState = window.APP_ENVIRONMENT) {
   userActions.prepend(badge);
 }
 
+function renderGlobalMunicipalityContext(municipality) {
+  const element = document.querySelector(".anchor-municipality-context");
+  if (!element) return;
+
+  const label = element.querySelector("span");
+  const value = element.querySelector("strong");
+
+  if (!label || !value) return;
+
+  label.textContent = "Município atual";
+
+  if (municipality && municipality.id) {
+    const municipalityName = municipality.name || "Prefeitura";
+    const municipalityState = municipality.state
+      ? " — " + municipality.state
+      : "";
+
+    value.textContent = municipalityName + municipalityState;
+    element.setAttribute(
+      "aria-label",
+      "Município atual: " + municipalityName + municipalityState
+    );
+    return;
+  }
+
+  value.textContent = "—";
+  element.setAttribute(
+    "aria-label",
+    "Município atual ainda não selecionado"
+  );
+}
+
+window.addEventListener("municipality-context-changed", (event) => {
+  renderGlobalMunicipalityContext(event.detail || null);
+});
+
+if (typeof window.getActiveMunicipalityContext === "function") {
+  renderGlobalMunicipalityContext(window.getActiveMunicipalityContext());
+}
+
 window.addEventListener("app-environment-ready", (event) => {
   renderEnvironmentBadge(event.detail);
 });

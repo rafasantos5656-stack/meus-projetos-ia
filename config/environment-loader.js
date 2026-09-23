@@ -11,6 +11,8 @@
   const developmentOrigins = new Set([
     "http://127.0.0.1:4173",
     "http://localhost:4173",
+    "http://127.0.0.1:3000",
+    "http://localhost:3000",
   ]);
   const productionSupabaseHost = "abgijcibarzdcockadiv.supabase.co";
   const currentOrigin = window.location.origin;

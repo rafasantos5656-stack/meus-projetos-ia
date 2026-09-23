@@ -288,6 +288,56 @@
     editingContactMembershipId: null,
   };
 
+  function getMunicipalityPreferenceKey(userId = state.currentUserId) {
+    const normalizedUserId = String(userId || "").trim();
+    return normalizedUserId
+      ? "anchor_active_municipality_" + normalizedUserId
+      : "";
+  }
+
+  function getStoredMunicipalityId(userId = state.currentUserId) {
+    const key = getMunicipalityPreferenceKey(userId);
+    if (!key) return "";
+
+    try {
+      return String(window.localStorage.getItem(key) || "").trim();
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function storeActiveMunicipalityId(municipalityId, userId = state.currentUserId) {
+    const key = getMunicipalityPreferenceKey(userId);
+    const normalizedMunicipalityId = String(municipalityId || "").trim();
+
+    if (!key || !normalizedMunicipalityId) return;
+
+    try {
+      window.localStorage.setItem(key, normalizedMunicipalityId);
+    } catch (error) {
+      // A persistência da preferência não deve impedir o uso da plataforma.
+    }
+  }
+
+  function getActiveMunicipalityContext() {
+    const municipality = state.municipalities.find((item) => item.id === state.selectedMunicipalityId) || null;
+    return municipality ? Object.freeze({
+      id: municipality.id,
+      name: municipality.name,
+      state: municipality.state,
+      ibgeCode: municipality.ibge_code
+    }) : null;
+  }
+
+  window.getActiveMunicipalityContext = getActiveMunicipalityContext;
+
+  function publishActiveMunicipalityContext() {
+    const context = getActiveMunicipalityContext();
+    window.dispatchEvent(new CustomEvent("municipality-context-changed", {
+      detail: context
+    }));
+  }
+
   function isMunicipalityRoute() {
     return ["#prefeitura", "#/prefeitura"].includes(window.location.hash || "");
   }
@@ -3146,34 +3196,73 @@
     }
   }
 
+  async function loadMunicipalityContext({ reloadMunicipalities = true } = {}) {
+    const context = await getAuthenticatedContext();
+
+    if (state.currentUserId && state.currentUserId !== context.userId) {
+      resetAnchorRoles();
+    }
+
+    state.currentUserId = context.userId;
+
+    if (reloadMunicipalities || state.municipalities.length === 0) {
+      const municipalities = await municipalityRequest(
+        "municipalities?select=id,name,state,ibge_code,primary_cnpj,timezone,status&order=name.asc",
+        context
+      );
+
+      state.municipalities = municipalities;
+    }
+
+    if (state.municipalities.length === 0) {
+      state.selectedMunicipalityId = "";
+      publishActiveMunicipalityContext();
+      return { context, municipality: null };
+    }
+
+    const selectedExists = state.municipalities.some(
+      (municipality) => municipality.id === state.selectedMunicipalityId
+    );
+
+    if (!selectedExists) {
+      const storedMunicipalityId = getStoredMunicipalityId();
+
+      const storedMunicipalityIsAuthorized = state.municipalities.some(
+        (municipality) => municipality.id === storedMunicipalityId
+      );
+
+      state.selectedMunicipalityId = storedMunicipalityIsAuthorized
+        ? storedMunicipalityId
+        : state.municipalities[0].id;
+    }
+
+    publishActiveMunicipalityContext();
+
+    return {
+      context,
+      municipality: getActiveMunicipalityContext()
+    };
+  }
+
   async function loadMunicipalityPage({ reloadMunicipalities = true } = {}) {
     if (!isMunicipalityRoute()) return;
 
     const requestId = ++state.requestId;
     setViewState("loading");
     try {
-      const context = await getAuthenticatedContext();
-      if (state.currentUserId && state.currentUserId !== context.userId) resetAnchorRoles();
-      state.currentUserId = context.userId;
+      const { context, municipality } = await loadMunicipalityContext({ reloadMunicipalities });
+      if (!isCurrentRequest(requestId)) return;
+
       await loadAnchorRoles(context);
       if (!isCurrentRequest(requestId)) return;
 
-      if (reloadMunicipalities || state.municipalities.length === 0) {
-        const municipalities = await municipalityRequest("municipalities?select=id,name,state,ibge_code,primary_cnpj,timezone,status&order=name.asc", context);
-        if (!isCurrentRequest(requestId)) return;
-        state.municipalities = municipalities;
-      }
-
-      if (state.municipalities.length === 0) {
-        state.selectedMunicipalityId = "";
+      if (!municipality) {
         selector.replaceChildren();
         selectorField.hidden = true;
         setViewState("empty");
         return;
       }
 
-      const selectedExists = state.municipalities.some((municipality) => municipality.id === state.selectedMunicipalityId);
-      if (!selectedExists) state.selectedMunicipalityId = state.municipalities[0].id;
       renderSelector();
       await loadSelectedMunicipality(context, requestId);
     } catch (error) {
@@ -3190,6 +3279,7 @@
     resetAnchorRoles();
     state.municipalities = [];
     state.selectedMunicipalityId = "";
+    publishActiveMunicipalityContext();
     state.profile = null;
     state.profileFailed = false;
     state.address = null;
@@ -3300,6 +3390,8 @@
     if (!state.municipalities.some((municipality) => municipality.id === selected)) return;
 
     state.selectedMunicipalityId = selected;
+    storeActiveMunicipalityId(selected);
+    publishActiveMunicipalityContext();
     invalidatePriorityAreaWriteState();
     invalidateMunicipalityDemandWriteState();
     invalidateCapacityWriteState();
@@ -3337,7 +3429,15 @@
     const userId = String(event.detail?.userId ?? "");
     resetAnchorRoles();
     state.currentUserId = userId;
-    if (isMunicipalityRoute()) void loadMunicipalityPage({ reloadMunicipalities: true });
+
+    if (isMunicipalityRoute()) {
+      void loadMunicipalityPage({ reloadMunicipalities: true });
+      return;
+    }
+
+    void loadMunicipalityContext({ reloadMunicipalities: true }).catch(() => {
+      // O contexto municipal compartilhado sera carregado novamente quando necessario.
+    });
   });
 
   window.addEventListener("supabase-auth-signed-out", resetMunicipalityPage);
@@ -3347,11 +3447,16 @@
 
   setActiveTab("overview");
   void (async () => {
-    if (!isMunicipalityRoute()) return;
     try {
       const context = await getAuthenticatedContext();
       state.currentUserId = context.userId;
-      await loadMunicipalityPage({ reloadMunicipalities: true });
+
+      if (isMunicipalityRoute()) {
+        await loadMunicipalityPage({ reloadMunicipalities: true });
+        return;
+      }
+
+      await loadMunicipalityContext({ reloadMunicipalities: true });
     } catch {
       // A camada de autenticação apresenta a tela adequada quando não há sessão.
     }
