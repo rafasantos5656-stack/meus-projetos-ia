@@ -73,7 +73,7 @@ begin
   select opportunity.id
     into published_one_id
   from public.opportunities as opportunity
-  where opportunity.source_id = source_id
+  where opportunity.source_id = fixture_source_id
     and opportunity.external_id = 'OPP_DEV_PUBLISHED_001'
     and opportunity.is_published = true
     and opportunity.status = 'open';
@@ -81,7 +81,7 @@ begin
   select opportunity.id
     into published_two_id
   from public.opportunities as opportunity
-  where opportunity.source_id = source_id
+  where opportunity.source_id = fixture_source_id
     and opportunity.external_id = 'OPP_DEV_PUBLISHED_002'
     and opportunity.is_published = true
     and opportunity.status = 'open';
@@ -89,7 +89,7 @@ begin
   select opportunity.id
     into unpublished_id
   from public.opportunities as opportunity
-  where opportunity.source_id = source_id
+  where opportunity.source_id = fixture_source_id
     and opportunity.external_id = 'OPP_DEV_UNPUBLISHED_001'
     and opportunity.is_published = false
     and opportunity.status = 'open';
